@@ -9,7 +9,6 @@ document.addEventListener('DOMContentLoaded', function() {
     initEditForm();
     initAllDayToggle();
     initRecurrenceToggle();
-    initUserMenu();
     initKeyboardShortcuts();
     initScrollToCurrentTime();
     initEventPopups();
@@ -412,24 +411,6 @@ if ('Notification' in window && Notification.permission === 'default') {
     }, { once: true });
 }
 
-/**
- * Initialize user menu dropdown
- */
-function initUserMenu() {
-    const menuBtn = document.querySelector('.user-menu-btn');
-    const dropdown = document.querySelector('.user-dropdown');
-
-    if (menuBtn && dropdown) {
-        menuBtn.addEventListener('click', function(e) {
-            e.stopPropagation();
-            dropdown.classList.toggle('show');
-        });
-
-        document.addEventListener('click', function() {
-            dropdown.classList.remove('show');
-        });
-    }
-}
 
 /**
  * Show error message

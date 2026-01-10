@@ -40,7 +40,7 @@ body {
 }
 
 /* Navbar styles */
-.navbar { background: var(--white); border-bottom: 1px solid var(--gray-200); position: sticky; top: 0; z-index: 100; }
+.navbar { background: var(--white); border-bottom: 1px solid var(--gray-200); position: sticky; top: 0; z-index: 500; }
 .nav-container { max-width: 1280px; margin: 0 auto; padding: 0 1.5rem; display: flex; align-items: center; justify-content: space-between; height: 64px; }
 .nav-logo { font-size: 1.5rem; font-weight: 800; color: var(--primary); text-decoration: none; }
 .nav-links { display: none; gap: 0.5rem; }
@@ -55,7 +55,9 @@ body {
 .user-avatar, .user-avatar-placeholder { width: 36px; height: 36px; border-radius: 50%; }
 .user-avatar { object-fit: cover; }
 .user-avatar-placeholder { background: var(--primary); color: var(--white); display: flex; align-items: center; justify-content: center; font-weight: 600; }
-.user-dropdown { position: absolute; top: 100%; right: 0; margin-top: 0.5rem; min-width: 200px; background: var(--white); border-radius: var(--radius-lg); box-shadow: var(--shadow-lg); border: 1px solid var(--gray-200); opacity: 0; visibility: hidden; transform: translateY(-10px); transition: var(--transition); }
+.user-dropdown { position: absolute; top: 100%; right: 0; margin-top: 0.5rem; min-width: 200px; background: var(--white); border-radius: var(--radius-lg); box-shadow: var(--shadow-lg); border: 1px solid var(--gray-200); opacity: 0; visibility: hidden; transform: translateY(-10px); transition: var(--transition); z-index: 1000; }
+.more-dropdown { position: absolute; top: 100%; right: 0; margin-top: 0.5rem; min-width: 200px; background: var(--white); border-radius: var(--radius-lg); box-shadow: var(--shadow-lg); border: 1px solid var(--gray-200); opacity: 0; visibility: hidden; transform: translateY(-10px); transition: var(--transition); z-index: 1000; }
+.more-dropdown.show { opacity: 1; visibility: visible; transform: translateY(0); }
 .user-dropdown.show { opacity: 1; visibility: visible; transform: translateY(0); }
 .user-dropdown-header { padding: 1rem; display: flex; flex-direction: column; }
 .user-dropdown-header strong { color: var(--gray-800); }

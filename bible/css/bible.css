@@ -39,12 +39,13 @@ body {
 }
 
 /* Navbar */
-.navbar { background: var(--white); border-bottom: 1px solid var(--gray-200); position: sticky; top: 0; z-index: 200; }
+.navbar { background: var(--white); border-bottom: 1px solid var(--gray-200); position: sticky; top: 0; z-index: 500; }
 .nav-container { max-width: 1600px; margin: 0 auto; padding: 0 1.5rem; display: flex; align-items: center; justify-content: space-between; height: 64px; }
 .nav-logo { font-size: 1.5rem; font-weight: 800; color: var(--primary); text-decoration: none; }
 .nav-links { display: none; gap: 0.5rem; }
 .nav-link { padding: 0.5rem 1rem; color: var(--gray-600); text-decoration: none; font-weight: 500; border-radius: var(--radius); transition: var(--transition); }
 .nav-link:hover, .nav-link.active { color: var(--primary); background: rgba(79, 70, 229, 0.05); }
+.user-dropdown, .more-dropdown { z-index: 1000; }
 @media (min-width: 768px) { .nav-links { display: flex; } }
 
 /* Bible Layout */

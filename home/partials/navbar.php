@@ -27,7 +27,7 @@ $isActive = function($path) use ($currentPath) {
 ?>
 <style>
 /* Navbar Styles - Inline for reliability */
-.navbar{background:#fff;border-bottom:1px solid #E5E7EB;position:sticky;top:0;z-index:100;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;}
+.navbar{background:#fff;border-bottom:1px solid #E5E7EB;position:sticky;top:0;z-index:500;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;}
 .nav-container{max-width:1280px;margin:0 auto;padding:0 1.5rem;display:flex;align-items:center;justify-content:space-between;height:64px;}
 .nav-logo{font-size:1.5rem;font-weight:800;color:#4F46E5;text-decoration:none;}
 .nav-links{display:none;gap:0.5rem;}
