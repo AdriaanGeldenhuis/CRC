@@ -205,12 +205,12 @@ try {
                                     Completed
                                 </div>
                             <?php else: ?>
-                                <a href="/morning_watch/today.php" class="btn btn-primary">Start Today's Session</a>
+                                <a href="/morning_watch/" class="btn btn-primary">Start Today's Session</a>
                             <?php endif; ?>
                         </div>
                     <?php else: ?>
                         <div class="no-content">
-                            <p>No morning watch session for today yet.</p>
+                            <p>No Morning Study session for today yet.</p>
                         </div>
                     <?php endif; ?>
                 </div>
