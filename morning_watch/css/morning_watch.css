@@ -1,0 +1,590 @@
+/* CRC Morning Watch Styles */
+
+:root {
+    --primary: #4F46E5;
+    --primary-dark: #4338CA;
+    --secondary: #10B981;
+    --danger: #EF4444;
+    --warning: #F59E0B;
+    --orange: #F97316;
+    --gray-50: #F9FAFB;
+    --gray-100: #F3F4F6;
+    --gray-200: #E5E7EB;
+    --gray-300: #D1D5DB;
+    --gray-400: #9CA3AF;
+    --gray-500: #6B7280;
+    --gray-600: #4B5563;
+    --gray-700: #374151;
+    --gray-800: #1F2937;
+    --gray-900: #111827;
+    --white: #FFFFFF;
+    --radius: 8px;
+    --radius-lg: 12px;
+    --shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+    --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+    --transition: all 0.2s ease;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background: linear-gradient(135deg, #FEF3C7 0%, #FDE68A 50%, #FCD34D 100%);
+    min-height: 100vh;
+    color: var(--gray-800);
+}
+
+/* Navbar */
+.navbar { background: rgba(255,255,255,0.95); border-bottom: 1px solid var(--gray-200); position: sticky; top: 0; z-index: 100; backdrop-filter: blur(10px); }
+.nav-container { max-width: 1280px; margin: 0 auto; padding: 0 1.5rem; display: flex; align-items: center; justify-content: space-between; height: 64px; }
+.nav-logo { font-size: 1.5rem; font-weight: 800; color: var(--primary); text-decoration: none; }
+.nav-links { display: none; gap: 0.5rem; }
+.nav-link { padding: 0.5rem 1rem; color: var(--gray-600); text-decoration: none; font-weight: 500; border-radius: var(--radius); transition: var(--transition); }
+.nav-link:hover, .nav-link.active { color: var(--primary); background: rgba(79, 70, 229, 0.05); }
+@media (min-width: 768px) { .nav-links { display: flex; } }
+
+/* Main Content */
+.main-content { padding: 2rem 0; }
+.container { max-width: 800px; margin: 0 auto; padding: 0 1.5rem; }
+
+/* Header */
+.mw-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 1.5rem;
+    flex-wrap: wrap;
+    gap: 1rem;
+}
+
+.mw-title h1 {
+    font-size: 2rem;
+    font-weight: 700;
+    color: var(--gray-900);
+}
+
+.mw-title p {
+    color: var(--gray-600);
+}
+
+.back-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    color: var(--gray-600);
+    text-decoration: none;
+    font-size: 0.875rem;
+    margin-bottom: 0.5rem;
+}
+
+.back-link:hover {
+    color: var(--primary);
+}
+
+.back-link svg {
+    width: 16px;
+    height: 16px;
+}
+
+.session-date {
+    color: var(--gray-500);
+    margin-top: 0.25rem;
+}
+
+/* Streak Bar */
+.streak-bar {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 2rem;
+    flex-wrap: wrap;
+}
+
+.streak-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    background: var(--white);
+    padding: 0.75rem 1rem;
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow);
+}
+
+.streak-icon {
+    font-size: 1.25rem;
+}
+
+.streak-value {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: var(--gray-900);
+}
+
+.streak-label {
+    font-size: 0.75rem;
+    color: var(--gray-500);
+}
+
+/* Devotional Card */
+.devotional-card {
+    background: var(--white);
+    border-radius: var(--radius-lg);
+    padding: 2rem;
+    box-shadow: var(--shadow-lg);
+    margin-bottom: 1.5rem;
+}
+
+.devotional-header {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 1rem;
+}
+
+.devotional-badge {
+    padding: 0.25rem 0.75rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    background: var(--orange);
+    color: var(--white);
+    border-radius: 100px;
+    text-transform: uppercase;
+}
+
+.devotional-theme {
+    font-size: 0.875rem;
+    color: var(--gray-500);
+}
+
+.devotional-title {
+    font-family: 'Merriweather', Georgia, serif;
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--gray-900);
+    margin-bottom: 1.5rem;
+}
+
+/* Scripture Section */
+.scripture-section {
+    background: linear-gradient(135deg, rgba(79, 70, 229, 0.05), rgba(139, 92, 246, 0.05));
+    border-left: 4px solid var(--primary);
+    border-radius: var(--radius);
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+}
+
+.scripture-ref {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-weight: 600;
+    color: var(--primary);
+    margin-bottom: 1rem;
+}
+
+.scripture-ref svg {
+    width: 18px;
+    height: 18px;
+}
+
+.version-badge {
+    font-size: 0.625rem;
+    padding: 0.125rem 0.375rem;
+    background: var(--gray-200);
+    color: var(--gray-600);
+    border-radius: 4px;
+    margin-left: auto;
+}
+
+.scripture-text {
+    font-family: 'Merriweather', Georgia, serif;
+    font-size: 1.125rem;
+    line-height: 1.8;
+    color: var(--gray-800);
+    margin: 0;
+    padding: 0;
+    border: none;
+}
+
+/* Devotional Content */
+.devotional-content {
+    margin-bottom: 1.5rem;
+}
+
+.devotional-content h3 {
+    font-size: 0.875rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--gray-500);
+    margin-bottom: 0.75rem;
+}
+
+.content-text {
+    font-size: 1rem;
+    line-height: 1.8;
+    color: var(--gray-700);
+}
+
+/* Prayer Section */
+.prayer-section {
+    background: var(--gray-50);
+    border-radius: var(--radius);
+    padding: 1.25rem;
+    margin-bottom: 1rem;
+}
+
+.prayer-section h3 {
+    font-size: 0.875rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--gray-500);
+    margin-bottom: 0.75rem;
+}
+
+.prayer-list {
+    list-style: none;
+}
+
+.prayer-list li {
+    position: relative;
+    padding-left: 1.5rem;
+    margin-bottom: 0.5rem;
+    color: var(--gray-700);
+}
+
+.prayer-list li::before {
+    content: '🙏';
+    position: absolute;
+    left: 0;
+    font-size: 0.875rem;
+}
+
+.devotional-author {
+    font-size: 0.875rem;
+    color: var(--gray-500);
+    text-align: right;
+    margin-top: 1rem;
+    padding-top: 1rem;
+    border-top: 1px solid var(--gray-200);
+}
+
+/* Entry Card */
+.entry-card {
+    background: var(--white);
+    border-radius: var(--radius-lg);
+    padding: 2rem;
+    box-shadow: var(--shadow-lg);
+}
+
+.entry-card h3 {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: var(--gray-900);
+    margin-bottom: 0.25rem;
+}
+
+.entry-subtitle {
+    color: var(--gray-500);
+    margin-bottom: 1.5rem;
+}
+
+.entry-card.view-only {
+    background: var(--gray-50);
+}
+
+.entry-section {
+    margin-bottom: 1.25rem;
+}
+
+.entry-section h4 {
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--gray-500);
+    margin-bottom: 0.5rem;
+}
+
+.entry-section p {
+    color: var(--gray-700);
+    line-height: 1.6;
+}
+
+.entry-meta {
+    font-size: 0.75rem;
+    color: var(--gray-500);
+    margin-top: 1rem;
+    padding-top: 1rem;
+    border-top: 1px solid var(--gray-200);
+}
+
+/* Form */
+.form-group {
+    margin-bottom: 1.25rem;
+}
+
+.form-group label {
+    display: block;
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: var(--gray-700);
+    margin-bottom: 0.5rem;
+}
+
+.form-group textarea {
+    width: 100%;
+    padding: 0.75rem 1rem;
+    border: 1px solid var(--gray-300);
+    border-radius: var(--radius);
+    font-size: 1rem;
+    font-family: inherit;
+    resize: vertical;
+    transition: var(--transition);
+}
+
+.form-group textarea:focus {
+    outline: none;
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+}
+
+.form-actions {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    gap: 1rem;
+}
+
+.saved-indicator {
+    font-size: 0.875rem;
+    color: var(--secondary);
+}
+
+/* Archive */
+.archive-nav {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+}
+
+.archive-nav h2 {
+    font-size: 1.25rem;
+    min-width: 180px;
+    text-align: center;
+}
+
+.nav-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    background: var(--white);
+    border-radius: 50%;
+    color: var(--gray-600);
+    text-decoration: none;
+    box-shadow: var(--shadow);
+    transition: var(--transition);
+}
+
+.nav-btn:hover {
+    background: var(--gray-100);
+    color: var(--gray-900);
+}
+
+.nav-btn svg {
+    width: 20px;
+    height: 20px;
+}
+
+.archive-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.archive-item {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    background: var(--white);
+    border-radius: var(--radius-lg);
+    padding: 1rem;
+    text-decoration: none;
+    box-shadow: var(--shadow);
+    transition: var(--transition);
+}
+
+.archive-item:hover {
+    box-shadow: var(--shadow-lg);
+    transform: translateY(-2px);
+}
+
+.archive-item.completed {
+    border-left: 4px solid var(--secondary);
+}
+
+.archive-item.today {
+    border-left: 4px solid var(--orange);
+}
+
+.archive-date {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-width: 48px;
+    padding: 0.5rem;
+    background: var(--gray-100);
+    border-radius: var(--radius);
+}
+
+.archive-date .day {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: var(--gray-800);
+    line-height: 1;
+}
+
+.archive-date .weekday {
+    font-size: 0.625rem;
+    text-transform: uppercase;
+    color: var(--gray-500);
+}
+
+.archive-content {
+    flex: 1;
+}
+
+.archive-content h3 {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--gray-800);
+    margin-bottom: 0.25rem;
+}
+
+.archive-scripture {
+    font-size: 0.875rem;
+    color: var(--gray-500);
+}
+
+.archive-theme {
+    display: inline-block;
+    padding: 0.125rem 0.5rem;
+    font-size: 0.625rem;
+    background: var(--gray-100);
+    color: var(--gray-600);
+    border-radius: 4px;
+    margin-top: 0.25rem;
+}
+
+.archive-status {
+    min-width: 50px;
+    text-align: center;
+}
+
+.status-completed {
+    color: var(--secondary);
+    font-size: 1.25rem;
+}
+
+.status-today {
+    font-size: 0.625rem;
+    font-weight: 600;
+    padding: 0.25rem 0.5rem;
+    background: var(--orange);
+    color: var(--white);
+    border-radius: 4px;
+}
+
+/* Empty State */
+.empty-state {
+    text-align: center;
+    padding: 4rem 2rem;
+    background: var(--white);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow);
+}
+
+.empty-icon {
+    font-size: 4rem;
+    margin-bottom: 1rem;
+}
+
+.empty-state h2 {
+    font-size: 1.5rem;
+    color: var(--gray-800);
+    margin-bottom: 0.5rem;
+}
+
+.empty-state p {
+    color: var(--gray-500);
+    margin-bottom: 1.5rem;
+}
+
+/* CTA Card */
+.cta-card {
+    background: var(--white);
+    border-radius: var(--radius-lg);
+    padding: 1.5rem;
+    text-align: center;
+    box-shadow: var(--shadow);
+}
+
+.cta-card p {
+    color: var(--gray-600);
+    margin-bottom: 1rem;
+}
+
+/* Buttons */
+.btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.75rem 1.5rem;
+    font-size: 0.875rem;
+    font-weight: 600;
+    border: none;
+    border-radius: var(--radius);
+    cursor: pointer;
+    transition: var(--transition);
+    text-decoration: none;
+}
+
+.btn-primary {
+    background: var(--primary);
+    color: var(--white);
+}
+
+.btn-primary:hover {
+    background: var(--primary-dark);
+}
+
+.btn-outline {
+    background: transparent;
+    border: 1px solid var(--gray-300);
+    color: var(--gray-700);
+}
+
+.btn-outline:hover {
+    background: var(--gray-50);
+}
+
+/* Responsive */
+@media (max-width: 640px) {
+    .devotional-card,
+    .entry-card {
+        padding: 1.5rem;
+    }
+
+    .devotional-title {
+        font-size: 1.25rem;
+    }
+
+    .streak-bar {
+        justify-content: center;
+    }
+}

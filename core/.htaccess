@@ -1,0 +1,3 @@
+# Block all direct access to core directory
+Order deny,allow
+Deny from all
