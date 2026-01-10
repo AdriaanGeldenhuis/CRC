@@ -326,213 +326,173 @@ body {
     font-weight: 500;
 }
 
-/* ==================== WEEK VIEW ==================== */
-.week-view {
-    display: flex;
-    flex-direction: column;
+/* ==================== WEEK VIEW (3x3 Grid) ==================== */
+.week-view-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    grid-template-rows: 1fr 1fr auto;
+    gap: 1rem;
+    min-height: 500px;
 }
 
-.week-header {
-    display: grid;
-    grid-template-columns: 60px repeat(7, 1fr);
-    border-bottom: 1px solid var(--gray-200);
-    position: sticky;
-    top: 0;
+.week-day-card {
     background: var(--white);
-    z-index: 10;
-}
-
-.week-day-header {
+    border: 1px solid var(--gray-200);
+    border-radius: var(--radius-lg);
+    padding: 1rem;
+    cursor: pointer;
+    transition: var(--transition);
     display: flex;
     flex-direction: column;
-    align-items: center;
-    padding: 0.75rem 0.5rem;
-    border-left: 1px solid var(--gray-200);
+    min-height: 180px;
 }
 
-.week-day-header .day-name {
-    font-size: 0.6875rem;
-    font-weight: 500;
-    color: var(--gray-500);
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
+.week-day-card:hover {
+    border-color: var(--primary);
+    box-shadow: var(--shadow-md);
+    transform: translateY(-2px);
 }
 
-.week-day-header .day-num {
-    font-size: 1.25rem;
-    font-weight: 600;
-    color: var(--gray-800);
-    margin-top: 2px;
+.week-day-card.today {
+    border-color: var(--primary);
+    background: rgba(79, 70, 229, 0.02);
 }
 
-.week-day-header.today .day-name {
-    color: var(--primary);
-}
-
-.week-day-header .today-num {
-    width: 32px;
-    height: 32px;
+.week-day-card-header {
     display: flex;
+    justify-content: space-between;
     align-items: center;
-    justify-content: center;
-    background: var(--primary);
-    color: var(--white);
-    border-radius: 50%;
-}
-
-/* All Day Row */
-.all-day-row {
-    display: grid;
-    grid-template-columns: 60px repeat(7, 1fr);
-    border-bottom: 1px solid var(--gray-200);
-    min-height: 40px;
-}
-
-.all-day-label {
-    font-size: 0.6875rem;
-    color: var(--gray-500);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
-.all-day-cell {
-    border-left: 1px solid var(--gray-200);
-    padding: 4px;
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
-}
-
-.all-day-event {
-    display: block;
-    font-size: 0.6875rem;
-    padding: 2px 6px;
-    border-radius: 4px;
-    color: var(--white);
-    text-decoration: none;
-    font-weight: 500;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-}
-
-.all-day-event:hover {
-    opacity: 0.9;
-}
-
-/* Week Time Grid */
-.week-grid-container {
-    overflow-y: auto;
-    max-height: calc(100vh - 320px);
-    min-height: 400px;
-}
-
-.week-grid {
-    position: relative;
-}
-
-.time-row {
-    display: grid;
-    grid-template-columns: 60px repeat(7, 1fr);
-    min-height: 48px;
+    margin-bottom: 0.75rem;
+    padding-bottom: 0.75rem;
     border-bottom: 1px solid var(--gray-100);
 }
 
-.time-gutter {
+.week-day-card-header .day-name {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--gray-700);
+}
+
+.week-day-card.today .day-name {
+    color: var(--primary);
+}
+
+.week-day-card-header .day-num {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--gray-800);
+    width: 40px;
+    height: 40px;
     display: flex;
-    align-items: flex-start;
-    justify-content: flex-end;
-    padding-right: 0.5rem;
-    padding-top: 0;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
 }
 
-.time-label {
-    font-size: 0.6875rem;
-    color: var(--gray-400);
-    position: relative;
-    top: -0.5em;
-}
-
-.time-cell {
-    border-left: 1px solid var(--gray-200);
-    position: relative;
-    min-height: 48px;
-}
-
-.time-cell.current-hour {
-    background: rgba(79, 70, 229, 0.03);
-}
-
-/* Week Events */
-.week-event {
-    position: absolute;
-    left: 2px;
-    right: 2px;
-    padding: 4px 6px;
-    border-radius: 4px;
+.week-day-card-header .today-num {
+    background: var(--primary);
     color: var(--white);
-    text-decoration: none;
-    font-size: 0.6875rem;
-    overflow: hidden;
-    z-index: 5;
+}
+
+.week-day-card-events {
+    flex: 1;
     display: flex;
     flex-direction: column;
-    gap: 1px;
-    box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+    gap: 0.5rem;
+    overflow: hidden;
 }
 
-.week-event:hover {
-    opacity: 0.95;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.15);
+.week-card-event {
+    display: flex;
+    flex-direction: column;
+    padding: 0.5rem 0.75rem;
+    background: var(--gray-50);
+    border-radius: var(--radius);
+    border-left: 3px solid var(--primary);
+    gap: 2px;
 }
 
-.week-event .event-time {
-    font-size: 0.625rem;
-    opacity: 0.9;
-}
-
-.week-event .event-title {
+.week-card-event .event-time {
+    font-size: 0.6875rem;
+    color: var(--gray-500);
     font-weight: 500;
-    line-height: 1.2;
 }
 
-.week-event .event-location {
-    font-size: 0.5625rem;
-    opacity: 0.85;
+.week-card-event .event-title {
+    font-size: 0.8125rem;
+    font-weight: 500;
+    color: var(--gray-800);
+    line-height: 1.3;
 }
 
-/* Current Time Line */
-.current-time-line {
-    position: absolute;
-    right: 0;
-    width: calc(100% - 60px);
-    height: 2px;
-    background: var(--danger);
-    z-index: 20;
-    pointer-events: none;
+.week-card-event .event-location {
+    font-size: 0.6875rem;
+    color: var(--gray-500);
 }
 
-.current-time-line::before {
-    content: '';
-    position: absolute;
-    left: 0;
-    top: 50%;
-    transform: translateY(-50%);
-    width: 8px;
-    height: 8px;
-    background: var(--danger);
-    border-radius: 50%;
+.week-day-card .no-events {
+    font-size: 0.8125rem;
+    color: var(--gray-400);
+    text-align: center;
+    padding: 1rem;
 }
 
-.current-time-dot {
-    position: absolute;
-    left: -4px;
-    top: -3px;
-    width: 8px;
-    height: 8px;
-    background: var(--danger);
-    border-radius: 50%;
+.week-day-card .more-events {
+    font-size: 0.75rem;
+    color: var(--primary);
+    font-weight: 500;
+    text-align: center;
+    padding: 0.25rem;
+}
+
+/* Sunday Full Width Card */
+.week-day-card.sunday-card {
+    grid-column: 1 / -1;
+    min-height: 140px;
+}
+
+.sunday-events {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.75rem;
+}
+
+.sunday-events .week-card-event {
+    min-height: auto;
+}
+
+/* Responsive Week View */
+@media (max-width: 768px) {
+    .week-view-grid {
+        grid-template-columns: repeat(2, 1fr);
+        grid-template-rows: auto;
+    }
+
+    .week-day-card {
+        min-height: 150px;
+    }
+
+    .week-day-card.sunday-card {
+        grid-column: 1 / -1;
+    }
+
+    .sunday-events {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (max-width: 480px) {
+    .week-view-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .week-day-card {
+        min-height: 120px;
+    }
+
+    .sunday-events {
+        grid-template-columns: 1fr;
+    }
 }
 
 /* ==================== DAY VIEW ==================== */

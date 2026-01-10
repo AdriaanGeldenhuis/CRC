@@ -389,89 +389,104 @@ $hours = range(0, 23);
 
                     <?php elseif ($view === 'week'): ?>
                     <!-- ============ WEEK VIEW ============ -->
-                    <div class="week-view">
-                        <!-- Week Header -->
-                        <div class="week-header">
-                            <div class="time-gutter"></div>
-                            <?php
-                            $weekDays = [];
-                            for ($i = 0; $i < 7; $i++) {
-                                $dayDate = date('Y-m-d', strtotime($weekStart . " +$i days"));
-                                $weekDays[] = $dayDate;
-                            }
-                            foreach ($weekDays as $dayDate):
-                                $isToday = $dayDate === $today;
-                            ?>
-                                <div class="week-day-header <?= $isToday ? 'today' : '' ?>">
-                                    <span class="day-name"><?= date('D', strtotime($dayDate)) ?></span>
+                    <?php
+                    // Build week days array (Monday first)
+                    $weekDays = [];
+                    for ($i = 0; $i < 7; $i++) {
+                        $dayDate = date('Y-m-d', strtotime($weekStart . " +$i days"));
+                        $weekDays[] = $dayDate;
+                    }
+                    // Reorder: Mon(0), Tue(1), Wed(2), Thu(3), Fri(4), Sat(5), Sun(6)
+                    ?>
+                    <div class="week-view-grid">
+                        <!-- Row 1: Mon, Tue, Wed -->
+                        <?php for ($i = 0; $i < 3; $i++):
+                            $dayDate = $weekDays[$i];
+                            $isToday = $dayDate === $today;
+                            $dayEvents = $eventsByDate[$dayDate] ?? [];
+                        ?>
+                            <div class="week-day-card <?= $isToday ? 'today' : '' ?>"
+                                 onclick="window.location.href='?view=day&year=<?= date('Y', strtotime($dayDate)) ?>&month=<?= date('n', strtotime($dayDate)) ?>&day=<?= date('j', strtotime($dayDate)) ?>'">
+                                <div class="week-day-card-header">
+                                    <span class="day-name"><?= date('l', strtotime($dayDate)) ?></span>
                                     <span class="day-num <?= $isToday ? 'today-num' : '' ?>"><?= date('j', strtotime($dayDate)) ?></span>
                                 </div>
-                            <?php endforeach; ?>
-                        </div>
-
-                        <!-- All Day Events Row -->
-                        <div class="all-day-row">
-                            <div class="time-gutter all-day-label">All Day</div>
-                            <?php foreach ($weekDays as $dayDate):
-                                $dayAllDayEvents = array_filter($eventsByDate[$dayDate] ?? [], fn($e) => !empty($e['all_day']));
-                            ?>
-                                <div class="all-day-cell">
-                                    <?php foreach ($dayAllDayEvents as $event): ?>
-                                        <a href="<?= e($event['url'] ?? '/calendar/event.php?id=' . $event['id']) ?>"
-                                           class="all-day-event" style="background: <?= e($event['color']) ?>">
-                                            <?= e(truncate($event['title'], 15)) ?>
-                                        </a>
-                                    <?php endforeach; ?>
-                                </div>
-                            <?php endforeach; ?>
-                        </div>
-
-                        <!-- Time Grid -->
-                        <div class="week-grid-container">
-                            <div class="week-grid">
-                                <?php foreach ($hours as $hour): ?>
-                                    <div class="time-row">
-                                        <div class="time-gutter">
-                                            <span class="time-label"><?= date('g A', mktime($hour, 0, 0)) ?></span>
-                                        </div>
-                                        <?php foreach ($weekDays as $dayDate):
-                                            $hourEvents = $eventsByHour[$dayDate][$hour] ?? [];
-                                            $hourEvents = array_filter($hourEvents, fn($e) => empty($e['all_day']));
-                                            $isCurrentHour = ($dayDate === $today && $hour === (int)date('G'));
-                                        ?>
-                                            <div class="time-cell <?= $isCurrentHour ? 'current-hour' : '' ?>">
-                                                <?php foreach ($hourEvents as $event):
-                                                    $startMin = (int)date('i', strtotime($event['start_datetime']));
-                                                    $endTime = $event['end_datetime'] ? strtotime($event['end_datetime']) : strtotime($event['start_datetime']) + 3600;
-                                                    $duration = ($endTime - strtotime($event['start_datetime'])) / 60;
-                                                    $height = max(25, min(200, $duration * 0.8));
-                                                    $top = $startMin * 0.8;
-                                                ?>
-                                                    <a href="<?= e($event['url'] ?? '/calendar/event.php?id=' . $event['id']) ?>"
-                                                       class="week-event"
-                                                       style="background: <?= e($event['color']) ?>; top: <?= $top ?>px; min-height: <?= $height ?>px;">
-                                                        <span class="event-time"><?= date('g:i', strtotime($event['start_datetime'])) ?></span>
-                                                        <span class="event-title"><?= e(truncate($event['title'], 20)) ?></span>
-                                                        <?php if (!empty($event['location'])): ?>
-                                                            <span class="event-location"><?= e(truncate($event['location'], 15)) ?></span>
-                                                        <?php endif; ?>
-                                                    </a>
-                                                <?php endforeach; ?>
+                                <div class="week-day-card-events">
+                                    <?php if ($dayEvents): ?>
+                                        <?php foreach (array_slice($dayEvents, 0, 4) as $event): ?>
+                                            <div class="week-card-event" style="border-left-color: <?= e($event['color'] ?? '#4F46E5') ?>">
+                                                <span class="event-time"><?= date('g:i A', strtotime($event['start_datetime'])) ?></span>
+                                                <span class="event-title"><?= e(truncate($event['title'], 25)) ?></span>
                                             </div>
                                         <?php endforeach; ?>
-                                    </div>
-                                <?php endforeach; ?>
+                                        <?php if (count($dayEvents) > 4): ?>
+                                            <span class="more-events">+<?= count($dayEvents) - 4 ?> more</span>
+                                        <?php endif; ?>
+                                    <?php else: ?>
+                                        <span class="no-events">No events</span>
+                                    <?php endif; ?>
+                                </div>
+                            </div>
+                        <?php endfor; ?>
 
-                                <!-- Current time indicator -->
-                                <?php if ($today >= $weekStart && $today <= $weekEnd):
-                                    $currentHour = (int)date('G');
-                                    $currentMin = (int)date('i');
-                                    $topPos = ($currentHour * 48) + ($currentMin * 0.8);
-                                    $dayIndex = array_search($today, $weekDays);
-                                ?>
-                                    <div class="current-time-line" style="top: <?= $topPos ?>px; left: calc(60px + (<?= $dayIndex ?> * (100% - 60px) / 7));">
-                                        <div class="current-time-dot"></div>
-                                    </div>
+                        <!-- Row 2: Thu, Fri, Sat -->
+                        <?php for ($i = 3; $i < 6; $i++):
+                            $dayDate = $weekDays[$i];
+                            $isToday = $dayDate === $today;
+                            $dayEvents = $eventsByDate[$dayDate] ?? [];
+                        ?>
+                            <div class="week-day-card <?= $isToday ? 'today' : '' ?>"
+                                 onclick="window.location.href='?view=day&year=<?= date('Y', strtotime($dayDate)) ?>&month=<?= date('n', strtotime($dayDate)) ?>&day=<?= date('j', strtotime($dayDate)) ?>'">
+                                <div class="week-day-card-header">
+                                    <span class="day-name"><?= date('l', strtotime($dayDate)) ?></span>
+                                    <span class="day-num <?= $isToday ? 'today-num' : '' ?>"><?= date('j', strtotime($dayDate)) ?></span>
+                                </div>
+                                <div class="week-day-card-events">
+                                    <?php if ($dayEvents): ?>
+                                        <?php foreach (array_slice($dayEvents, 0, 4) as $event): ?>
+                                            <div class="week-card-event" style="border-left-color: <?= e($event['color'] ?? '#4F46E5') ?>">
+                                                <span class="event-time"><?= date('g:i A', strtotime($event['start_datetime'])) ?></span>
+                                                <span class="event-title"><?= e(truncate($event['title'], 25)) ?></span>
+                                            </div>
+                                        <?php endforeach; ?>
+                                        <?php if (count($dayEvents) > 4): ?>
+                                            <span class="more-events">+<?= count($dayEvents) - 4 ?> more</span>
+                                        <?php endif; ?>
+                                    <?php else: ?>
+                                        <span class="no-events">No events</span>
+                                    <?php endif; ?>
+                                </div>
+                            </div>
+                        <?php endfor; ?>
+
+                        <!-- Row 3: Sunday (full width) -->
+                        <?php
+                        $dayDate = $weekDays[6];
+                        $isToday = $dayDate === $today;
+                        $dayEvents = $eventsByDate[$dayDate] ?? [];
+                        ?>
+                        <div class="week-day-card sunday-card <?= $isToday ? 'today' : '' ?>"
+                             onclick="window.location.href='?view=day&year=<?= date('Y', strtotime($dayDate)) ?>&month=<?= date('n', strtotime($dayDate)) ?>&day=<?= date('j', strtotime($dayDate)) ?>'">
+                            <div class="week-day-card-header">
+                                <span class="day-name"><?= date('l', strtotime($dayDate)) ?></span>
+                                <span class="day-num <?= $isToday ? 'today-num' : '' ?>"><?= date('j', strtotime($dayDate)) ?></span>
+                            </div>
+                            <div class="week-day-card-events sunday-events">
+                                <?php if ($dayEvents): ?>
+                                    <?php foreach (array_slice($dayEvents, 0, 6) as $event): ?>
+                                        <div class="week-card-event" style="border-left-color: <?= e($event['color'] ?? '#4F46E5') ?>">
+                                            <span class="event-time"><?= date('g:i A', strtotime($event['start_datetime'])) ?></span>
+                                            <span class="event-title"><?= e(truncate($event['title'], 40)) ?></span>
+                                            <?php if (!empty($event['location'])): ?>
+                                                <span class="event-location"><?= e(truncate($event['location'], 30)) ?></span>
+                                            <?php endif; ?>
+                                        </div>
+                                    <?php endforeach; ?>
+                                    <?php if (count($dayEvents) > 6): ?>
+                                        <span class="more-events">+<?= count($dayEvents) - 6 ?> more</span>
+                                    <?php endif; ?>
+                                <?php else: ?>
+                                    <span class="no-events">No events scheduled</span>
                                 <?php endif; ?>
                             </div>
                         </div>
