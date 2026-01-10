@@ -1,6 +1,6 @@
 <?php
 /**
- * CRC Morning Watch - Archive
+ * CRC Morning Study - Archive
  */
 
 require_once __DIR__ . '/../core/bootstrap.php';
@@ -9,7 +9,7 @@ Auth::requireAuth();
 
 $user = Auth::user();
 $primaryCong = Auth::primaryCongregation();
-$pageTitle = "Morning Watch Archive - CRC";
+$pageTitle = "Morning Study Archive - CRC";
 
 // Get month/year for filter
 $month = (int)($_GET['month'] ?? date('n'));
@@ -25,7 +25,7 @@ $endDate = date('Y-m-t', strtotime($startDate));
 // Get sessions for this month
 $sessions = Database::fetchAll(
     "SELECT ms.*, u.name as author_name,
-            (SELECT COUNT(*) FROM morning_watch_entries WHERE session_id = ms.id) as entry_count
+            (SELECT COUNT(*) FROM morning_user_entries WHERE session_id = ms.id) as entry_count
      FROM morning_sessions ms
      LEFT JOIN users u ON ms.created_by = u.id
      WHERE ms.session_date BETWEEN ? AND ?
@@ -37,7 +37,7 @@ $sessions = Database::fetchAll(
 
 // Get user's completed entries
 $userEntries = Database::fetchAll(
-    "SELECT session_id FROM morning_watch_entries
+    "SELECT session_id FROM morning_user_entries
      WHERE user_id = ?
      AND session_id IN (SELECT id FROM morning_sessions WHERE session_date BETWEEN ? AND ?)",
     [$user['id'], $startDate, $endDate]

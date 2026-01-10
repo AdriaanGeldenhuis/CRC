@@ -1,6 +1,6 @@
 <?php
 /**
- * CRC Morning Watch - View Session
+ * CRC Morning Study - View Session
  */
 
 require_once __DIR__ . '/../core/bootstrap.php';
@@ -30,11 +30,12 @@ if (!$session) {
     Response::redirect('/morning_watch/');
 }
 
-$pageTitle = e($session['title']) . " - Morning Watch";
+$pageTitle = e($session['title']) . " - Morning Study";
 
 // Get user's entry for this session
 $userEntry = Database::fetchOne(
-    "SELECT * FROM morning_watch_entries
+    "SELECT *, personal_notes as application, prayer_notes as prayer
+     FROM morning_user_entries
      WHERE user_id = ? AND session_id = ?",
     [$user['id'], $sessionId]
 );

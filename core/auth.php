@@ -317,8 +317,14 @@ class Auth {
 
     /**
      * Check if user has role in congregation
+     * Super admin automatically has all congregation roles
      */
     public static function hasCongregationRole(int $congregationId, string $role): bool {
+        // Super admin has access to all congregations
+        if (self::isSuperAdmin()) {
+            return true;
+        }
+
         $userRole = self::congregationRole($congregationId);
         if (!$userRole) return false;
 
@@ -337,9 +343,44 @@ class Auth {
 
     /**
      * Check if user is congregation admin
+     * Super admin always returns true
      */
     public static function isCongregationAdmin(int $congregationId): bool {
+        // Super admin has access to all congregations
+        if (self::isSuperAdmin()) {
+            return true;
+        }
         return self::hasCongregationRole($congregationId, self::CONG_ADMIN);
+    }
+
+    /**
+     * Get all congregations (for super admin)
+     */
+    public static function allCongregations(): array {
+        if (!self::isSuperAdmin()) {
+            return [];
+        }
+        return Database::fetchAll(
+            "SELECT * FROM congregations WHERE status = 'active' ORDER BY name ASC"
+        ) ?: [];
+    }
+
+    /**
+     * Get congregation by ID
+     */
+    public static function getCongregation(int $congregationId): ?array {
+        return Database::fetchOne(
+            "SELECT * FROM congregations WHERE id = ?",
+            [$congregationId]
+        );
+    }
+
+    /**
+     * Get global role of current user
+     */
+    public static function globalRole(): ?string {
+        $user = self::user();
+        return $user['global_role'] ?? null;
     }
 
     /**

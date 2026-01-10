@@ -1,6 +1,6 @@
 <?php
 /**
- * CRC Morning Watch Sessions API
+ * CRC Morning Study Sessions API
  * POST /morning_watch/api/sessions.php
  */
 
@@ -65,7 +65,7 @@ switch ($action) {
 
         $sessions = Database::fetchAll(
             "SELECT ms.id, ms.session_date, ms.title, ms.scripture_ref, ms.theme, ms.scope,
-                    (SELECT 1 FROM morning_watch_entries WHERE user_id = ? AND session_id = ms.id LIMIT 1) as completed
+                    (SELECT 1 FROM morning_user_entries WHERE user_id = ? AND session_id = ms.id LIMIT 1) as completed
              FROM morning_sessions ms
              WHERE ms.session_date BETWEEN ? AND ?
              AND (ms.scope = 'global' OR ms.congregation_id = ?)
@@ -94,13 +94,31 @@ switch ($action) {
         $prayerPoints = $_POST['prayer_points'] ?? [];
         $scope = input('scope', 'congregation');
 
-        if (!$sessionDate || !$title || !$scriptureRef || !$devotional) {
-            Response::error('Date, title, scripture, and devotional are required');
+        // Study/Live fields
+        $contentMode = input('content_mode', 'watch');
+        $keyVerse = input('key_verse');
+        $studyQuestions = $_POST['study_questions'] ?? [];
+        $streamUrl = input('stream_url');
+        $replayUrl = input('replay_url');
+        $liveStartsAt = input('live_starts_at');
+
+        if (!$sessionDate || !$title || !$scriptureRef) {
+            Response::error('Date, title, and scripture are required');
+        }
+
+        // For watch mode, devotional is required
+        if ($contentMode === 'watch' && !$devotional) {
+            Response::error('Devotional content is required for watch mode');
         }
 
         // Super admin can create global sessions
         if ($scope === 'global' && Auth::globalRole() !== 'super_admin') {
             $scope = 'congregation';
+        }
+
+        // Validate content_mode
+        if (!in_array($contentMode, ['watch', 'study'])) {
+            $contentMode = 'watch';
         }
 
         $sessionId = Database::insert('morning_sessions', [
@@ -109,11 +127,18 @@ switch ($action) {
             'session_date' => $sessionDate,
             'title' => $title,
             'theme' => $theme,
+            'content_mode' => $contentMode,
+            'key_verse' => $keyVerse ?: null,
+            'study_questions' => $studyQuestions ? json_encode($studyQuestions) : null,
             'scripture_ref' => $scriptureRef,
             'scripture_text' => $scriptureText,
             'version_code' => $versionCode,
             'devotional' => $devotional,
             'prayer_points' => json_encode($prayerPoints),
+            'stream_url' => $streamUrl ?: null,
+            'replay_url' => $replayUrl ?: null,
+            'live_status' => 'scheduled',
+            'live_starts_at' => $liveStartsAt ?: null,
             'created_by' => $user['id'],
             'published_at' => date('Y-m-d H:i:s'),
             'created_at' => date('Y-m-d H:i:s'),
@@ -152,7 +177,16 @@ switch ($action) {
         $devotional = input('devotional');
         $prayerPoints = $_POST['prayer_points'] ?? [];
 
-        Database::update('morning_sessions', [
+        // Study/Live fields
+        $contentMode = input('content_mode');
+        $keyVerse = input('key_verse');
+        $studyQuestions = $_POST['study_questions'] ?? null;
+        $streamUrl = input('stream_url');
+        $replayUrl = input('replay_url');
+        $liveStartsAt = input('live_starts_at');
+        $liveStatus = input('live_status');
+
+        $updateData = [
             'title' => $title,
             'theme' => $theme,
             'scripture_ref' => $scriptureRef,
@@ -160,7 +194,35 @@ switch ($action) {
             'devotional' => $devotional,
             'prayer_points' => json_encode($prayerPoints),
             'updated_at' => date('Y-m-d H:i:s')
-        ], 'id = ?', [$sessionId]);
+        ];
+
+        // Only update study fields if provided
+        if ($contentMode && in_array($contentMode, ['watch', 'study'])) {
+            $updateData['content_mode'] = $contentMode;
+        }
+        if ($keyVerse !== null) {
+            $updateData['key_verse'] = $keyVerse ?: null;
+        }
+        if ($studyQuestions !== null) {
+            $updateData['study_questions'] = $studyQuestions ? json_encode($studyQuestions) : null;
+        }
+        if ($streamUrl !== null) {
+            $updateData['stream_url'] = $streamUrl ?: null;
+        }
+        if ($replayUrl !== null) {
+            $updateData['replay_url'] = $replayUrl ?: null;
+        }
+        if ($liveStartsAt !== null) {
+            $updateData['live_starts_at'] = $liveStartsAt ?: null;
+        }
+        if ($liveStatus && in_array($liveStatus, ['scheduled', 'live', 'ended'])) {
+            $updateData['live_status'] = $liveStatus;
+            if ($liveStatus === 'ended') {
+                $updateData['live_ended_at'] = date('Y-m-d H:i:s');
+            }
+        }
+
+        Database::update('morning_sessions', $updateData, 'id = ?', [$sessionId]);
 
         Response::success([], 'Session updated');
         break;

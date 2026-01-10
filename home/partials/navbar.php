@@ -60,7 +60,7 @@ $isActive = function($path) use ($currentPath) {
         <div class="nav-links">
             <a href="/gospel_media/" class="nav-link <?= $isActive('/gospel_media') ? 'active' : '' ?>">Feed</a>
             <a href="/bible/" class="nav-link <?= $isActive('/bible') ? 'active' : '' ?>">Bible</a>
-            <a href="/morning_watch/" class="nav-link <?= $isActive('/morning_watch') ? 'active' : '' ?>">Morning Watch</a>
+            <a href="/morning_watch/" class="nav-link <?= $isActive('/morning_watch') ? 'active' : '' ?>">Morning Study</a>
             <a href="/calendar/" class="nav-link <?= $isActive('/calendar') ? 'active' : '' ?>">Calendar</a>
             <a href="/media/" class="nav-link <?= $isActive('/media') ? 'active' : '' ?>">Media</a>
         </div>

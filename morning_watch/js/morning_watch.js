@@ -1,5 +1,5 @@
 /**
- * CRC Morning Watch JavaScript
+ * CRC Morning Study JavaScript
  */
 
 document.addEventListener('DOMContentLoaded', function() {
