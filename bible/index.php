@@ -127,13 +127,18 @@ if ($chapter < $currentBook['chapters']) {
 }
 
 // Get user highlights for this chapter
-$highlights = Database::fetchAll(
-    "SELECT * FROM bible_highlights
-     WHERE user_id = ? AND version_code = ? AND book_number = ? AND chapter = ?",
-    [$user['id'], $version, $bookIndex + 1, $chapter]
-);
-
+$highlights = [];
 $highlightMap = [];
+$notes = [];
+
+try {
+    $highlights = Database::fetchAll(
+        "SELECT * FROM bible_highlights
+         WHERE user_id = ? AND version_code = ? AND book_number = ? AND chapter = ?",
+        [$user['id'], $version, $bookIndex + 1, $chapter]
+    ) ?: [];
+} catch (Exception $e) {}
+
 foreach ($highlights as $h) {
     for ($v = $h['verse_start']; $v <= ($h['verse_end'] ?: $h['verse_start']); $v++) {
         $highlightMap[$v] = $h['color'];
@@ -141,12 +146,14 @@ foreach ($highlights as $h) {
 }
 
 // Get user notes for this chapter
-$notes = Database::fetchAll(
-    "SELECT * FROM bible_notes
-     WHERE user_id = ? AND version_code = ? AND book_number = ? AND chapter = ?
-     ORDER BY verse_start ASC",
-    [$user['id'], $version, $bookIndex + 1, $chapter]
-);
+try {
+    $notes = Database::fetchAll(
+        "SELECT * FROM bible_notes
+         WHERE user_id = ? AND version_code = ? AND book_number = ? AND chapter = ?
+         ORDER BY verse_start ASC",
+        [$user['id'], $version, $bookIndex + 1, $chapter]
+    ) ?: [];
+} catch (Exception $e) {}
 ?>
 <!DOCTYPE html>
 <html lang="en">

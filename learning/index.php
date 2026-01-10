@@ -43,33 +43,40 @@ if ($search) {
 $whereClause = implode(' AND ', $where);
 
 // Get courses
-$courses = Database::fetchAll(
-    "SELECT c.*,
-            u.name as instructor_name,
-            (SELECT COUNT(*) FROM lessons WHERE course_id = c.id) as lesson_count,
-            (SELECT COUNT(*) FROM enrollments WHERE course_id = c.id) as student_count,
-            (SELECT id FROM enrollments WHERE course_id = c.id AND user_id = ?) as enrollment_id,
-            (SELECT COUNT(*) FROM lesson_progress lp
-             JOIN lessons l ON lp.lesson_id = l.id
-             WHERE l.course_id = c.id AND lp.user_id = ? AND lp.completed_at IS NOT NULL) as completed_lessons
-     FROM courses c
-     LEFT JOIN users u ON c.instructor_id = u.id
-     WHERE $whereClause
-     ORDER BY c.featured DESC, c.created_at DESC",
-    array_merge([$user['id'], $user['id']], $params)
-);
+$courses = [];
+$enrolledCourses = [];
+
+try {
+    $courses = Database::fetchAll(
+        "SELECT c.*,
+                u.name as instructor_name,
+                (SELECT COUNT(*) FROM lessons WHERE course_id = c.id) as lesson_count,
+                (SELECT COUNT(*) FROM enrollments WHERE course_id = c.id) as student_count,
+                (SELECT id FROM enrollments WHERE course_id = c.id AND user_id = ?) as enrollment_id,
+                (SELECT COUNT(*) FROM lesson_progress lp
+                 JOIN lessons l ON lp.lesson_id = l.id
+                 WHERE l.course_id = c.id AND lp.user_id = ? AND lp.completed_at IS NOT NULL) as completed_lessons
+         FROM courses c
+         LEFT JOIN users u ON c.instructor_id = u.id
+         WHERE $whereClause
+         ORDER BY c.featured DESC, c.created_at DESC",
+        array_merge([$user['id'], $user['id']], $params)
+    ) ?: [];
+} catch (Exception $e) {}
 
 // Get user's enrolled courses
-$enrolledCourses = Database::fetchAll(
-    "SELECT c.*, e.progress_percent, e.enrolled_at,
-            (SELECT COUNT(*) FROM lessons WHERE course_id = c.id) as lesson_count
-     FROM enrollments e
-     JOIN courses c ON e.course_id = c.id
-     WHERE e.user_id = ?
-     ORDER BY e.last_accessed_at DESC
-     LIMIT 4",
-    [$user['id']]
-);
+try {
+    $enrolledCourses = Database::fetchAll(
+        "SELECT c.*, e.progress_percent, e.enrolled_at,
+                (SELECT COUNT(*) FROM lessons WHERE course_id = c.id) as lesson_count
+         FROM enrollments e
+         JOIN courses c ON e.course_id = c.id
+         WHERE e.user_id = ?
+         ORDER BY e.last_accessed_at DESC
+         LIMIT 4",
+        [$user['id']]
+    ) ?: [];
+} catch (Exception $e) {}
 
 $categories = ['biblical_studies', 'theology', 'discipleship', 'leadership', 'evangelism', 'family', 'other'];
 $levels = ['beginner', 'intermediate', 'advanced'];

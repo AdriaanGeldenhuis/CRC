@@ -15,27 +15,35 @@ if (!$primaryCong) {
 
 $pageTitle = "Homecells - CRC";
 
+// Initialize defaults
+$myHomecell = null;
+$homecells = [];
+
 // Get user's homecell membership
-$myHomecell = Database::fetchOne(
-    "SELECT h.*, u.name as leader_name,
-            (SELECT COUNT(*) FROM homecell_members WHERE homecell_id = h.id AND status = 'active') as member_count
-     FROM homecell_members hm
-     JOIN homecells h ON hm.homecell_id = h.id
-     LEFT JOIN users u ON h.leader_user_id = u.id
-     WHERE hm.user_id = ? AND hm.status = 'active' AND h.congregation_id = ?",
-    [$user['id'], $primaryCong['id']]
-);
+try {
+    $myHomecell = Database::fetchOne(
+        "SELECT h.*, u.name as leader_name,
+                (SELECT COUNT(*) FROM homecell_members WHERE homecell_id = h.id AND status = 'active') as member_count
+         FROM homecell_members hm
+         JOIN homecells h ON hm.homecell_id = h.id
+         LEFT JOIN users u ON h.leader_user_id = u.id
+         WHERE hm.user_id = ? AND hm.status = 'active' AND h.congregation_id = ?",
+        [$user['id'], $primaryCong['id']]
+    );
+} catch (Exception $e) {}
 
 // Get all active homecells in congregation
-$homecells = Database::fetchAll(
-    "SELECT h.*, u.name as leader_name,
-            (SELECT COUNT(*) FROM homecell_members WHERE homecell_id = h.id AND status = 'active') as member_count
-     FROM homecells h
-     LEFT JOIN users u ON h.leader_user_id = u.id
-     WHERE h.congregation_id = ? AND h.status = 'active'
-     ORDER BY h.name ASC",
-    [$primaryCong['id']]
-);
+try {
+    $homecells = Database::fetchAll(
+        "SELECT h.*, u.name as leader_name,
+                (SELECT COUNT(*) FROM homecell_members WHERE homecell_id = h.id AND status = 'active') as member_count
+         FROM homecells h
+         LEFT JOIN users u ON h.leader_user_id = u.id
+         WHERE h.congregation_id = ? AND h.status = 'active'
+         ORDER BY h.name ASC",
+        [$primaryCong['id']]
+    ) ?: [];
+} catch (Exception $e) {}
 
 $days = ['monday' => 'Monday', 'tuesday' => 'Tuesday', 'wednesday' => 'Wednesday',
          'thursday' => 'Thursday', 'friday' => 'Friday', 'saturday' => 'Saturday', 'sunday' => 'Sunday'];

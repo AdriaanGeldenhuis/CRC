@@ -39,34 +39,42 @@ if ($scope === 'global') {
     $scopeCondition = "p.congregation_id = ?";
 }
 
+// Initialize defaults
+$posts = [];
+$totalPosts = 0;
+
 // Get posts
-$posts = Database::fetchAll(
-    "SELECT p.*,
-            u.name as author_name, u.avatar as author_avatar,
-            c.name as congregation_name,
-            (SELECT COUNT(*) FROM reactions WHERE reactable_type = 'post' AND reactable_id = p.id) as reaction_count,
-            (SELECT COUNT(*) FROM comments WHERE post_id = p.id AND status = 'active') as comment_count,
-            (SELECT reaction_type FROM reactions WHERE reactable_type = 'post' AND reactable_id = p.id AND user_id = ?) as user_reaction
-     FROM posts p
-     JOIN users u ON p.user_id = u.id
-     LEFT JOIN congregations c ON p.congregation_id = c.id
-     WHERE {$scopeCondition}
-       AND p.status = 'active'
-       AND p.group_id IS NULL
-     ORDER BY p.is_pinned DESC, p.created_at DESC
-     LIMIT ? OFFSET ?",
-    array_merge([Auth::id()], $params, [$perPage, $offset])
-);
+try {
+    $posts = Database::fetchAll(
+        "SELECT p.*,
+                u.name as author_name, u.avatar as author_avatar,
+                c.name as congregation_name,
+                (SELECT COUNT(*) FROM reactions WHERE reactable_type = 'post' AND reactable_id = p.id) as reaction_count,
+                (SELECT COUNT(*) FROM comments WHERE post_id = p.id AND status = 'active') as comment_count,
+                (SELECT reaction_type FROM reactions WHERE reactable_type = 'post' AND reactable_id = p.id AND user_id = ?) as user_reaction
+         FROM posts p
+         JOIN users u ON p.user_id = u.id
+         LEFT JOIN congregations c ON p.congregation_id = c.id
+         WHERE {$scopeCondition}
+           AND p.status = 'active'
+           AND p.group_id IS NULL
+         ORDER BY p.is_pinned DESC, p.created_at DESC
+         LIMIT ? OFFSET ?",
+        array_merge([Auth::id()], $params, [$perPage, $offset])
+    ) ?: [];
+} catch (Exception $e) {}
 
 // Get total for pagination
-$totalParams = $scope === 'global' ? [] : [$primaryCong['id']];
-$totalPosts = Database::fetchColumn(
-    "SELECT COUNT(*) FROM posts p
-     WHERE {$scopeCondition}
-       AND p.status = 'active'
-       AND p.group_id IS NULL",
-    $totalParams
-);
+try {
+    $totalParams = $scope === 'global' ? [] : [$primaryCong['id']];
+    $totalPosts = Database::fetchColumn(
+        "SELECT COUNT(*) FROM posts p
+         WHERE {$scopeCondition}
+           AND p.status = 'active'
+           AND p.group_id IS NULL",
+        $totalParams
+    ) ?: 0;
+} catch (Exception $e) {}
 
 $totalPages = ceil($totalPosts / $perPage);
 ?>

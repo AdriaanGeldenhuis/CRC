@@ -33,31 +33,38 @@ $startDayOfWeek = date('w', $firstDay);
 $startDate = date('Y-m-01', $firstDay);
 $endDate = date('Y-m-t', $lastDay);
 
-$events = Database::fetchAll(
-    "SELECT e.*,
-            c.name as congregation_name
-     FROM events e
-     LEFT JOIN congregations c ON e.congregation_id = c.id
-     WHERE (
-         (e.scope = 'global')
-         OR (e.congregation_id = ?)
-         OR (e.user_id = ?)
-     )
-     AND e.status = 'published'
-     AND DATE(e.start_datetime) BETWEEN ? AND ?
-     ORDER BY e.start_datetime ASC",
-    [$primaryCong['id'], $user['id'], $startDate, $endDate]
-);
+$events = [];
+$personalEvents = [];
+
+try {
+    $events = Database::fetchAll(
+        "SELECT e.*,
+                c.name as congregation_name
+         FROM events e
+         LEFT JOIN congregations c ON e.congregation_id = c.id
+         WHERE (
+             (e.scope = 'global')
+             OR (e.congregation_id = ?)
+             OR (e.user_id = ?)
+         )
+         AND e.status = 'published'
+         AND DATE(e.start_datetime) BETWEEN ? AND ?
+         ORDER BY e.start_datetime ASC",
+        [$primaryCong['id'], $user['id'], $startDate, $endDate]
+    ) ?: [];
+} catch (Exception $e) {}
 
 // Get personal calendar events
-$personalEvents = Database::fetchAll(
-    "SELECT * FROM calendar_events
-     WHERE user_id = ?
-     AND DATE(start_datetime) BETWEEN ? AND ?
-     AND status = 'active'
-     ORDER BY start_datetime ASC",
-    [$user['id'], $startDate, $endDate]
-);
+try {
+    $personalEvents = Database::fetchAll(
+        "SELECT * FROM calendar_events
+         WHERE user_id = ?
+         AND DATE(start_datetime) BETWEEN ? AND ?
+         AND status = 'active'
+         ORDER BY start_datetime ASC",
+        [$user['id'], $startDate, $endDate]
+    ) ?: [];
+} catch (Exception $e) {}
 
 // Merge and organize by date
 $eventsByDate = [];
@@ -174,17 +181,20 @@ $monthName = date('F', $firstDay);
                 <div class="calendar-sidebar">
                     <h3>Upcoming Events</h3>
                     <?php
-                    $upcomingEvents = Database::fetchAll(
-                        "SELECT e.*, c.name as congregation_name
-                         FROM events e
-                         LEFT JOIN congregations c ON e.congregation_id = c.id
-                         WHERE (e.scope = 'global' OR e.congregation_id = ? OR e.user_id = ?)
-                         AND e.status = 'published'
-                         AND e.start_datetime >= NOW()
-                         ORDER BY e.start_datetime ASC
-                         LIMIT 5",
-                        [$primaryCong['id'], $user['id']]
-                    );
+                    $upcomingEvents = [];
+                    try {
+                        $upcomingEvents = Database::fetchAll(
+                            "SELECT e.*, c.name as congregation_name
+                             FROM events e
+                             LEFT JOIN congregations c ON e.congregation_id = c.id
+                             WHERE (e.scope = 'global' OR e.congregation_id = ? OR e.user_id = ?)
+                             AND e.status = 'published'
+                             AND e.start_datetime >= NOW()
+                             ORDER BY e.start_datetime ASC
+                             LIMIT 5",
+                            [$primaryCong['id'], $user['id']]
+                        ) ?: [];
+                    } catch (Exception $e) {}
                     ?>
                     <?php if ($upcomingEvents): ?>
                         <div class="upcoming-list">

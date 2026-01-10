@@ -26,23 +26,34 @@ if ($filter === 'unread') {
     $whereClause .= " AND read_at IS NOT NULL";
 }
 
+// Initialize defaults
+$totalCount = 0;
+$notifications = [];
+$unreadCount = 0;
+
 // Get total count
-$totalCount = Database::fetchColumn(
-    "SELECT COUNT(*) FROM notifications $whereClause",
-    $params
-);
+try {
+    $totalCount = Database::fetchColumn(
+        "SELECT COUNT(*) FROM notifications $whereClause",
+        $params
+    ) ?: 0;
+} catch (Exception $e) {}
 
 // Get notifications
-$notifications = Database::fetchAll(
-    "SELECT * FROM notifications $whereClause ORDER BY created_at DESC LIMIT $perPage OFFSET $offset",
-    $params
-);
+try {
+    $notifications = Database::fetchAll(
+        "SELECT * FROM notifications $whereClause ORDER BY created_at DESC LIMIT $perPage OFFSET $offset",
+        $params
+    ) ?: [];
+} catch (Exception $e) {}
 
 // Get unread count
-$unreadCount = Database::fetchColumn(
-    "SELECT COUNT(*) FROM notifications WHERE user_id = ? AND read_at IS NULL",
-    [$user['id']]
-);
+try {
+    $unreadCount = Database::fetchColumn(
+        "SELECT COUNT(*) FROM notifications WHERE user_id = ? AND read_at IS NULL",
+        [$user['id']]
+    ) ?: 0;
+} catch (Exception $e) {}
 
 $totalPages = ceil($totalCount / $perPage);
 
