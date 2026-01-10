@@ -11,54 +11,69 @@ $user = Auth::user();
 $primaryCong = Auth::primaryCongregation();
 $pageTitle = "Media - CRC";
 
-// Get active livestream
+// Initialize defaults
 $activeLivestream = null;
+$upcomingStreams = [];
+$latestSermons = [];
+$series = [];
+$categories = [];
+$congId = $primaryCong ? $primaryCong['id'] : 0;
+
+// Get active livestream
 if ($primaryCong) {
-    $activeLivestream = Database::fetchOne(
-        "SELECT * FROM livestreams WHERE congregation_id = ? AND status = 'live' ORDER BY started_at DESC LIMIT 1",
-        [$primaryCong['id']]
-    );
+    try {
+        $activeLivestream = Database::fetchOne(
+            "SELECT * FROM livestreams WHERE congregation_id = ? AND status = 'live' ORDER BY started_at DESC LIMIT 1",
+            [$primaryCong['id']]
+        );
+    } catch (Exception $e) {}
 }
 
 // Get upcoming scheduled livestreams
-$upcomingStreams = [];
 if ($primaryCong) {
-    $upcomingStreams = Database::fetchAll(
-        "SELECT * FROM livestreams
-         WHERE congregation_id = ? AND status = 'scheduled' AND scheduled_at > NOW()
-         ORDER BY scheduled_at ASC LIMIT 3",
-        [$primaryCong['id']]
-    );
+    try {
+        $upcomingStreams = Database::fetchAll(
+            "SELECT * FROM livestreams
+             WHERE congregation_id = ? AND status = 'scheduled' AND scheduled_at > NOW()
+             ORDER BY scheduled_at ASC LIMIT 3",
+            [$primaryCong['id']]
+        ) ?: [];
+    } catch (Exception $e) {}
 }
 
 // Get latest sermons (congregation + global)
-$congId = $primaryCong ? $primaryCong['id'] : 0;
-$latestSermons = Database::fetchAll(
-    "SELECT s.*, u.name as speaker_name, c.name as congregation_name
-     FROM sermons s
-     LEFT JOIN users u ON s.speaker_user_id = u.id
-     LEFT JOIN congregations c ON s.congregation_id = c.id
-     WHERE s.status = 'published' AND (s.congregation_id = ? OR s.congregation_id IS NULL)
-     ORDER BY s.sermon_date DESC LIMIT 6",
-    [$congId]
-);
+try {
+    $latestSermons = Database::fetchAll(
+        "SELECT s.*, u.name as speaker_name, c.name as congregation_name
+         FROM sermons s
+         LEFT JOIN users u ON s.speaker_user_id = u.id
+         LEFT JOIN congregations c ON s.congregation_id = c.id
+         WHERE s.status = 'published' AND (s.congregation_id = ? OR s.congregation_id IS NULL)
+         ORDER BY s.sermon_date DESC LIMIT 6",
+        [$congId]
+    ) ?: [];
+} catch (Exception $e) {}
 
 // Get sermon series
-$series = Database::fetchAll(
-    "SELECT ss.*,
-            (SELECT COUNT(*) FROM sermons WHERE series_id = ss.id AND status = 'published') as sermon_count
-     FROM sermon_series ss
-     WHERE ss.congregation_id = ? OR ss.congregation_id IS NULL
-     ORDER BY ss.created_at DESC LIMIT 4",
-    [$congId]
-);
+try {
+    $series = Database::fetchAll(
+        "SELECT ss.*,
+                (SELECT COUNT(*) FROM sermons WHERE series_id = ss.id AND status = 'published') as sermon_count
+         FROM sermon_series ss
+         WHERE ss.congregation_id = ? OR ss.congregation_id IS NULL
+         ORDER BY ss.created_at DESC LIMIT 4",
+        [$congId]
+    ) ?: [];
+} catch (Exception $e) {}
 
 // Get categories
-$categories = Database::fetchAll(
-    "SELECT DISTINCT category FROM sermons
-     WHERE status = 'published' AND category IS NOT NULL AND category != ''
-     ORDER BY category ASC"
-);
+try {
+    $categories = Database::fetchAll(
+        "SELECT DISTINCT category FROM sermons
+         WHERE status = 'published' AND category IS NOT NULL AND category != ''
+         ORDER BY category ASC"
+    ) ?: [];
+} catch (Exception $e) {}
 ?>
 <!DOCTYPE html>
 <html lang="en">
