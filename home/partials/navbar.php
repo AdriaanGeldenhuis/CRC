@@ -33,33 +33,33 @@ $isActive = function($path) use ($currentPath) {
 })();
 </script>
 <style>
-/* ===== ULTRA GLOSSY 3D NAVBAR - Premium Design ===== */
+/* ===== ULTRA GLOSSY 3D NAVBAR - Pure Black + Vibrant Colors ===== */
 :root {
-  /* Primary Palette */
-  --nav-primary: #7C3AED;
+  /* Primary Palette - Vibrant Purple */
+  --nav-primary: #8B5CF6;
   --nav-primary-light: #A78BFA;
-  --nav-primary-glow: rgba(124, 58, 237, 0.5);
-  --nav-primary-intense: rgba(124, 58, 237, 0.8);
+  --nav-primary-glow: rgba(139, 92, 246, 0.6);
+  --nav-primary-intense: rgba(139, 92, 246, 0.9);
 
   /* Accent - Electric Cyan */
-  --nav-accent: #06B6D4;
-  --nav-accent-glow: rgba(6, 182, 212, 0.5);
+  --nav-accent: #22D3EE;
+  --nav-accent-glow: rgba(34, 211, 238, 0.6);
 
   /* Secondary - Hot Pink */
-  --nav-secondary: #EC4899;
-  --nav-secondary-glow: rgba(236, 72, 153, 0.4);
+  --nav-secondary: #F472B6;
+  --nav-secondary-glow: rgba(244, 114, 182, 0.5);
 
   /* Danger */
   --nav-danger: #EF4444;
   --nav-danger-glow: rgba(239, 68, 68, 0.5);
 
-  /* Backgrounds */
-  --nav-bg-base: #030014;
-  --nav-glass-bg: rgba(255, 255, 255, 0.03);
-  --nav-glass-bg-strong: rgba(255, 255, 255, 0.12);
+  /* Backgrounds - Pure Black */
+  --nav-bg-base: #000000;
+  --nav-glass-bg: rgba(0, 0, 0, 0.85);
+  --nav-glass-bg-strong: rgba(0, 0, 0, 0.9);
   --nav-glass-bg-hover: rgba(255, 255, 255, 0.08);
-  --nav-glass-border: rgba(255, 255, 255, 0.1);
-  --nav-glass-border-hover: rgba(255, 255, 255, 0.2);
+  --nav-glass-border: rgba(139, 92, 246, 0.3);
+  --nav-glass-border-hover: rgba(139, 92, 246, 0.5);
 
   /* Text */
   --nav-text-primary: #FFFFFF;
@@ -126,11 +126,12 @@ $isActive = function($path) use ($currentPath) {
   backdrop-filter: var(--nav-blur) saturate(180%);
   -webkit-backdrop-filter: var(--nav-blur) saturate(180%);
   border-bottom: 1px solid var(--nav-glass-border);
+  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.5), 0 0 60px rgba(139, 92, 246, 0.1);
   font-family: var(--nav-font);
   transition: var(--nav-transition);
 }
 
-/* Top glossy shine line */
+/* Top rainbow glow line */
 .navbar::before {
   content: '';
   position: absolute;
@@ -138,7 +139,8 @@ $isActive = function($path) use ($currentPath) {
   left: 0;
   right: 0;
   height: 1px;
-  background: linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.3) 50%, transparent 100%);
+  background: linear-gradient(90deg, transparent, var(--nav-primary), var(--nav-accent), var(--nav-secondary), transparent);
+  opacity: 0.6;
 }
 
 .nav-container {

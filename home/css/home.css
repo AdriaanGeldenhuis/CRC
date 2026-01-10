@@ -198,10 +198,11 @@ body::after {
   position: sticky;
   top: 0;
   z-index: 1000;
-  background: var(--glass-bg);
+  background: rgba(0, 0, 0, 0.85);
   backdrop-filter: var(--blur-md) saturate(180%);
   -webkit-backdrop-filter: var(--blur-md) saturate(180%);
-  border-bottom: 1px solid var(--glass-border);
+  border-bottom: 1px solid rgba(139, 92, 246, 0.3);
+  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.5), 0 0 60px rgba(139, 92, 246, 0.1);
   transition: var(--transition-base);
 }
 
@@ -212,7 +213,8 @@ body::after {
   left: 0;
   right: 0;
   height: 1px;
-  background: var(--glass-shine);
+  background: linear-gradient(90deg, transparent, var(--primary), var(--accent), var(--secondary), transparent);
+  opacity: 0.6;
 }
 
 .nav-container {
