@@ -17,83 +17,99 @@ $mood = input('mood');
 $year = (int)($_GET['year'] ?? date('Y'));
 $month = (int)($_GET['month'] ?? 0);
 
-// Build query
-$where = ['user_id = ?'];
-$params = [$user['id']];
+// Initialize defaults
+$entries = [];
+$tags = [];
+$totalEntries = 0;
+$streak = 0;
+$archives = [];
+$moods = ['grateful', 'joyful', 'peaceful', 'hopeful', 'anxious', 'sad', 'angry', 'confused'];
 
-if ($search) {
-    $where[] = "(title LIKE ? OR content LIKE ?)";
-    $params[] = '%' . $search . '%';
-    $params[] = '%' . $search . '%';
-}
+try {
+    // Build query
+    $where = ['user_id = ?'];
+    $params = [$user['id']];
 
-if ($mood) {
-    $where[] = "mood = ?";
-    $params[] = $mood;
-}
+    if ($search) {
+        $where[] = "(title LIKE ? OR content LIKE ?)";
+        $params[] = '%' . $search . '%';
+        $params[] = '%' . $search . '%';
+    }
 
-if ($month) {
-    $where[] = "YEAR(entry_date) = ? AND MONTH(entry_date) = ?";
-    $params[] = $year;
-    $params[] = $month;
-} else {
-    $where[] = "YEAR(entry_date) = ?";
-    $params[] = $year;
-}
+    if ($mood) {
+        $where[] = "mood = ?";
+        $params[] = $mood;
+    }
 
-$whereClause = implode(' AND ', $where);
+    if ($month) {
+        $where[] = "YEAR(entry_date) = ? AND MONTH(entry_date) = ?";
+        $params[] = $year;
+        $params[] = $month;
+    } else {
+        $where[] = "YEAR(entry_date) = ?";
+        $params[] = $year;
+    }
 
-// Get entries
-$entries = Database::fetchAll(
-    "SELECT * FROM diary_entries
-     WHERE $whereClause
-     ORDER BY entry_date DESC, created_at DESC",
-    $params
-);
+    $whereClause = implode(' AND ', $where);
+
+    // Get entries
+    $entries = Database::fetchAll(
+        "SELECT * FROM diary_entries
+         WHERE $whereClause
+         ORDER BY entry_date DESC, created_at DESC",
+        $params
+    ) ?: [];
+} catch (Exception $e) {}
 
 // Get tags for filter
-$tags = Database::fetchAll(
-    "SELECT DISTINCT t.name, COUNT(*) as count
-     FROM diary_entry_tags det
-     JOIN diary_tags t ON det.tag_id = t.id
-     JOIN diary_entries e ON det.entry_id = e.id
-     WHERE e.user_id = ?
-     GROUP BY t.id
-     ORDER BY count DESC
-     LIMIT 20",
-    [$user['id']]
-);
+try {
+    $tags = Database::fetchAll(
+        "SELECT DISTINCT t.name, COUNT(*) as count
+         FROM diary_entry_tags det
+         JOIN diary_tags t ON det.tag_id = t.id
+         JOIN diary_entries e ON det.entry_id = e.id
+         WHERE e.user_id = ?
+         GROUP BY t.id
+         ORDER BY count DESC
+         LIMIT 20",
+        [$user['id']]
+    ) ?: [];
+} catch (Exception $e) {}
 
 // Get user's tags for entry
 if ($tag) {
-    $tagData = Database::fetchOne(
-        "SELECT * FROM diary_tags WHERE name = ? AND user_id = ?",
-        [$tag, $user['id']]
-    );
-    if ($tagData) {
-        $entries = Database::fetchAll(
-            "SELECT e.* FROM diary_entries e
-             JOIN diary_entry_tags det ON e.id = det.entry_id
-             WHERE det.tag_id = ? AND e.user_id = ?
-             ORDER BY e.entry_date DESC",
-            [$tagData['id'], $user['id']]
+    try {
+        $tagData = Database::fetchOne(
+            "SELECT * FROM diary_tags WHERE name = ? AND user_id = ?",
+            [$tag, $user['id']]
         );
-    }
+        if ($tagData) {
+            $entries = Database::fetchAll(
+                "SELECT e.* FROM diary_entries e
+                 JOIN diary_entry_tags det ON e.id = det.entry_id
+                 WHERE det.tag_id = ? AND e.user_id = ?
+                 ORDER BY e.entry_date DESC",
+                [$tagData['id'], $user['id']]
+            ) ?: [];
+        }
+    } catch (Exception $e) {}
 }
 
 // Stats
-$totalEntries = Database::fetchColumn(
-    "SELECT COUNT(*) FROM diary_entries WHERE user_id = ?",
-    [$user['id']]
-);
+try {
+    $totalEntries = Database::fetchColumn(
+        "SELECT COUNT(*) FROM diary_entries WHERE user_id = ?",
+        [$user['id']]
+    ) ?: 0;
+} catch (Exception $e) {}
 
-$streak = Database::fetchColumn(
-    "SELECT COUNT(DISTINCT DATE(entry_date)) FROM diary_entries
-     WHERE user_id = ? AND entry_date >= DATE_SUB(CURDATE(), INTERVAL 7 DAY)",
-    [$user['id']]
-);
-
-$moods = ['grateful', 'joyful', 'peaceful', 'hopeful', 'anxious', 'sad', 'angry', 'confused'];
+try {
+    $streak = Database::fetchColumn(
+        "SELECT COUNT(DISTINCT DATE(entry_date)) FROM diary_entries
+         WHERE user_id = ? AND entry_date >= DATE_SUB(CURDATE(), INTERVAL 7 DAY)",
+        [$user['id']]
+    ) ?: 0;
+} catch (Exception $e) {}
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -181,14 +197,16 @@ $moods = ['grateful', 'joyful', 'peaceful', 'hopeful', 'anxious', 'sad', 'angry'
                         <h3>Archive</h3>
                         <div class="archive-links">
                             <?php
-                            $archives = Database::fetchAll(
-                                "SELECT YEAR(entry_date) as year, MONTH(entry_date) as month, COUNT(*) as count
-                                 FROM diary_entries WHERE user_id = ?
-                                 GROUP BY year, month
-                                 ORDER BY year DESC, month DESC
-                                 LIMIT 12",
-                                [$user['id']]
-                            );
+                            try {
+                                $archives = Database::fetchAll(
+                                    "SELECT YEAR(entry_date) as year, MONTH(entry_date) as month, COUNT(*) as count
+                                     FROM diary_entries WHERE user_id = ?
+                                     GROUP BY year, month
+                                     ORDER BY year DESC, month DESC
+                                     LIMIT 12",
+                                    [$user['id']]
+                                ) ?: [];
+                            } catch (Exception $e) { $archives = []; }
                             foreach ($archives as $archive):
                                 $monthName = date('F', mktime(0, 0, 0, $archive['month'], 1));
                             ?>
