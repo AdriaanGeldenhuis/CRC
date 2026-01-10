@@ -34,7 +34,8 @@ $pageTitle = e($session['title']) . " - Morning Watch";
 
 // Get user's entry for this session
 $userEntry = Database::fetchOne(
-    "SELECT * FROM morning_watch_entries
+    "SELECT *, personal_notes as application, prayer_notes as prayer
+     FROM morning_user_entries
      WHERE user_id = ? AND session_id = ?",
     [$user['id'], $sessionId]
 );

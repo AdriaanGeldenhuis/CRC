@@ -38,7 +38,8 @@ try {
 if ($session) {
     try {
         $userEntry = Database::fetchOne(
-            "SELECT * FROM morning_watch_entries
+            "SELECT *, personal_notes as application, prayer_notes as prayer
+             FROM morning_user_entries
              WHERE user_id = ? AND session_id = ?",
             [$user['id'], $session['id']]
         );
@@ -48,8 +49,8 @@ if ($session) {
 // Get user's streak
 try {
     $streak = Database::fetchOne(
-        "SELECT current_streak, longest_streak, total_entries
-         FROM morning_watch_streaks
+        "SELECT current_streak, longest_streak, total_completions as total_entries
+         FROM morning_streaks
          WHERE user_id = ?",
         [$user['id']]
     );

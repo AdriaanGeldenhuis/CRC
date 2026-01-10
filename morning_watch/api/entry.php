@@ -1,6 +1,6 @@
 <?php
 /**
- * CRC Morning Watch Entry API
+ * CRC Morning Study Entry API
  * POST /morning_watch/api/entry.php
  */
 
@@ -17,8 +17,8 @@ switch ($action) {
     case 'save':
         $sessionId = (int)input('session_id');
         $reflection = input('reflection');
-        $prayer = input('prayer');
-        $application = input('application');
+        $prayer = input('prayer');           // maps to prayer_notes
+        $application = input('application'); // maps to personal_notes
 
         if (!$sessionId) {
             Response::error('Session ID required');
@@ -41,28 +41,28 @@ switch ($action) {
 
         // Check if entry exists
         $existing = Database::fetchOne(
-            "SELECT * FROM morning_watch_entries WHERE user_id = ? AND session_id = ?",
+            "SELECT * FROM morning_user_entries WHERE user_id = ? AND session_id = ?",
             [$user['id'], $sessionId]
         );
 
         if ($existing) {
             // Update
-            Database::update('morning_watch_entries', [
+            Database::update('morning_user_entries', [
                 'reflection' => $reflection,
-                'prayer' => $prayer,
-                'application' => $application,
+                'prayer_notes' => $prayer,
+                'personal_notes' => $application,
                 'updated_at' => date('Y-m-d H:i:s')
             ], 'id = ?', [$existing['id']]);
 
             $entryId = $existing['id'];
         } else {
             // Insert
-            $entryId = Database::insert('morning_watch_entries', [
+            $entryId = Database::insert('morning_user_entries', [
                 'user_id' => $user['id'],
                 'session_id' => $sessionId,
                 'reflection' => $reflection,
-                'prayer' => $prayer,
-                'application' => $application,
+                'prayer_notes' => $prayer,
+                'personal_notes' => $application,
                 'completed_at' => date('Y-m-d H:i:s'),
                 'created_at' => date('Y-m-d H:i:s'),
                 'updated_at' => date('Y-m-d H:i:s')
@@ -82,8 +82,14 @@ switch ($action) {
             Response::error('Session ID required');
         }
 
+        // Return with aliases for backward compatibility
         $entry = Database::fetchOne(
-            "SELECT * FROM morning_watch_entries WHERE user_id = ? AND session_id = ?",
+            "SELECT id, user_id, session_id,
+                    personal_notes, prayer_notes, reflection,
+                    personal_notes as application, prayer_notes as prayer,
+                    completed_at, created_at, updated_at
+             FROM morning_user_entries
+             WHERE user_id = ? AND session_id = ?",
             [$user['id'], $sessionId]
         );
 
@@ -95,8 +101,12 @@ switch ($action) {
         $offset = (int)input('offset', 0);
 
         $entries = Database::fetchAll(
-            "SELECT e.*, ms.title, ms.session_date, ms.scripture_ref
-             FROM morning_watch_entries e
+            "SELECT e.id, e.user_id, e.session_id,
+                    e.personal_notes, e.prayer_notes, e.reflection,
+                    e.personal_notes as application, e.prayer_notes as prayer,
+                    e.completed_at, e.created_at, e.updated_at,
+                    ms.title, ms.session_date, ms.scripture_ref
+             FROM morning_user_entries e
              JOIN morning_sessions ms ON e.session_id = ms.id
              WHERE e.user_id = ?
              ORDER BY ms.session_date DESC
@@ -109,6 +119,8 @@ switch ($action) {
 
     case 'streak':
         $streak = getOrCreateStreak($user['id']);
+        // Return with aliases for backward compatibility
+        $streak['total_entries'] = $streak['total_completions'] ?? 0;
         Response::success(['streak' => $streak]);
         break;
 
@@ -122,7 +134,7 @@ function updateStreak($userId) {
     // Get dates with entries in last 30 days
     $recentEntries = Database::fetchAll(
         "SELECT DISTINCT DATE(ms.session_date) as entry_date
-         FROM morning_watch_entries e
+         FROM morning_user_entries e
          JOIN morning_sessions ms ON e.session_id = ms.id
          WHERE e.user_id = ?
          AND ms.session_date >= DATE_SUB(CURDATE(), INTERVAL 30 DAY)
@@ -143,42 +155,41 @@ function updateStreak($userId) {
 
     // Update total entries
     $totalEntries = Database::fetchColumn(
-        "SELECT COUNT(*) FROM morning_watch_entries WHERE user_id = ?",
+        "SELECT COUNT(*) FROM morning_user_entries WHERE user_id = ?",
         [$userId]
     );
 
     // Update streak record
     $longestStreak = max($streak['longest_streak'], $currentStreak);
 
-    Database::update('morning_watch_streaks', [
+    Database::update('morning_streaks', [
         'current_streak' => $currentStreak,
         'longest_streak' => $longestStreak,
-        'total_entries' => $totalEntries,
-        'last_entry_date' => date('Y-m-d'),
+        'total_completions' => $totalEntries,
+        'last_completed_date' => date('Y-m-d'),
         'updated_at' => date('Y-m-d H:i:s')
     ], 'user_id = ?', [$userId]);
 }
 
 function getOrCreateStreak($userId) {
     $streak = Database::fetchOne(
-        "SELECT * FROM morning_watch_streaks WHERE user_id = ?",
+        "SELECT * FROM morning_streaks WHERE user_id = ?",
         [$userId]
     );
 
     if (!$streak) {
-        Database::insert('morning_watch_streaks', [
+        Database::insert('morning_streaks', [
             'user_id' => $userId,
             'current_streak' => 0,
             'longest_streak' => 0,
-            'total_entries' => 0,
-            'created_at' => date('Y-m-d H:i:s'),
+            'total_completions' => 0,
             'updated_at' => date('Y-m-d H:i:s')
         ]);
 
         $streak = [
             'current_streak' => 0,
             'longest_streak' => 0,
-            'total_entries' => 0
+            'total_completions' => 0
         ];
     }
 
