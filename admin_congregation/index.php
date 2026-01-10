@@ -8,19 +8,42 @@ require_once __DIR__ . '/../core/bootstrap.php';
 // Require authentication
 Auth::requireAuth();
 
-// Get primary congregation and check admin access
-$primaryCong = Auth::primaryCongregation();
-if (!$primaryCong) {
+$isSuperAdmin = Auth::isSuperAdmin();
+$allCongregations = $isSuperAdmin ? Auth::allCongregations() : [];
+
+// Get congregation to manage
+$congregation = null;
+
+// Super admin can select any congregation via query param
+if ($isSuperAdmin && isset($_GET['cong_id'])) {
+    $selectedCongId = (int)$_GET['cong_id'];
+    $congregation = Auth::getCongregation($selectedCongId);
+}
+
+// Fall back to primary congregation
+if (!$congregation) {
+    $primaryCong = Auth::primaryCongregation();
+    if ($primaryCong) {
+        $congregation = $primaryCong;
+    } elseif ($isSuperAdmin && !empty($allCongregations)) {
+        // Super admin without primary congregation - use first available
+        $congregation = $allCongregations[0];
+    }
+}
+
+if (!$congregation) {
     Response::redirect('/onboarding/');
 }
 
-if (!Auth::isCongregationAdmin($primaryCong['id'])) {
+if (!Auth::isCongregationAdmin($congregation['id'])) {
     Session::flash('error', 'You do not have admin access');
     Response::redirect('/home/');
 }
 
-$congregation = $primaryCong;
 $pageTitle = 'Manage ' . $congregation['name'] . ' - CRC';
+
+// Build query string for super admin navigation
+$congQuery = $isSuperAdmin ? '?cong_id=' . $congregation['id'] : '';
 
 // Get statistics
 $stats = [
@@ -74,6 +97,12 @@ $recentMembers = Database::fetchAll(
     <link rel="stylesheet" href="/admin_congregation/css/admin_congregation.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        .congregation-select { width: 100%; padding: 0.5rem; margin-top: 0.5rem; border: 1px solid rgba(255,255,255,0.2); border-radius: 6px; background: rgba(255,255,255,0.1); color: white; font-size: 0.8rem; cursor: pointer; }
+        .congregation-select option { background: #1F2937; color: white; }
+        .super-admin-link { display: inline-block; margin-top: 0.5rem; padding: 0.25rem 0.5rem; background: #F59E0B; color: white; border-radius: 4px; text-decoration: none; font-size: 0.75rem; }
+        .super-admin-link:hover { background: #D97706; }
+    </style>
 </head>
 <body>
     <div class="admin-layout">
@@ -81,10 +110,23 @@ $recentMembers = Database::fetchAll(
         <aside class="sidebar">
             <div class="sidebar-header">
                 <a href="/home/" class="sidebar-logo">CRC</a>
-                <span class="congregation-badge"><?= e($congregation['name']) ?></span>
+                <?php if ($isSuperAdmin && count($allCongregations) > 1): ?>
+                    <select class="congregation-select" onchange="window.location.href='?cong_id='+this.value">
+                        <?php foreach ($allCongregations as $cong): ?>
+                            <option value="<?= $cong['id'] ?>" <?= $cong['id'] == $congregation['id'] ? 'selected' : '' ?>>
+                                <?= e($cong['name']) ?>
+                            </option>
+                        <?php endforeach; ?>
+                    </select>
+                <?php else: ?>
+                    <span class="congregation-badge"><?= e($congregation['name']) ?></span>
+                <?php endif; ?>
+                <?php if ($isSuperAdmin): ?>
+                    <a href="/admin/" class="super-admin-link" title="Super Admin">⚡</a>
+                <?php endif; ?>
             </div>
             <nav class="sidebar-nav">
-                <a href="/admin_congregation/" class="nav-item active">
+                <a href="/admin_congregation/<?= $congQuery ?>" class="nav-item active">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <rect x="3" y="3" width="7" height="7"></rect>
                         <rect x="14" y="3" width="7" height="7"></rect>
@@ -93,7 +135,7 @@ $recentMembers = Database::fetchAll(
                     </svg>
                     Dashboard
                 </a>
-                <a href="/admin_congregation/members.php" class="nav-item">
+                <a href="/admin_congregation/members.php<?= $congQuery ?>" class="nav-item">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
                         <circle cx="9" cy="7" r="4"></circle>
@@ -105,7 +147,7 @@ $recentMembers = Database::fetchAll(
                         <span class="badge"><?= $stats['pending'] ?></span>
                     <?php endif; ?>
                 </a>
-                <a href="/admin_congregation/invites.php" class="nav-item">
+                <a href="/admin_congregation/invites.php<?= $congQuery ?>" class="nav-item">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
                         <circle cx="8.5" cy="7" r="4"></circle>
@@ -114,7 +156,7 @@ $recentMembers = Database::fetchAll(
                     </svg>
                     Invites
                 </a>
-                <a href="/admin_congregation/events.php" class="nav-item">
+                <a href="/admin_congregation/events.php<?= $congQuery ?>" class="nav-item">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
                         <line x1="16" y1="2" x2="16" y2="6"></line>
@@ -123,7 +165,7 @@ $recentMembers = Database::fetchAll(
                     </svg>
                     Events
                 </a>
-                <a href="/admin_congregation/morning_study.php" class="nav-item">
+                <a href="/admin_congregation/morning_study.php<?= $congQuery ?>" class="nav-item">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <circle cx="12" cy="12" r="5"></circle>
                         <line x1="12" y1="1" x2="12" y2="3"></line>
@@ -137,7 +179,7 @@ $recentMembers = Database::fetchAll(
                     </svg>
                     Morning Study
                 </a>
-                <a href="/admin_congregation/settings.php" class="nav-item">
+                <a href="/admin_congregation/settings.php<?= $congQuery ?>" class="nav-item">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <circle cx="12" cy="12" r="3"></circle>
                         <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
