@@ -44,12 +44,15 @@ switch ($action) {
         $bookNumber++; // 1-indexed
 
         // Try to get from database
-        $verses = Database::fetchAll(
-            "SELECT verse_number, text FROM bible_verses
-             WHERE version_code = ? AND book_number = ? AND chapter = ?
-             ORDER BY verse_number ASC",
-            [$version, $bookNumber, $chapter]
-        );
+        $verses = [];
+        try {
+            $verses = Database::fetchAll(
+                "SELECT verse_number, text FROM bible_verses
+                 WHERE version_code = ? AND book_number = ? AND chapter = ?
+                 ORDER BY verse_number ASC",
+                [$version, $bookNumber, $chapter]
+            ) ?: [];
+        } catch (Exception $e) {}
 
         if (empty($verses)) {
             // Generate sample verses if no data in DB
@@ -67,15 +70,18 @@ switch ($action) {
             Response::error('Search query must be at least 3 characters');
         }
 
-        $results = Database::fetchAll(
-            "SELECT v.book_number, v.chapter, v.verse_number, v.text
-             FROM bible_verses v
-             WHERE v.version_code = ?
-             AND v.text LIKE ?
-             ORDER BY v.book_number, v.chapter, v.verse_number
-             LIMIT 50",
-            [$version, '%' . $query . '%']
-        );
+        $results = [];
+        try {
+            $results = Database::fetchAll(
+                "SELECT v.book_number, v.chapter, v.verse_number, v.text
+                 FROM bible_verses v
+                 WHERE v.version_code = ?
+                 AND v.text LIKE ?
+                 ORDER BY v.book_number, v.chapter, v.verse_number
+                 LIMIT 50",
+                [$version, '%' . $query . '%']
+            ) ?: [];
+        } catch (Exception $e) {}
 
         // Map book numbers to names
         $mappedResults = array_map(function($r) use ($bibleBooks) {
@@ -93,10 +99,13 @@ switch ($action) {
     case 'verse_of_day':
         // Get or generate verse of the day
         $today = date('Y-m-d');
-        $votd = Database::fetchOne(
-            "SELECT * FROM verse_of_day WHERE date = ?",
-            [$today]
-        );
+        $votd = null;
+        try {
+            $votd = Database::fetchOne(
+                "SELECT * FROM verse_of_day WHERE date = ?",
+                [$today]
+            );
+        } catch (Exception $e) {}
 
         if (!$votd) {
             // Generate new VOTD
