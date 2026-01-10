@@ -7,6 +7,20 @@ require_once __DIR__ . '/../core/bootstrap.php';
 
 Auth::requireAuth();
 
+function getMoodEmoji($mood) {
+    $emojis = [
+        'grateful' => '🙏',
+        'joyful' => '😊',
+        'peaceful' => '😌',
+        'hopeful' => '🌟',
+        'anxious' => '😰',
+        'sad' => '😢',
+        'angry' => '😤',
+        'confused' => '😕'
+    ];
+    return $emojis[$mood] ?? '📝';
+}
+
 $user = Auth::user();
 $pageTitle = 'My Diary - CRC';
 
@@ -256,18 +270,3 @@ try {
     <script src="/diary/js/diary.js"></script>
 </body>
 </html>
-<?php
-
-function getMoodEmoji($mood) {
-    $emojis = [
-        'grateful' => '🙏',
-        'joyful' => '😊',
-        'peaceful' => '😌',
-        'hopeful' => '🌟',
-        'anxious' => '😰',
-        'sad' => '😢',
-        'angry' => '😤',
-        'confused' => '😕'
-    ];
-    return $emojis[$mood] ?? '📝';
-}
