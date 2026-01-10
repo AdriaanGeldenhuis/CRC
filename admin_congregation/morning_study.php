@@ -5,10 +5,10 @@
 
 require_once __DIR__ . '/../core/bootstrap.php';
 
-header('Content-Type: text/html; charset=UTF-8');
-
+// Require authentication
 Auth::requireAuth();
 
+// Get primary congregation and check admin access
 $primaryCong = Auth::primaryCongregation();
 if (!$primaryCong) {
     Response::redirect('/onboarding/');
@@ -24,32 +24,40 @@ $pageTitle = 'Morning Study - ' . $congregation['name'] . ' - CRC';
 $currentUser = Auth::user();
 $today = date('Y-m-d');
 
+// Initialize defaults
+$todaySession = null;
+$recentSessions = [];
+$existingQuestions = [];
+
 // Get today's session if it exists
-$todaySession = Database::fetchOne(
-    "SELECT ms.*, u.name as author_name
-     FROM morning_sessions ms
-     LEFT JOIN users u ON ms.created_by = u.id
-     WHERE ms.session_date = ?
-     AND (ms.congregation_id = ? OR ms.scope = 'global')
-     ORDER BY ms.congregation_id = ? DESC
-     LIMIT 1",
-    [$today, $congregation['id'], $congregation['id']]
-);
+try {
+    $todaySession = Database::fetchOne(
+        "SELECT ms.*, u.name as author_name
+         FROM morning_sessions ms
+         LEFT JOIN users u ON ms.created_by = u.id
+         WHERE ms.session_date = ?
+         AND (ms.congregation_id = ? OR ms.scope = 'global')
+         ORDER BY ms.congregation_id = ? DESC
+         LIMIT 1",
+        [$today, $congregation['id'], $congregation['id']]
+    );
+} catch (Exception $e) {}
 
 // Get recent sessions
-$recentSessions = Database::fetchAll(
-    "SELECT ms.id, ms.session_date, ms.title, ms.scripture_ref, ms.content_mode, ms.live_status,
-            (SELECT COUNT(*) FROM morning_study_attendance WHERE session_id = ms.id) as attendee_count
-     FROM morning_sessions ms
-     WHERE ms.congregation_id = ? OR ms.scope = 'global'
-     ORDER BY ms.session_date DESC
-     LIMIT 10",
-    [$congregation['id']]
-) ?: [];
+try {
+    $recentSessions = Database::fetchAll(
+        "SELECT ms.id, ms.session_date, ms.title, ms.scripture_ref,
+                ms.content_mode, ms.live_status
+         FROM morning_sessions ms
+         WHERE ms.congregation_id = ? OR ms.scope = 'global'
+         ORDER BY ms.session_date DESC
+         LIMIT 10",
+        [$congregation['id']]
+    ) ?: [];
+} catch (Exception $e) {}
 
 // Parse existing study questions if editing
-$existingQuestions = [];
-if ($todaySession && $todaySession['study_questions']) {
+if ($todaySession && !empty($todaySession['study_questions'])) {
     $existingQuestions = json_decode($todaySession['study_questions'], true) ?: [];
 }
 ?>
@@ -246,7 +254,7 @@ if ($todaySession && $todaySession['study_questions']) {
                                 </div>
                                 <div class="form-group">
                                     <label>Scheduled Start Time</label>
-                                    <input type="time" id="liveStartsAt" value="<?= $todaySession['live_starts_at'] ? date('H:i', strtotime($todaySession['live_starts_at'])) : '' ?>">
+                                    <input type="time" id="liveStartsAt" value="<?= isset($todaySession['live_starts_at']) && $todaySession['live_starts_at'] ? date('H:i', strtotime($todaySession['live_starts_at'])) : '' ?>">
                                 </div>
                             </div>
 
@@ -289,16 +297,8 @@ if ($todaySession && $todaySession['study_questions']) {
                                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="6" y="6" width="12" height="12"></rect></svg>
                                         End Session
                                     </button>
-                                    <button class="btn btn-warning" onclick="generateRecap()">
-                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline></svg>
-                                        Generate Recap
-                                    </button>
                                 <?php else: ?>
                                     <span style="color: var(--gray-500);">Session has ended</span>
-                                    <button class="btn btn-outline" onclick="generateRecap()">
-                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline></svg>
-                                        Generate Recap
-                                    </button>
                                     <a href="/morning_watch/recap.php?session_id=<?= $todaySession['id'] ?>" class="btn btn-outline">View Recap</a>
                                 <?php endif; ?>
                             </div>
@@ -323,9 +323,6 @@ if ($todaySession && $todaySession['study_questions']) {
                                             <div class="recent-session-meta">
                                                 <span><?= date('M j', strtotime($session['session_date'])) ?></span>
                                                 <span><?= e($session['scripture_ref']) ?></span>
-                                                <?php if ($session['attendee_count']): ?>
-                                                    <span><?= $session['attendee_count'] ?> attended</span>
-                                                <?php endif; ?>
                                             </div>
                                         </li>
                                     <?php endforeach; ?>
@@ -478,32 +475,6 @@ if ($todaySession && $todaySession['study_questions']) {
                     setTimeout(() => location.reload(), 1000);
                 } else {
                     showToast(result.error || 'Failed to end session', 'error');
-                }
-            } catch (error) {
-                showToast('Network error', 'error');
-            }
-        }
-
-        async function generateRecap() {
-            const sessionId = document.getElementById('sessionId').value;
-            if (!sessionId) return;
-
-            showToast('Generating recap...');
-
-            try {
-                const response = await fetch('/morning_watch/api/study.php', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': getCSRFToken() },
-                    body: JSON.stringify({ action: 'generate_recap', session_id: sessionId })
-                });
-                const result = await response.json();
-                if (result.ok) {
-                    showToast('Recap generated!');
-                    setTimeout(() => {
-                        window.open('/morning_watch/recap.php?session_id=' + sessionId, '_blank');
-                    }, 500);
-                } else {
-                    showToast(result.error || 'Failed to generate recap', 'error');
                 }
             } catch (error) {
                 showToast('Network error', 'error');
