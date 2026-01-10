@@ -1,6 +1,6 @@
 <?php
 /**
- * CRC Morning Watch - Archive
+ * CRC Morning Study - Archive
  */
 
 require_once __DIR__ . '/../core/bootstrap.php';
@@ -9,7 +9,7 @@ Auth::requireAuth();
 
 $user = Auth::user();
 $primaryCong = Auth::primaryCongregation();
-$pageTitle = "Morning Watch Archive - CRC";
+$pageTitle = "Morning Study Archive - CRC";
 
 // Get month/year for filter
 $month = (int)($_GET['month'] ?? date('n'));

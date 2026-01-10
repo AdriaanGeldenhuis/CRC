@@ -1,6 +1,6 @@
 <?php
 /**
- * CRC Morning Watch - View Session
+ * CRC Morning Study - View Session
  */
 
 require_once __DIR__ . '/../core/bootstrap.php';
@@ -30,7 +30,7 @@ if (!$session) {
     Response::redirect('/morning_watch/');
 }
 
-$pageTitle = e($session['title']) . " - Morning Watch";
+$pageTitle = e($session['title']) . " - Morning Study";
 
 // Get user's entry for this session
 $userEntry = Database::fetchOne(

@@ -1,6 +1,6 @@
 <?php
 /**
- * CRC Morning Watch Sessions API
+ * CRC Morning Study Sessions API
  * POST /morning_watch/api/sessions.php
  */
 

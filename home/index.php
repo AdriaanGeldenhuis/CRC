@@ -124,7 +124,7 @@ try {
             <div class="nav-links">
                 <a href="/gospel_media/" class="nav-link">Feed</a>
                 <a href="/bible/" class="nav-link">Bible</a>
-                <a href="/morning_watch/" class="nav-link">Morning Watch</a>
+                <a href="/morning_watch/" class="nav-link">Morning Study</a>
                 <a href="/calendar/" class="nav-link">Calendar</a>
                 <a href="/media/" class="nav-link">Media</a>
             </div>
@@ -184,10 +184,10 @@ try {
             </section>
 
             <div class="dashboard-grid">
-                <!-- Morning Watch Card -->
+                <!-- Morning Study Card -->
                 <div class="dashboard-card morning-watch-card">
                     <div class="card-header">
-                        <h2>Morning Watch</h2>
+                        <h2>Morning Study</h2>
                         <?php if ($streak): ?>
                             <span class="streak-badge"><?= $streak['current_streak'] ?> day streak</span>
                         <?php endif; ?>
