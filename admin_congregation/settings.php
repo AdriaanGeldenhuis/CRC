@@ -25,18 +25,24 @@ $congregation = Database::fetchOne(
     [$primaryCong['id']]
 );
 
-$pageTitle = 'Settings - ' . $congregation['name'] . ' - CRC';
+$pageTitle = 'Settings - ' . ($congregation['name'] ?? 'Congregation') . ' - CRC';
 $currentUser = Auth::user();
 
-// Get church positions for this congregation
-$positions = Database::fetchAll(
-    "SELECT cp.*,
-            (SELECT COUNT(*) FROM user_church_positions WHERE position_id = cp.id AND is_active = 1) as member_count
-     FROM church_positions cp
-     WHERE cp.congregation_id = ?
-     ORDER BY cp.display_order ASC",
-    [$congregation['id']]
-) ?: [];
+// Get church positions for this congregation (with fallback if table doesn't exist)
+$positions = [];
+try {
+    $positions = Database::fetchAll(
+        "SELECT cp.*,
+                (SELECT COUNT(*) FROM user_church_positions WHERE position_id = cp.id AND is_active = 1) as member_count
+         FROM church_positions cp
+         WHERE cp.congregation_id = ?
+         ORDER BY cp.display_order ASC",
+        [$congregation['id']]
+    ) ?: [];
+} catch (Exception $e) {
+    // Table might not exist yet - that's OK
+    Logger::warning('church_positions query failed', ['error' => $e->getMessage()]);
+}
 
 // Flash messages
 $success = Session::flash('success');
@@ -114,7 +120,7 @@ $error = Session::flash('error');
         <aside class="sidebar">
             <div class="sidebar-header">
                 <a href="/home/" class="sidebar-logo">CRC</a>
-                <span class="congregation-badge"><?= e($congregation['name']) ?></span>
+                <span class="congregation-badge"><?= e($congregation['name'] ?? '') ?></span>
             </div>
             <nav class="sidebar-nav">
                 <a href="/admin_congregation/" class="nav-item">
@@ -170,11 +176,11 @@ $error = Session::flash('error');
                             <div class="form-row">
                                 <div class="form-group">
                                     <label>Congregation Name</label>
-                                    <input type="text" name="name" value="<?= e($congregation['name']) ?>" required>
+                                    <input type="text" name="name" value="<?= e($congregation['name'] ?? '') ?>" required>
                                 </div>
                                 <div class="form-group">
                                     <label>URL Slug</label>
-                                    <input type="text" name="slug" value="<?= e($congregation['slug']) ?>" readonly>
+                                    <input type="text" name="slug" value="<?= e($congregation['slug'] ?? '') ?>" readonly>
                                     <small>Used in URLs - cannot be changed</small>
                                 </div>
                             </div>
@@ -249,9 +255,9 @@ $error = Session::flash('error');
                             <div class="form-group">
                                 <label>Join Mode</label>
                                 <select name="join_mode">
-                                    <option value="open" <?= $congregation['join_mode'] === 'open' ? 'selected' : '' ?>>Open - Anyone can join</option>
-                                    <option value="approval" <?= $congregation['join_mode'] === 'approval' ? 'selected' : '' ?>>Approval Required - Admin must approve</option>
-                                    <option value="invite_only" <?= $congregation['join_mode'] === 'invite_only' ? 'selected' : '' ?>>Invite Only - Must have invite link</option>
+                                    <option value="open" <?= ($congregation['join_mode'] ?? '') === 'open' ? 'selected' : '' ?>>Open - Anyone can join</option>
+                                    <option value="approval" <?= ($congregation['join_mode'] ?? 'approval') === 'approval' ? 'selected' : '' ?>>Approval Required - Admin must approve</option>
+                                    <option value="invite_only" <?= ($congregation['join_mode'] ?? '') === 'invite_only' ? 'selected' : '' ?>>Invite Only - Must have invite link</option>
                                 </select>
                                 <small>Controls how new members can join your congregation</small>
                             </div>
