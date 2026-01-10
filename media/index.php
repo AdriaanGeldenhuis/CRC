@@ -16,7 +16,6 @@ $latestSermons = [];
 $series = [];
 $congId = $primaryCong ? $primaryCong['id'] : 0;
 
-// Get active livestream
 if ($primaryCong) {
     try {
         $activeLivestream = Database::fetchOne(
@@ -26,7 +25,6 @@ if ($primaryCong) {
     } catch (Exception $e) {}
 }
 
-// Get latest sermons
 try {
     $latestSermons = Database::fetchAll(
         "SELECT s.*, u.name as speaker_name FROM sermons s
@@ -37,23 +35,14 @@ try {
     ) ?: [];
 } catch (Exception $e) {}
 
-// Get sermon series
 try {
     $series = Database::fetchAll(
         "SELECT ss.*, (SELECT COUNT(*) FROM sermons WHERE series_id = ss.id AND status = 'published') as sermon_count
-         FROM sermon_series ss
-         WHERE ss.congregation_id = ? OR ss.congregation_id IS NULL
+         FROM sermon_series ss WHERE ss.congregation_id = ? OR ss.congregation_id IS NULL
          ORDER BY ss.created_at DESC LIMIT 4",
         [$congId]
     ) ?: [];
 } catch (Exception $e) {}
-
-function formatDuration($seconds) {
-    $hours = floor($seconds / 3600);
-    $minutes = floor(($seconds % 3600) / 60);
-    if ($hours > 0) return sprintf('%d:%02d', $hours, $minutes);
-    return sprintf('%d min', $minutes);
-}
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -65,94 +54,6 @@ function formatDuration($seconds) {
     <link rel="stylesheet" href="/home/css/home.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <style>
-        .media-card {
-            background: linear-gradient(135deg, #EF4444 0%, #F87171 100%);
-            color: var(--white);
-        }
-        .media-card .card-header h2 { color: var(--white); }
-        .live-banner {
-            display: flex;
-            align-items: center;
-            gap: 1rem;
-            background: rgba(255,255,255,0.15);
-            padding: 1rem;
-            border-radius: var(--radius);
-            margin-bottom: 1rem;
-            text-decoration: none;
-            color: white;
-        }
-        .live-dot {
-            width: 12px;
-            height: 12px;
-            background: white;
-            border-radius: 50%;
-            animation: pulse 1.5s infinite;
-        }
-        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
-        .quick-actions-grid {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 0.75rem;
-        }
-        .quick-action {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 0.5rem;
-            padding: 1rem;
-            background: var(--gray-50);
-            border-radius: var(--radius);
-            text-decoration: none;
-            color: var(--gray-700);
-            transition: var(--transition);
-        }
-        .quick-action:hover { background: var(--primary); color: white; }
-        .quick-action-icon { font-size: 1.5rem; }
-        .sermon-list {
-            display: flex;
-            flex-direction: column;
-            gap: 0.75rem;
-        }
-        .sermon-item {
-            display: flex;
-            gap: 1rem;
-            padding: 0.75rem;
-            background: var(--gray-50);
-            border-radius: var(--radius);
-            text-decoration: none;
-            transition: var(--transition);
-        }
-        .sermon-item:hover { background: var(--gray-100); }
-        .sermon-thumb {
-            width: 60px;
-            height: 60px;
-            background: var(--gray-200);
-            border-radius: var(--radius);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 1.5rem;
-        }
-        .sermon-info h4 { font-size: 0.875rem; color: var(--gray-800); margin-bottom: 0.25rem; }
-        .sermon-info p { font-size: 0.75rem; color: var(--gray-500); }
-        .series-grid {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 0.5rem;
-        }
-        .series-item {
-            padding: 0.75rem;
-            background: var(--gray-50);
-            border-radius: var(--radius);
-            text-decoration: none;
-            text-align: center;
-        }
-        .series-item:hover { background: var(--gray-100); }
-        .series-icon { font-size: 1.5rem; margin-bottom: 0.25rem; }
-        .series-name { font-size: 0.75rem; color: var(--gray-700); font-weight: 500; }
-        .series-count { font-size: 0.65rem; color: var(--gray-500); }
-    </style>
 </head>
 <body>
     <?php include __DIR__ . '/../home/partials/navbar.php'; ?>
@@ -168,94 +69,126 @@ function formatDuration($seconds) {
 
             <div class="dashboard-grid">
                 <!-- Live/Featured Card -->
-                <div class="dashboard-card media-card">
+                <div class="dashboard-card morning-watch-card">
                     <div class="card-header">
                         <h2><?= $activeLivestream ? 'Live Now' : 'Watch' ?></h2>
+                        <?php if ($activeLivestream): ?>
+                            <span class="streak-badge">LIVE</span>
+                        <?php endif; ?>
                     </div>
-                    <?php if ($activeLivestream): ?>
-                        <a href="/media/livestream.php?id=<?= $activeLivestream['id'] ?>" class="live-banner">
-                            <span class="live-dot"></span>
-                            <div style="flex: 1;">
-                                <strong><?= e($activeLivestream['title']) ?></strong>
-                                <p style="font-size: 0.875rem; opacity: 0.9;">Join the live service</p>
-                            </div>
-                        </a>
-                    <?php else: ?>
-                        <div style="text-align: center; padding: 1rem;">
-                            <p style="margin-bottom: 1rem;">No live stream right now</p>
-                        </div>
-                    <?php endif; ?>
-                    <a href="/media/livestream.php" class="btn" style="width: 100%; background: white; color: #EF4444;">
-                        <?= $activeLivestream ? 'Watch Live' : 'View Schedule' ?>
-                    </a>
+                    <div class="morning-watch-preview">
+                        <?php if ($activeLivestream): ?>
+                            <h3><?= e($activeLivestream['title']) ?></h3>
+                            <p class="scripture-ref">Join the live service</p>
+                            <a href="/media/livestream.php?id=<?= $activeLivestream['id'] ?>" class="btn btn-primary">Watch Live</a>
+                        <?php elseif ($latestSermons): ?>
+                            <h3><?= e($latestSermons[0]['title']) ?></h3>
+                            <p class="scripture-ref"><?= e($latestSermons[0]['speaker_name'] ?? $latestSermons[0]['speaker'] ?? '') ?></p>
+                            <a href="/media/sermon.php?id=<?= $latestSermons[0]['id'] ?>" class="btn btn-primary">Watch Now</a>
+                        <?php else: ?>
+                            <h3>No media available</h3>
+                            <p class="scripture-ref">Check back soon for new content</p>
+                        <?php endif; ?>
+                    </div>
                 </div>
 
                 <!-- Quick Actions -->
-                <div class="dashboard-card">
-                    <h2 style="margin-bottom: 1rem;">Browse</h2>
+                <div class="dashboard-card quick-actions-card">
+                    <h2>Browse</h2>
                     <div class="quick-actions-grid">
                         <a href="/media/sermons.php" class="quick-action">
-                            <span class="quick-action-icon">🎤</span>
+                            <div class="quick-action-icon">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <polygon points="23 7 16 12 23 17 23 7"></polygon>
+                                    <rect x="1" y="5" width="15" height="14" rx="2" ry="2"></rect>
+                                </svg>
+                            </div>
                             <span>Sermons</span>
                         </a>
                         <a href="/media/livestream.php" class="quick-action">
-                            <span class="quick-action-icon">📺</span>
+                            <div class="quick-action-icon">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <rect x="2" y="7" width="20" height="15" rx="2" ry="2"></rect>
+                                    <polyline points="17 2 12 7 7 2"></polyline>
+                                </svg>
+                            </div>
                             <span>Live</span>
                         </a>
                         <a href="/media/sermons.php?view=series" class="quick-action">
-                            <span class="quick-action-icon">📚</span>
+                            <div class="quick-action-icon">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
+                                    <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
+                                </svg>
+                            </div>
                             <span>Series</span>
                         </a>
                         <a href="/media/music.php" class="quick-action">
-                            <span class="quick-action-icon">🎵</span>
+                            <div class="quick-action-icon">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M9 18V5l12-2v13"></path>
+                                    <circle cx="6" cy="18" r="3"></circle>
+                                    <circle cx="18" cy="16" r="3"></circle>
+                                </svg>
+                            </div>
                             <span>Music</span>
                         </a>
                     </div>
                 </div>
 
                 <!-- Latest Sermons -->
-                <div class="dashboard-card">
+                <div class="dashboard-card events-card">
                     <div class="card-header">
                         <h2>Latest Sermons</h2>
                         <a href="/media/sermons.php" class="view-all-link">View All</a>
                     </div>
                     <?php if ($latestSermons): ?>
-                        <div class="sermon-list">
+                        <div class="events-list">
                             <?php foreach (array_slice($latestSermons, 0, 3) as $sermon): ?>
-                                <a href="/media/sermon.php?id=<?= $sermon['id'] ?>" class="sermon-item">
-                                    <div class="sermon-thumb">🎤</div>
-                                    <div class="sermon-info">
-                                        <h4><?= e($sermon['title']) ?></h4>
-                                        <p><?= e($sermon['speaker_name'] ?? $sermon['speaker']) ?> • <?= date('M j', strtotime($sermon['sermon_date'])) ?></p>
+                                <a href="/media/sermon.php?id=<?= $sermon['id'] ?>" class="event-item">
+                                    <div class="event-date">
+                                        <span class="event-day"><?= date('d', strtotime($sermon['sermon_date'])) ?></span>
+                                        <span class="event-month"><?= date('M', strtotime($sermon['sermon_date'])) ?></span>
+                                    </div>
+                                    <div class="event-info">
+                                        <h4><?= e(truncate($sermon['title'], 30)) ?></h4>
+                                        <p><?= e($sermon['speaker_name'] ?? $sermon['speaker']) ?></p>
                                     </div>
                                 </a>
                             <?php endforeach; ?>
                         </div>
                     <?php else: ?>
-                        <div style="text-align: center; padding: 2rem; color: var(--gray-500);">
+                        <div class="no-content">
                             <p>No sermons yet</p>
                         </div>
                     <?php endif; ?>
                 </div>
 
                 <!-- Series -->
-                <div class="dashboard-card">
+                <div class="dashboard-card posts-card">
                     <div class="card-header">
                         <h2>Sermon Series</h2>
                         <a href="/media/sermons.php?view=series" class="view-all-link">View All</a>
                     </div>
                     <?php if ($series): ?>
-                        <div class="series-grid">
+                        <div class="posts-list">
                             <?php foreach ($series as $s): ?>
-                                <a href="/media/sermons.php?series=<?= $s['id'] ?>" class="series-item">
-                                    <div class="series-icon">📚</div>
-                                    <div class="series-name"><?= e(truncate($s['name'], 15)) ?></div>
-                                    <div class="series-count"><?= $s['sermon_count'] ?> sermons</div>
+                                <a href="/media/sermons.php?series=<?= $s['id'] ?>" class="post-item">
+                                    <div class="post-author">
+                                        <div class="author-avatar-placeholder">
+                                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
+                                                <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
+                                            </svg>
+                                        </div>
+                                        <span><?= e($s['name']) ?></span>
+                                    </div>
+                                    <p class="post-content"><?= $s['sermon_count'] ?> sermons</p>
                                 </a>
                             <?php endforeach; ?>
                         </div>
                     <?php else: ?>
-                        <div style="text-align: center; padding: 1rem; color: var(--gray-500);">
+                        <div class="no-content">
                             <p>No series yet</p>
                         </div>
                     <?php endif; ?>

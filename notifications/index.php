@@ -10,53 +10,16 @@ Auth::requireAuth();
 $user = Auth::user();
 $pageTitle = "Notifications - CRC";
 
-$filter = $_GET['filter'] ?? 'all';
-$notifications = [];
 $unreadCount = 0;
-$totalCount = 0;
-
-// Get unread count
-try {
-    $unreadCount = Database::fetchColumn(
-        "SELECT COUNT(*) FROM notifications WHERE user_id = ? AND read_at IS NULL",
-        [$user['id']]
-    ) ?: 0;
-} catch (Exception $e) {}
-
-// Get total count
-try {
-    $totalCount = Database::fetchColumn(
-        "SELECT COUNT(*) FROM notifications WHERE user_id = ?",
-        [$user['id']]
-    ) ?: 0;
-} catch (Exception $e) {}
-
-// Get notifications
-$whereClause = "WHERE user_id = ?";
-$params = [$user['id']];
-if ($filter === 'unread') {
-    $whereClause .= " AND read_at IS NULL";
-}
+$notifications = [];
 
 try {
-    $notifications = Database::fetchAll(
-        "SELECT * FROM notifications $whereClause ORDER BY created_at DESC LIMIT 20",
-        $params
-    ) ?: [];
+    $unreadCount = Database::fetchColumn("SELECT COUNT(*) FROM notifications WHERE user_id = ? AND read_at IS NULL", [$user['id']]) ?: 0;
 } catch (Exception $e) {}
 
-// Group by date
-$grouped = [];
-foreach ($notifications as $notif) {
-    $date = date('Y-m-d', strtotime($notif['created_at']));
-    $grouped[$date][] = $notif;
-}
-
-$typeIcons = [
-    'event_reminder' => '📅', 'prayer_answered' => '🙏', 'homecell_join' => '🏠',
-    'course_complete' => '📚', 'new_sermon' => '🎤', 'livestream_start' => '📺',
-    'announcement' => '📢', 'system' => '⚙️', 'welcome' => '👋', 'default' => '🔔'
-];
+try {
+    $notifications = Database::fetchAll("SELECT * FROM notifications WHERE user_id = ? ORDER BY created_at DESC LIMIT 20", [$user['id']]) ?: [];
+} catch (Exception $e) {}
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -68,101 +31,6 @@ $typeIcons = [
     <link rel="stylesheet" href="/home/css/home.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <style>
-        .notif-card {
-            background: linear-gradient(135deg, #3B82F6 0%, #60A5FA 100%);
-            color: var(--white);
-        }
-        .notif-card .card-header h2 { color: var(--white); }
-        .stats-row {
-            display: flex;
-            gap: 1rem;
-            margin-bottom: 1rem;
-        }
-        .stat-box {
-            flex: 1;
-            background: rgba(255,255,255,0.15);
-            padding: 1rem;
-            border-radius: var(--radius);
-            text-align: center;
-        }
-        .stat-box .value { font-size: 1.5rem; font-weight: 700; }
-        .stat-box .label { font-size: 0.75rem; opacity: 0.9; }
-        .filter-tabs {
-            display: flex;
-            gap: 0.5rem;
-            margin-bottom: 1rem;
-        }
-        .filter-tab {
-            flex: 1;
-            padding: 0.75rem;
-            background: var(--gray-100);
-            border: none;
-            border-radius: var(--radius);
-            font-weight: 500;
-            cursor: pointer;
-            text-decoration: none;
-            text-align: center;
-            color: var(--gray-600);
-        }
-        .filter-tab.active { background: var(--primary); color: white; }
-        .notif-list {
-            display: flex;
-            flex-direction: column;
-            gap: 0.5rem;
-        }
-        .notif-item {
-            display: flex;
-            gap: 0.75rem;
-            padding: 0.75rem;
-            background: var(--gray-50);
-            border-radius: var(--radius);
-            cursor: pointer;
-            transition: var(--transition);
-        }
-        .notif-item:hover { background: var(--gray-100); }
-        .notif-item.unread { border-left: 3px solid var(--primary); background: rgba(79, 70, 229, 0.05); }
-        .notif-icon {
-            width: 40px;
-            height: 40px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 1.25rem;
-            background: var(--gray-100);
-            border-radius: 50%;
-        }
-        .notif-content h4 { font-size: 0.875rem; color: var(--gray-800); margin-bottom: 0.25rem; }
-        .notif-content p { font-size: 0.75rem; color: var(--gray-500); }
-        .notif-time { font-size: 0.65rem; color: var(--gray-400); margin-top: 0.25rem; }
-        .date-header {
-            font-size: 0.75rem;
-            font-weight: 600;
-            color: var(--gray-500);
-            margin: 1rem 0 0.5rem;
-            padding-bottom: 0.5rem;
-            border-bottom: 1px solid var(--gray-200);
-        }
-        .quick-actions-grid {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 0.75rem;
-        }
-        .quick-action {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 0.5rem;
-            padding: 1rem;
-            background: var(--gray-50);
-            border-radius: var(--radius);
-            text-decoration: none;
-            color: var(--gray-700);
-            transition: var(--transition);
-        }
-        .quick-action:hover { background: var(--primary); color: white; }
-        .quick-action-icon { font-size: 1.5rem; }
-    </style>
 </head>
 <body>
     <?php include __DIR__ . '/../home/partials/navbar.php'; ?>
@@ -177,86 +45,89 @@ $typeIcons = [
             </section>
 
             <div class="dashboard-grid">
-                <!-- Stats Card -->
-                <div class="dashboard-card notif-card">
+                <!-- Overview Card (Featured) -->
+                <div class="dashboard-card morning-watch-card">
                     <div class="card-header">
                         <h2>Overview</h2>
+                        <span class="streak-badge"><?= $unreadCount ?> new</span>
                     </div>
-                    <div class="stats-row">
-                        <div class="stat-box">
-                            <div class="value"><?= $unreadCount ?></div>
-                            <div class="label">Unread</div>
-                        </div>
-                        <div class="stat-box">
-                            <div class="value"><?= $totalCount ?></div>
-                            <div class="label">Total</div>
-                        </div>
+                    <div class="morning-watch-preview">
+                        <h3><?= $unreadCount > 0 ? 'You have new notifications' : 'All caught up!' ?></h3>
+                        <p class="scripture-ref"><?= $unreadCount > 0 ? 'Check your latest updates below' : 'No new notifications' ?></p>
+                        <?php if ($unreadCount > 0): ?>
+                            <button onclick="markAllRead()" class="btn btn-primary">Mark All Read</button>
+                        <?php endif; ?>
                     </div>
-                    <?php if ($unreadCount > 0): ?>
-                        <button onclick="markAllRead()" class="btn" style="width: 100%; background: white; color: #3B82F6;">Mark All Read</button>
-                    <?php endif; ?>
                 </div>
 
                 <!-- Quick Actions -->
-                <div class="dashboard-card">
-                    <h2 style="margin-bottom: 1rem;">Settings</h2>
+                <div class="dashboard-card quick-actions-card">
+                    <h2>Quick Actions</h2>
                     <div class="quick-actions-grid">
-                        <a href="/notifications/settings.php" class="quick-action">
-                            <span class="quick-action-icon">⚙️</span>
-                            <span>Preferences</span>
-                        </a>
                         <a href="/notifications/?filter=unread" class="quick-action">
-                            <span class="quick-action-icon">📬</span>
+                            <div class="quick-action-icon">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+                                    <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+                                </svg>
+                            </div>
                             <span>Unread</span>
                         </a>
+                        <a href="/notifications/settings.php" class="quick-action">
+                            <div class="quick-action-icon">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <circle cx="12" cy="12" r="3"></circle>
+                                    <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+                                </svg>
+                            </div>
+                            <span>Settings</span>
+                        </a>
                         <a href="/notifications/archive.php" class="quick-action">
-                            <span class="quick-action-icon">📦</span>
+                            <div class="quick-action-icon">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M21 8v13H3V8"></path>
+                                    <path d="M1 3h22v5H1z"></path>
+                                </svg>
+                            </div>
                             <span>Archive</span>
                         </a>
                         <a href="/" class="quick-action">
-                            <span class="quick-action-icon">🏠</span>
+                            <div class="quick-action-icon">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+                                    <polyline points="9 22 9 12 15 12 15 22"></polyline>
+                                </svg>
+                            </div>
                             <span>Home</span>
                         </a>
                     </div>
                 </div>
 
-                <!-- Notifications List -->
-                <div class="dashboard-card" style="grid-column: span 2;">
+                <!-- Recent Notifications -->
+                <div class="dashboard-card posts-card" style="grid-column: span 2;">
                     <div class="card-header">
                         <h2>All Notifications</h2>
                     </div>
-                    <div class="filter-tabs">
-                        <a href="?filter=all" class="filter-tab <?= $filter === 'all' ? 'active' : '' ?>">All</a>
-                        <a href="?filter=unread" class="filter-tab <?= $filter === 'unread' ? 'active' : '' ?>">Unread (<?= $unreadCount ?>)</a>
-                    </div>
-                    <?php if ($grouped): ?>
-                        <?php foreach ($grouped as $date => $dayNotifs): ?>
-                            <div class="date-header">
-                                <?php
-                                $today = date('Y-m-d');
-                                $yesterday = date('Y-m-d', strtotime('-1 day'));
-                                if ($date === $today) echo 'Today';
-                                elseif ($date === $yesterday) echo 'Yesterday';
-                                else echo date('l, M j', strtotime($date));
-                                ?>
-                            </div>
-                            <div class="notif-list">
-                                <?php foreach ($dayNotifs as $notif): ?>
-                                    <div class="notif-item <?= $notif['read_at'] ? '' : 'unread' ?>" onclick="handleNotif(<?= $notif['id'] ?>, '<?= e($notif['link'] ?? '') ?>')">
-                                        <div class="notif-icon"><?= $typeIcons[$notif['type']] ?? $typeIcons['default'] ?></div>
-                                        <div class="notif-content">
-                                            <h4><?= e($notif['title']) ?></h4>
-                                            <p><?= e($notif['message']) ?></p>
-                                            <div class="notif-time"><?= time_ago($notif['created_at']) ?></div>
+                    <?php if ($notifications): ?>
+                        <div class="posts-list">
+                            <?php foreach ($notifications as $notif): ?>
+                                <div class="post-item" onclick="handleNotif(<?= $notif['id'] ?>, '<?= e($notif['link'] ?? '') ?>')" style="cursor: pointer; <?= !$notif['read_at'] ? 'border-left: 3px solid var(--primary);' : '' ?>">
+                                    <div class="post-author">
+                                        <div class="author-avatar-placeholder">
+                                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+                                            </svg>
                                         </div>
+                                        <span><?= e($notif['title']) ?></span>
+                                        <span class="post-time"><?= time_ago($notif['created_at']) ?></span>
                                     </div>
-                                <?php endforeach; ?>
-                            </div>
-                        <?php endforeach; ?>
+                                    <p class="post-content"><?= e($notif['message']) ?></p>
+                                </div>
+                            <?php endforeach; ?>
+                        </div>
                     <?php else: ?>
-                        <div style="text-align: center; padding: 3rem; color: var(--gray-500);">
-                            <p style="font-size: 2rem; margin-bottom: 0.5rem;">🔔</p>
-                            <p>No notifications</p>
+                        <div class="no-content">
+                            <p>No notifications yet</p>
                         </div>
                     <?php endif; ?>
                 </div>
@@ -266,12 +137,13 @@ $typeIcons = [
 
     <script>
         function markAllRead() {
-            fetch('/notifications/api/mark-all-read.php', { method: 'POST' })
-                .then(() => location.reload());
+            fetch('/notifications/api/mark-all-read.php', { method: 'POST' }).then(() => location.reload());
         }
         function handleNotif(id, link) {
-            fetch('/notifications/api/mark-read.php?id=' + id, { method: 'POST' })
-                .then(() => { if (link) window.location = link; else location.reload(); });
+            fetch('/notifications/api/mark-read.php?id=' + id, { method: 'POST' }).then(() => {
+                if (link) window.location = link;
+                else location.reload();
+            });
         }
     </script>
 </body>

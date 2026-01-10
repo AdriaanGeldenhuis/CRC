@@ -1,6 +1,6 @@
 <?php
 /**
- * CRC Navbar Partial - Self-contained with inline styles
+ * CRC Navbar Partial - With Dark Mode Toggle
  * Include: <?php include __DIR__ . '/../home/partials/navbar.php'; ?>
  */
 
@@ -19,40 +19,11 @@ if ($navUser) {
     }
 }
 
-// Helper to check current path
 $currentPath = $_SERVER['REQUEST_URI'] ?? '';
 $isActive = function($path) use ($currentPath) {
     return strpos($currentPath, $path) === 0;
 };
 ?>
-<style>
-/* Navbar Styles - Inline for reliability */
-.navbar{background:#fff;border-bottom:1px solid #E5E7EB;position:sticky;top:0;z-index:100;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;}
-.nav-container{max-width:1280px;margin:0 auto;padding:0 1.5rem;display:flex;align-items:center;justify-content:space-between;height:64px;}
-.nav-logo{font-size:1.5rem;font-weight:800;color:#4F46E5;text-decoration:none;}
-.nav-links{display:none;gap:0.5rem;}
-@media(min-width:768px){.nav-links{display:flex;}}
-.nav-link{padding:0.5rem 1rem;color:#4B5563;text-decoration:none;font-weight:500;border-radius:8px;transition:all 0.2s;}
-.nav-link:hover,.nav-link.active{color:#4F46E5;background:rgba(79,70,229,0.05);}
-.nav-actions{display:flex;align-items:center;gap:0.5rem;}
-.nav-icon-btn{position:relative;width:40px;height:40px;display:flex;align-items:center;justify-content:center;color:#4B5563;border-radius:8px;transition:all 0.2s;text-decoration:none;}
-.nav-icon-btn:hover{background:#F3F4F6;color:#1F2937;}
-.notification-badge{position:absolute;top:4px;right:4px;min-width:18px;height:18px;padding:0 4px;background:#EF4444;color:#fff;font-size:0.75rem;font-weight:600;border-radius:9px;display:flex;align-items:center;justify-content:center;}
-.user-menu{position:relative;}
-.user-menu-btn{background:none;border:none;cursor:pointer;padding:4px;border-radius:50%;transition:all 0.2s;}
-.user-menu-btn:hover{background:#F3F4F6;}
-.user-avatar{width:36px;height:36px;border-radius:50%;object-fit:cover;}
-.user-avatar-placeholder{width:36px;height:36px;border-radius:50%;background:#4F46E5;color:#fff;display:flex;align-items:center;justify-content:center;font-weight:600;font-size:14px;}
-.user-dropdown{position:absolute;top:100%;right:0;margin-top:0.5rem;min-width:200px;background:#fff;border-radius:12px;box-shadow:0 10px 15px -3px rgba(0,0,0,0.1);border:1px solid #E5E7EB;opacity:0;visibility:hidden;transform:translateY(-10px);transition:all 0.2s;}
-.user-dropdown.show{opacity:1;visibility:visible;transform:translateY(0);}
-.user-dropdown-header{padding:1rem;display:flex;flex-direction:column;}
-.user-dropdown-header strong{color:#1F2937;}
-.user-dropdown-header span{font-size:0.875rem;color:#6B7280;}
-.user-dropdown-divider{height:1px;background:#E5E7EB;margin:0.25rem 0;}
-.user-dropdown-item{display:block;padding:0.75rem 1rem;color:#374151;text-decoration:none;font-size:0.875rem;transition:all 0.2s;}
-.user-dropdown-item:hover{background:#F9FAFB;}
-.user-dropdown-item.logout{color:#EF4444;}
-</style>
 <nav class="navbar">
     <div class="nav-container">
         <a href="/" class="nav-logo">CRC</a>
@@ -66,8 +37,27 @@ $isActive = function($path) use ($currentPath) {
         </div>
 
         <div class="nav-actions">
+            <!-- Theme Toggle -->
+            <button class="theme-toggle" onclick="toggleTheme()" title="Toggle theme">
+                <svg class="sun-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="12" r="5"></circle>
+                    <line x1="12" y1="1" x2="12" y2="3"></line>
+                    <line x1="12" y1="21" x2="12" y2="23"></line>
+                    <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+                    <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+                    <line x1="1" y1="12" x2="3" y2="12"></line>
+                    <line x1="21" y1="12" x2="23" y2="12"></line>
+                    <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+                    <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+                </svg>
+                <svg class="moon-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+                </svg>
+            </button>
+
+            <!-- Notifications -->
             <a href="/notifications/" class="nav-icon-btn" title="Notifications">
-                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
                     <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
                 </svg>
@@ -76,6 +66,7 @@ $isActive = function($path) use ($currentPath) {
                 <?php endif; ?>
             </a>
 
+            <!-- User Menu -->
             <div class="user-menu">
                 <button class="user-menu-btn" onclick="toggleUserMenu()">
                     <?php if (!empty($navUser['avatar'])): ?>
@@ -112,6 +103,23 @@ $isActive = function($path) use ($currentPath) {
 </nav>
 
 <script>
+// Theme toggle
+function toggleTheme() {
+    const html = document.documentElement;
+    const currentTheme = html.getAttribute('data-theme');
+    const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+    html.setAttribute('data-theme', newTheme);
+    localStorage.setItem('theme', newTheme);
+}
+
+// Load saved theme
+(function() {
+    const savedTheme = localStorage.getItem('theme') ||
+        (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+    document.documentElement.setAttribute('data-theme', savedTheme);
+})();
+
+// User menu toggle
 function toggleUserMenu() {
     document.getElementById('userDropdown').classList.toggle('show');
 }
