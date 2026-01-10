@@ -3,22 +3,13 @@
  * CRC Diary - Main Page
  */
 
-// Catch any errors
-set_error_handler(function($severity, $message, $file, $line) {
-    // Silently handle errors
-});
+// Show errors for debugging
+ini_set('display_errors', 1);
+error_reporting(E_ALL);
 
-try {
-    require_once __DIR__ . '/../core/bootstrap.php';
-} catch (Throwable $e) {
-    die('Bootstrap error');
-}
+require_once __DIR__ . '/../core/bootstrap.php';
 
-try {
-    Auth::requireAuth();
-} catch (Throwable $e) {
-    die('Auth error');
-}
+Auth::requireAuth();
 
 function getMoodEmoji($mood) {
     $emojis = [
