@@ -9,21 +9,21 @@
 /* ===== CSS VARIABLES - DARK THEME (DEFAULT) ===== */
 :root {
   /* Primary Palette - Rich Purple/Indigo */
-  --primary: #7C3AED;
+  --primary: #8B5CF6;
   --primary-light: #A78BFA;
-  --primary-dark: #5B21B6;
-  --primary-glow: rgba(124, 58, 237, 0.5);
-  --primary-intense: rgba(124, 58, 237, 0.8);
+  --primary-dark: #6D28D9;
+  --primary-glow: rgba(139, 92, 246, 0.6);
+  --primary-intense: rgba(139, 92, 246, 0.9);
 
   /* Accent - Electric Cyan */
-  --accent: #06B6D4;
-  --accent-light: #22D3EE;
-  --accent-glow: rgba(6, 182, 212, 0.5);
+  --accent: #22D3EE;
+  --accent-light: #67E8F9;
+  --accent-glow: rgba(34, 211, 238, 0.6);
 
   /* Secondary - Hot Pink */
-  --secondary: #EC4899;
-  --secondary-light: #F472B6;
-  --secondary-glow: rgba(236, 72, 153, 0.4);
+  --secondary: #F472B6;
+  --secondary-light: #FB7185;
+  --secondary-glow: rgba(244, 114, 182, 0.5);
 
   /* Status Colors */
   --success: #10B981;
@@ -58,8 +58,8 @@
   --shadow-lg: 0 16px 48px rgba(0, 0, 0, 0.6);
   --shadow-xl: 0 24px 64px rgba(0, 0, 0, 0.7);
   --shadow-inner: inset 0 2px 4px rgba(0, 0, 0, 0.3);
-  --shadow-glow-primary: 0 0 40px var(--primary-glow), 0 0 80px rgba(124, 58, 237, 0.2);
-  --shadow-glow-accent: 0 0 40px var(--accent-glow);
+  --shadow-glow-primary: 0 0 50px var(--primary-glow), 0 0 100px rgba(124, 58, 237, 0.4);
+  --shadow-glow-accent: 0 0 50px var(--accent-glow), 0 0 100px rgba(6, 182, 212, 0.3);
 
   /* 3D Button Shadows */
   --btn-shadow: 0 4px 0 rgba(0, 0, 0, 0.3), 0 8px 24px rgba(0, 0, 0, 0.4);
@@ -71,11 +71,11 @@
   --gradient-accent: linear-gradient(135deg, var(--accent) 0%, var(--primary) 100%);
   --gradient-secondary: linear-gradient(135deg, var(--secondary) 0%, var(--primary) 100%);
   --gradient-rainbow: linear-gradient(135deg, #7C3AED 0%, #EC4899 25%, #F59E0B 50%, #10B981 75%, #06B6D4 100%);
-  --gradient-mesh: radial-gradient(at 40% 20%, rgba(124, 58, 237, 0.15) 0px, transparent 50%),
-                   radial-gradient(at 80% 0%, rgba(6, 182, 212, 0.1) 0px, transparent 50%),
-                   radial-gradient(at 0% 50%, rgba(236, 72, 153, 0.08) 0px, transparent 50%),
-                   radial-gradient(at 80% 50%, rgba(124, 58, 237, 0.1) 0px, transparent 50%),
-                   radial-gradient(at 0% 100%, rgba(6, 182, 212, 0.08) 0px, transparent 50%);
+  --gradient-mesh: radial-gradient(at 40% 20%, rgba(124, 58, 237, 0.4) 0px, transparent 50%),
+                   radial-gradient(at 80% 0%, rgba(6, 182, 212, 0.35) 0px, transparent 50%),
+                   radial-gradient(at 0% 50%, rgba(236, 72, 153, 0.3) 0px, transparent 50%),
+                   radial-gradient(at 80% 50%, rgba(124, 58, 237, 0.25) 0px, transparent 50%),
+                   radial-gradient(at 0% 100%, rgba(6, 182, 212, 0.3) 0px, transparent 50%);
 
   /* Blur */
   --blur-sm: blur(8px);
@@ -157,7 +157,7 @@ body {
   transition: var(--transition-slow);
 }
 
-/* Animated Background Mesh - Subtle */
+/* Animated Background Mesh - Vibrant Colors on Black */
 body::before {
   content: '';
   position: fixed;
@@ -166,10 +166,10 @@ body::before {
   width: 100%;
   height: 100%;
   background: var(--gradient-mesh);
-  opacity: 0.5;
+  opacity: 0.9;
   pointer-events: none;
   z-index: 0;
-  animation: meshMove 30s ease-in-out infinite;
+  animation: meshMove 20s ease-in-out infinite;
 }
 
 @keyframes meshMove {
