@@ -1,6 +1,6 @@
 <?php
 /**
- * CRC Calendar Page
+ * CRC Calendar Page - Dashboard Layout
  */
 
 require_once __DIR__ . '/../core/bootstrap.php';
@@ -34,19 +34,15 @@ $startDate = date('Y-m-01', $firstDay);
 $endDate = date('Y-m-t', $lastDay);
 
 $events = [];
-$personalEvents = [];
+$upcomingEvents = [];
+$todayEvents = [];
 
 try {
     $events = Database::fetchAll(
-        "SELECT e.*,
-                c.name as congregation_name
+        "SELECT e.*, c.name as congregation_name
          FROM events e
          LEFT JOIN congregations c ON e.congregation_id = c.id
-         WHERE (
-             (e.scope = 'global')
-             OR (e.congregation_id = ?)
-             OR (e.user_id = ?)
-         )
+         WHERE ((e.scope = 'global') OR (e.congregation_id = ?) OR (e.user_id = ?))
          AND e.status = 'published'
          AND DATE(e.start_datetime) BETWEEN ? AND ?
          ORDER BY e.start_datetime ASC",
@@ -54,42 +50,39 @@ try {
     ) ?: [];
 } catch (Exception $e) {}
 
-// Get personal calendar events
-try {
-    $personalEvents = Database::fetchAll(
-        "SELECT * FROM calendar_events
-         WHERE user_id = ?
-         AND DATE(start_datetime) BETWEEN ? AND ?
-         AND status = 'active'
-         ORDER BY start_datetime ASC",
-        [$user['id'], $startDate, $endDate]
-    ) ?: [];
-} catch (Exception $e) {}
-
-// Merge and organize by date
+// Organize by date
 $eventsByDate = [];
 foreach ($events as $event) {
     $date = date('Y-m-d', strtotime($event['start_datetime']));
-    $eventsByDate[$date][] = array_merge($event, ['type' => 'event']);
+    $eventsByDate[$date][] = $event;
 }
-foreach ($personalEvents as $event) {
-    $date = date('Y-m-d', strtotime($event['start_datetime']));
-    $eventsByDate[$date][] = array_merge($event, ['type' => 'personal']);
-}
+
+// Get today's events
+$today = date('Y-m-d');
+$todayEvents = $eventsByDate[$today] ?? [];
+
+// Get upcoming events
+try {
+    $upcomingEvents = Database::fetchAll(
+        "SELECT e.*, c.name as congregation_name
+         FROM events e
+         LEFT JOIN congregations c ON e.congregation_id = c.id
+         WHERE (e.scope = 'global' OR e.congregation_id = ? OR e.user_id = ?)
+         AND e.status = 'published'
+         AND e.start_datetime >= NOW()
+         ORDER BY e.start_datetime ASC
+         LIMIT 5",
+        [$primaryCong['id'], $user['id']]
+    ) ?: [];
+} catch (Exception $e) {}
 
 // Month navigation
 $prevMonth = $month - 1;
 $prevYear = $year;
-if ($prevMonth < 1) {
-    $prevMonth = 12;
-    $prevYear--;
-}
+if ($prevMonth < 1) { $prevMonth = 12; $prevYear--; }
 $nextMonth = $month + 1;
 $nextYear = $year;
-if ($nextMonth > 12) {
-    $nextMonth = 1;
-    $nextYear++;
-}
+if ($nextMonth > 12) { $nextMonth = 1; $nextYear++; }
 
 $monthName = date('F', $firstDay);
 ?>
@@ -100,138 +93,241 @@ $monthName = date('F', $firstDay);
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><?= e($pageTitle) ?></title>
     <?= CSRF::meta() ?>
-    <link rel="stylesheet" href="/calendar/css/calendar.css">
+    <link rel="stylesheet" href="/home/css/home.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        .calendar-card {
+            background: linear-gradient(135deg, #059669 0%, #10B981 100%);
+            color: var(--white);
+        }
+        .calendar-card .card-header h2 { color: var(--white); }
+        .month-nav {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 1rem;
+        }
+        .month-nav button, .month-nav a {
+            background: rgba(255,255,255,0.2);
+            border: none;
+            color: white;
+            padding: 0.5rem 1rem;
+            border-radius: var(--radius);
+            cursor: pointer;
+            text-decoration: none;
+            transition: var(--transition);
+        }
+        .month-nav button:hover, .month-nav a:hover { background: rgba(255,255,255,0.3); }
+        .month-name { font-size: 1.25rem; font-weight: 600; }
+        .mini-calendar {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 2px;
+            font-size: 0.75rem;
+        }
+        .mini-calendar .day-header {
+            text-align: center;
+            padding: 0.25rem;
+            font-weight: 600;
+            color: rgba(255,255,255,0.8);
+        }
+        .mini-calendar .day {
+            text-align: center;
+            padding: 0.5rem 0.25rem;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: var(--transition);
+        }
+        .mini-calendar .day:hover { background: rgba(255,255,255,0.2); }
+        .mini-calendar .day.today { background: rgba(255,255,255,0.3); font-weight: 700; }
+        .mini-calendar .day.has-event { position: relative; }
+        .mini-calendar .day.has-event::after {
+            content: '';
+            position: absolute;
+            bottom: 2px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 4px;
+            height: 4px;
+            background: white;
+            border-radius: 50%;
+        }
+        .mini-calendar .day.empty { visibility: hidden; }
+        .quick-actions-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 0.75rem;
+        }
+        .quick-action {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 1rem;
+            background: var(--gray-50);
+            border-radius: var(--radius);
+            text-decoration: none;
+            color: var(--gray-700);
+            transition: var(--transition);
+        }
+        .quick-action:hover { background: var(--primary); color: white; }
+        .quick-action-icon { font-size: 1.5rem; }
+        .event-list {
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+        .event-item {
+            display: flex;
+            gap: 1rem;
+            padding: 0.75rem;
+            background: var(--gray-50);
+            border-radius: var(--radius);
+            text-decoration: none;
+            transition: var(--transition);
+        }
+        .event-item:hover { background: var(--gray-100); }
+        .event-date-badge {
+            min-width: 48px;
+            padding: 0.5rem;
+            background: var(--primary);
+            color: white;
+            border-radius: var(--radius);
+            text-align: center;
+        }
+        .event-date-badge .day { font-size: 1.25rem; font-weight: 700; line-height: 1; }
+        .event-date-badge .month { font-size: 0.7rem; text-transform: uppercase; }
+        .event-info h4 { font-size: 0.875rem; color: var(--gray-800); margin-bottom: 0.25rem; }
+        .event-info p { font-size: 0.75rem; color: var(--gray-500); }
+        .today-events-card .event-item { background: rgba(5, 150, 105, 0.1); }
+        @media (max-width: 640px) {
+            .mini-calendar { font-size: 0.65rem; }
+            .mini-calendar .day { padding: 0.35rem 0.15rem; }
+        }
+    </style>
 </head>
 <body>
     <?php include __DIR__ . '/../home/partials/navbar.php'; ?>
 
     <main class="main-content">
         <div class="container">
-            <div class="calendar-header">
-                <div class="calendar-title">
+            <!-- Welcome Section -->
+            <section class="welcome-section">
+                <div class="welcome-content">
                     <h1>Calendar</h1>
                     <p>Your events and congregation activities</p>
                 </div>
-                <div class="calendar-actions">
-                    <a href="/calendar/create.php" class="btn btn-primary">+ Add Event</a>
-                </div>
-            </div>
+            </section>
 
-            <div class="calendar-layout">
-                <div class="calendar-main">
-                    <!-- Month Navigation -->
-                    <div class="calendar-nav">
-                        <a href="?month=<?= $prevMonth ?>&year=<?= $prevYear ?>" class="nav-btn">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <polyline points="15 18 9 12 15 6"></polyline>
-                            </svg>
-                        </a>
-                        <h2><?= $monthName ?> <?= $year ?></h2>
-                        <a href="?month=<?= $nextMonth ?>&year=<?= $nextYear ?>" class="nav-btn">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <polyline points="9 18 15 12 9 6"></polyline>
-                            </svg>
-                        </a>
+            <div class="dashboard-grid">
+                <!-- Calendar Card -->
+                <div class="dashboard-card calendar-card">
+                    <div class="month-nav">
+                        <a href="?month=<?= $prevMonth ?>&year=<?= $prevYear ?>">←</a>
+                        <span class="month-name"><?= $monthName ?> <?= $year ?></span>
+                        <a href="?month=<?= $nextMonth ?>&year=<?= $nextYear ?>">→</a>
                     </div>
-
-                    <!-- Calendar Grid -->
-                    <div class="calendar-grid">
-                        <!-- Day Headers -->
-                        <div class="day-header">Sun</div>
-                        <div class="day-header">Mon</div>
-                        <div class="day-header">Tue</div>
-                        <div class="day-header">Wed</div>
-                        <div class="day-header">Thu</div>
-                        <div class="day-header">Fri</div>
-                        <div class="day-header">Sat</div>
-
-                        <!-- Empty cells before first day -->
+                    <div class="mini-calendar">
+                        <div class="day-header">S</div>
+                        <div class="day-header">M</div>
+                        <div class="day-header">T</div>
+                        <div class="day-header">W</div>
+                        <div class="day-header">T</div>
+                        <div class="day-header">F</div>
+                        <div class="day-header">S</div>
                         <?php for ($i = 0; $i < $startDayOfWeek; $i++): ?>
-                            <div class="calendar-cell empty"></div>
+                            <div class="day empty"></div>
                         <?php endfor; ?>
-
-                        <!-- Days -->
                         <?php for ($day = 1; $day <= $daysInMonth; $day++):
                             $date = sprintf('%04d-%02d-%02d', $year, $month, $day);
                             $isToday = $date === date('Y-m-d');
-                            $dayEvents = $eventsByDate[$date] ?? [];
+                            $hasEvent = isset($eventsByDate[$date]);
                         ?>
-                            <div class="calendar-cell <?= $isToday ? 'today' : '' ?> <?= !empty($dayEvents) ? 'has-events' : '' ?>">
-                                <span class="day-number"><?= $day ?></span>
-                                <?php if ($dayEvents): ?>
-                                    <div class="cell-events">
-                                        <?php foreach (array_slice($dayEvents, 0, 3) as $event): ?>
-                                            <div class="event-dot <?= $event['type'] === 'personal' ? 'personal' : ($event['scope'] ?? 'congregation') ?>">
-                                                <?= e(truncate($event['title'], 15)) ?>
-                                            </div>
-                                        <?php endforeach; ?>
-                                        <?php if (count($dayEvents) > 3): ?>
-                                            <span class="more-events">+<?= count($dayEvents) - 3 ?> more</span>
-                                        <?php endif; ?>
-                                    </div>
-                                <?php endif; ?>
+                            <div class="day <?= $isToday ? 'today' : '' ?> <?= $hasEvent ? 'has-event' : '' ?>">
+                                <?= $day ?>
                             </div>
                         <?php endfor; ?>
                     </div>
                 </div>
 
-                <!-- Upcoming Events Sidebar -->
-                <div class="calendar-sidebar">
-                    <h3>Upcoming Events</h3>
-                    <?php
-                    $upcomingEvents = [];
-                    try {
-                        $upcomingEvents = Database::fetchAll(
-                            "SELECT e.*, c.name as congregation_name
-                             FROM events e
-                             LEFT JOIN congregations c ON e.congregation_id = c.id
-                             WHERE (e.scope = 'global' OR e.congregation_id = ? OR e.user_id = ?)
-                             AND e.status = 'published'
-                             AND e.start_datetime >= NOW()
-                             ORDER BY e.start_datetime ASC
-                             LIMIT 5",
-                            [$primaryCong['id'], $user['id']]
-                        ) ?: [];
-                    } catch (Exception $e) {}
-                    ?>
-                    <?php if ($upcomingEvents): ?>
-                        <div class="upcoming-list">
-                            <?php foreach ($upcomingEvents as $event): ?>
-                                <a href="/calendar/event.php?id=<?= $event['id'] ?>" class="upcoming-item">
-                                    <div class="event-date">
-                                        <span class="day"><?= date('d', strtotime($event['start_datetime'])) ?></span>
-                                        <span class="month"><?= date('M', strtotime($event['start_datetime'])) ?></span>
+                <!-- Quick Actions Card -->
+                <div class="dashboard-card">
+                    <h2 style="margin-bottom: 1rem;">Quick Actions</h2>
+                    <div class="quick-actions-grid">
+                        <a href="/calendar/create.php" class="quick-action">
+                            <span class="quick-action-icon">➕</span>
+                            <span>Add Event</span>
+                        </a>
+                        <a href="/calendar/?month=<?= date('n') ?>&year=<?= date('Y') ?>" class="quick-action">
+                            <span class="quick-action-icon">📅</span>
+                            <span>This Month</span>
+                        </a>
+                        <a href="/calendar/my-events.php" class="quick-action">
+                            <span class="quick-action-icon">⭐</span>
+                            <span>My Events</span>
+                        </a>
+                        <a href="/calendar/birthdays.php" class="quick-action">
+                            <span class="quick-action-icon">🎂</span>
+                            <span>Birthdays</span>
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Today's Events Card -->
+                <div class="dashboard-card today-events-card">
+                    <div class="card-header">
+                        <h2>Today</h2>
+                        <span style="color: var(--gray-500); font-size: 0.875rem;"><?= date('l, M j') ?></span>
+                    </div>
+                    <?php if ($todayEvents): ?>
+                        <div class="event-list">
+                            <?php foreach ($todayEvents as $event): ?>
+                                <a href="/calendar/event.php?id=<?= $event['id'] ?>" class="event-item">
+                                    <div class="event-date-badge" style="background: var(--secondary);">
+                                        <div class="day"><?= date('H:i', strtotime($event['start_datetime'])) ?></div>
                                     </div>
-                                    <div class="event-details">
+                                    <div class="event-info">
                                         <h4><?= e($event['title']) ?></h4>
-                                        <p><?= date('H:i', strtotime($event['start_datetime'])) ?></p>
-                                        <?php if ($event['location']): ?>
-                                            <p><?= e($event['location']) ?></p>
-                                        <?php endif; ?>
+                                        <p><?= e($event['location'] ?: 'No location') ?></p>
                                     </div>
                                 </a>
                             <?php endforeach; ?>
                         </div>
                     <?php else: ?>
-                        <div class="no-events">
-                            <p>No upcoming events</p>
+                        <div style="text-align: center; padding: 2rem 1rem; color: var(--gray-500);">
+                            <p>No events today</p>
                         </div>
                     <?php endif; ?>
+                </div>
 
-                    <div class="legend">
-                        <h4>Legend</h4>
-                        <div class="legend-item">
-                            <span class="dot global"></span> Global
-                        </div>
-                        <div class="legend-item">
-                            <span class="dot congregation"></span> Congregation
-                        </div>
-                        <div class="legend-item">
-                            <span class="dot personal"></span> Personal
-                        </div>
+                <!-- Upcoming Events Card -->
+                <div class="dashboard-card">
+                    <div class="card-header">
+                        <h2>Upcoming Events</h2>
+                        <a href="/calendar/all.php" class="view-all-link">View All</a>
                     </div>
+                    <?php if ($upcomingEvents): ?>
+                        <div class="event-list">
+                            <?php foreach ($upcomingEvents as $event): ?>
+                                <a href="/calendar/event.php?id=<?= $event['id'] ?>" class="event-item">
+                                    <div class="event-date-badge">
+                                        <div class="day"><?= date('d', strtotime($event['start_datetime'])) ?></div>
+                                        <div class="month"><?= date('M', strtotime($event['start_datetime'])) ?></div>
+                                    </div>
+                                    <div class="event-info">
+                                        <h4><?= e($event['title']) ?></h4>
+                                        <p><?= date('H:i', strtotime($event['start_datetime'])) ?> • <?= e($event['location'] ?: 'No location') ?></p>
+                                    </div>
+                                </a>
+                            <?php endforeach; ?>
+                        </div>
+                    <?php else: ?>
+                        <div style="text-align: center; padding: 2rem 1rem; color: var(--gray-500);">
+                            <p>No upcoming events</p>
+                            <a href="/calendar/create.php" class="btn btn-outline" style="margin-top: 0.5rem;">Create Event</a>
+                        </div>
+                    <?php endif; ?>
                 </div>
             </div>
         </div>

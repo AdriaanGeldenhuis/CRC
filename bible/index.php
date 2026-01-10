@@ -1,6 +1,6 @@
 <?php
 /**
- * CRC Bible Reader
+ * CRC Bible Reader - Dashboard Layout
  */
 
 require_once __DIR__ . '/../core/bootstrap.php';
@@ -130,6 +130,8 @@ if ($chapter < $currentBook['chapters']) {
 $highlights = [];
 $highlightMap = [];
 $notes = [];
+$bookmarks = [];
+$recentHistory = [];
 
 try {
     $highlights = Database::fetchAll(
@@ -154,6 +156,42 @@ try {
         [$user['id'], $version, $bookIndex + 1, $chapter]
     ) ?: [];
 } catch (Exception $e) {}
+
+// Get user bookmarks
+try {
+    $bookmarks = Database::fetchAll(
+        "SELECT * FROM bible_bookmarks
+         WHERE user_id = ?
+         ORDER BY created_at DESC
+         LIMIT 5",
+        [$user['id']]
+    ) ?: [];
+} catch (Exception $e) {}
+
+// Get recent reading history
+try {
+    $recentHistory = Database::fetchAll(
+        "SELECT * FROM bible_reading_history
+         WHERE user_id = ?
+         ORDER BY read_at DESC
+         LIMIT 5",
+        [$user['id']]
+    ) ?: [];
+} catch (Exception $e) {}
+
+// Count highlights and notes
+$totalHighlights = 0;
+$totalNotes = 0;
+try {
+    $totalHighlights = Database::fetchColumn(
+        "SELECT COUNT(*) FROM bible_highlights WHERE user_id = ?",
+        [$user['id']]
+    ) ?: 0;
+    $totalNotes = Database::fetchColumn(
+        "SELECT COUNT(*) FROM bible_notes WHERE user_id = ?",
+        [$user['id']]
+    ) ?: 0;
+} catch (Exception $e) {}
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -162,146 +200,260 @@ try {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><?= e($book) ?> <?= $chapter ?> - <?= e($pageTitle) ?></title>
     <?= CSRF::meta() ?>
-    <link rel="stylesheet" href="/bible/css/bible.css">
+    <link rel="stylesheet" href="/home/css/home.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Merriweather:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        .bible-reader-card {
+            background: linear-gradient(135deg, #1E3A5F 0%, #2C5282 100%);
+            color: var(--white);
+        }
+        .bible-reader-card .card-header h2 { color: var(--white); }
+        .version-badge {
+            background: rgba(255,255,255,0.2);
+            padding: 0.25rem 0.75rem;
+            border-radius: 100px;
+            font-size: 0.875rem;
+        }
+        .scripture-display {
+            background: rgba(255,255,255,0.1);
+            border-radius: var(--radius);
+            padding: 1.5rem;
+            margin-top: 1rem;
+            font-family: 'Merriweather', serif;
+            line-height: 1.8;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        .verse-num {
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: rgba(255,255,255,0.7);
+            vertical-align: super;
+            margin-right: 0.25rem;
+        }
+        .chapter-nav-btns {
+            display: flex;
+            gap: 0.5rem;
+            margin-top: 1rem;
+        }
+        .chapter-nav-btns a {
+            flex: 1;
+            padding: 0.75rem;
+            background: rgba(255,255,255,0.2);
+            color: white;
+            text-decoration: none;
+            border-radius: var(--radius);
+            text-align: center;
+            transition: var(--transition);
+        }
+        .chapter-nav-btns a:hover { background: rgba(255,255,255,0.3); }
+        .quick-jump-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 0.75rem;
+        }
+        .quick-jump-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 1rem;
+            background: var(--gray-50);
+            border-radius: var(--radius);
+            text-decoration: none;
+            color: var(--gray-700);
+            transition: var(--transition);
+        }
+        .quick-jump-item:hover {
+            background: var(--primary);
+            color: white;
+        }
+        .quick-jump-icon { font-size: 1.5rem; margin-bottom: 0.5rem; }
+        .bookmark-list, .history-list {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+        .bookmark-item, .history-item {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.75rem;
+            background: var(--gray-50);
+            border-radius: var(--radius);
+            text-decoration: none;
+            color: var(--gray-700);
+            transition: var(--transition);
+        }
+        .bookmark-item:hover, .history-item:hover { background: var(--gray-100); }
+        .bookmark-icon, .history-icon {
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: var(--primary);
+            color: white;
+            border-radius: var(--radius);
+            font-size: 0.875rem;
+        }
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+        .stat-item {
+            text-align: center;
+            padding: 1rem;
+            background: var(--gray-50);
+            border-radius: var(--radius);
+        }
+        .stat-value { font-size: 1.5rem; font-weight: 700; color: var(--primary); }
+        .stat-label { font-size: 0.75rem; color: var(--gray-500); }
+    </style>
 </head>
 <body>
     <?php include __DIR__ . '/../home/partials/navbar.php'; ?>
 
-    <main class="bible-layout">
-        <!-- Sidebar - Book List -->
-        <aside class="bible-sidebar" id="sidebar">
-            <div class="sidebar-header">
-                <h2>Books</h2>
-                <button class="close-sidebar" onclick="toggleSidebar()">×</button>
-            </div>
+    <main class="main-content">
+        <div class="container">
+            <!-- Welcome Section -->
+            <section class="welcome-section">
+                <div class="welcome-content">
+                    <h1>Bible</h1>
+                    <p>Read and study God's Word</p>
+                </div>
+            </section>
 
-            <div class="testament-section">
-                <h3>Old Testament</h3>
-                <div class="book-list">
-                    <?php foreach ($bibleBooks as $b):
-                        if ($b['testament'] !== 'old') continue;
-                    ?>
-                        <a href="?v=<?= $version ?>&b=<?= urlencode($b['name']) ?>&c=1"
-                           class="book-link <?= $b['name'] === $book ? 'active' : '' ?>">
-                            <?= e($b['name']) ?>
+            <div class="dashboard-grid">
+                <!-- Bible Reader Card -->
+                <div class="dashboard-card bible-reader-card">
+                    <div class="card-header">
+                        <h2><?= e($book) ?> <?= $chapter ?></h2>
+                        <span class="version-badge"><?= e($version) ?></span>
+                    </div>
+                    <div class="reference-selector" style="display: flex; gap: 0.5rem; margin-bottom: 1rem;">
+                        <select id="bookSelect" onchange="changeBook(this.value)" style="flex: 1; padding: 0.5rem; border-radius: var(--radius); border: 1px solid rgba(255,255,255,0.3); background: rgba(255,255,255,0.1); color: white;">
+                            <?php foreach ($bibleBooks as $b): ?>
+                                <option value="<?= e($b['name']) ?>" <?= $b['name'] === $book ? 'selected' : '' ?> style="color: #333;">
+                                    <?= e($b['name']) ?>
+                                </option>
+                            <?php endforeach; ?>
+                        </select>
+                        <select id="chapterSelect" onchange="changeChapter(this.value)" style="padding: 0.5rem; border-radius: var(--radius); border: 1px solid rgba(255,255,255,0.3); background: rgba(255,255,255,0.1); color: white;">
+                            <?php for ($c = 1; $c <= $currentBook['chapters']; $c++): ?>
+                                <option value="<?= $c ?>" <?= $c === $chapter ? 'selected' : '' ?> style="color: #333;">
+                                    Ch <?= $c ?>
+                                </option>
+                            <?php endfor; ?>
+                        </select>
+                    </div>
+                    <div class="scripture-display" id="versesContainer">
+                        <div class="loading">Loading verses...</div>
+                    </div>
+                    <div class="chapter-nav-btns">
+                        <?php if ($prevChapter): ?>
+                            <a href="?v=<?= $version ?>&b=<?= urlencode($prevChapter['book']) ?>&c=<?= $prevChapter['chapter'] ?>">
+                                ← <?= e($prevChapter['book']) ?> <?= $prevChapter['chapter'] ?>
+                            </a>
+                        <?php endif; ?>
+                        <?php if ($nextChapter): ?>
+                            <a href="?v=<?= $version ?>&b=<?= urlencode($nextChapter['book']) ?>&c=<?= $nextChapter['chapter'] ?>">
+                                <?= e($nextChapter['book']) ?> <?= $nextChapter['chapter'] ?> →
+                            </a>
+                        <?php endif; ?>
+                    </div>
+                </div>
+
+                <!-- Quick Jump Card -->
+                <div class="dashboard-card">
+                    <h2 style="margin-bottom: 1rem;">Quick Jump</h2>
+                    <div class="quick-jump-grid">
+                        <a href="?b=Psalms&c=23" class="quick-jump-item">
+                            <span class="quick-jump-icon">📖</span>
+                            <span>Psalm 23</span>
                         </a>
-                    <?php endforeach; ?>
-                </div>
-            </div>
-
-            <div class="testament-section">
-                <h3>New Testament</h3>
-                <div class="book-list">
-                    <?php foreach ($bibleBooks as $b):
-                        if ($b['testament'] !== 'new') continue;
-                    ?>
-                        <a href="?v=<?= $version ?>&b=<?= urlencode($b['name']) ?>&c=1"
-                           class="book-link <?= $b['name'] === $book ? 'active' : '' ?>">
-                            <?= e($b['name']) ?>
+                        <a href="?b=John&c=3" class="quick-jump-item">
+                            <span class="quick-jump-icon">❤️</span>
+                            <span>John 3:16</span>
                         </a>
-                    <?php endforeach; ?>
-                </div>
-            </div>
-        </aside>
-
-        <!-- Main Content -->
-        <div class="bible-main">
-            <!-- Top Bar -->
-            <div class="bible-topbar">
-                <button class="menu-btn" onclick="toggleSidebar()">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <line x1="3" y1="12" x2="21" y2="12"></line>
-                        <line x1="3" y1="6" x2="21" y2="6"></line>
-                        <line x1="3" y1="18" x2="21" y2="18"></line>
-                    </svg>
-                </button>
-
-                <div class="reference-selector">
-                    <select id="bookSelect" onchange="changeBook(this.value)">
-                        <?php foreach ($bibleBooks as $b): ?>
-                            <option value="<?= e($b['name']) ?>" <?= $b['name'] === $book ? 'selected' : '' ?>>
-                                <?= e($b['name']) ?>
-                            </option>
-                        <?php endforeach; ?>
-                    </select>
-                    <select id="chapterSelect" onchange="changeChapter(this.value)">
-                        <?php for ($c = 1; $c <= $currentBook['chapters']; $c++): ?>
-                            <option value="<?= $c ?>" <?= $c === $chapter ? 'selected' : '' ?>>
-                                Chapter <?= $c ?>
-                            </option>
-                        <?php endfor; ?>
-                    </select>
-                </div>
-
-                <select id="versionSelect" onchange="changeVersion(this.value)">
-                    <option value="KJV" <?= $version === 'KJV' ? 'selected' : '' ?>>KJV</option>
-                    <option value="NIV" <?= $version === 'NIV' ? 'selected' : '' ?>>NIV</option>
-                    <option value="ESV" <?= $version === 'ESV' ? 'selected' : '' ?>>ESV</option>
-                    <option value="NLT" <?= $version === 'NLT' ? 'selected' : '' ?>>NLT</option>
-                </select>
-
-                <button class="tool-btn" onclick="openSearch()">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <circle cx="11" cy="11" r="8"></circle>
-                        <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
-                    </svg>
-                </button>
-            </div>
-
-            <!-- Chapter Content -->
-            <div class="chapter-content">
-                <h1 class="chapter-title"><?= e($book) ?> <?= $chapter ?></h1>
-
-                <div class="verses" id="versesContainer">
-                    <div class="loading">Loading verses...</div>
-                </div>
-
-                <!-- Chapter Navigation -->
-                <div class="chapter-nav">
-                    <?php if ($prevChapter): ?>
-                        <a href="?v=<?= $version ?>&b=<?= urlencode($prevChapter['book']) ?>&c=<?= $prevChapter['chapter'] ?>" class="nav-link prev">
-                            ← <?= e($prevChapter['book']) ?> <?= $prevChapter['chapter'] ?>
+                        <a href="?b=Romans&c=8" class="quick-jump-item">
+                            <span class="quick-jump-icon">✨</span>
+                            <span>Romans 8</span>
                         </a>
+                        <a href="?b=Proverbs&c=3" class="quick-jump-item">
+                            <span class="quick-jump-icon">🙏</span>
+                            <span>Proverbs 3</span>
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Bookmarks & Notes Card -->
+                <div class="dashboard-card">
+                    <div class="card-header">
+                        <h2>My Study</h2>
+                        <a href="/bible/bookmarks.php" class="view-all-link">View All</a>
+                    </div>
+                    <div class="stats-grid">
+                        <div class="stat-item">
+                            <div class="stat-value"><?= $totalHighlights ?></div>
+                            <div class="stat-label">Highlights</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-value"><?= $totalNotes ?></div>
+                            <div class="stat-label">Notes</div>
+                        </div>
+                    </div>
+                    <?php if ($bookmarks): ?>
+                        <div class="bookmark-list">
+                            <?php foreach (array_slice($bookmarks, 0, 3) as $bm): ?>
+                                <a href="?b=<?= urlencode($bm['book_name'] ?? 'Genesis') ?>&c=<?= $bm['chapter'] ?? 1 ?>" class="bookmark-item">
+                                    <div class="bookmark-icon">📌</div>
+                                    <div>
+                                        <strong><?= e($bm['book_name'] ?? 'Bookmark') ?> <?= $bm['chapter'] ?? '' ?>:<?= $bm['verse'] ?? '' ?></strong>
+                                    </div>
+                                </a>
+                            <?php endforeach; ?>
+                        </div>
                     <?php else: ?>
-                        <span></span>
+                        <p style="color: var(--gray-500); text-align: center; padding: 1rem;">No bookmarks yet</p>
                     <?php endif; ?>
+                </div>
 
-                    <?php if ($nextChapter): ?>
-                        <a href="?v=<?= $version ?>&b=<?= urlencode($nextChapter['book']) ?>&c=<?= $nextChapter['chapter'] ?>" class="nav-link next">
-                            <?= e($nextChapter['book']) ?> <?= $nextChapter['chapter'] ?> →
-                        </a>
+                <!-- Reading History Card -->
+                <div class="dashboard-card">
+                    <div class="card-header">
+                        <h2>Recent Reading</h2>
+                    </div>
+                    <?php if ($recentHistory): ?>
+                        <div class="history-list">
+                            <?php foreach ($recentHistory as $h): ?>
+                                <a href="?b=<?= urlencode($h['book_name'] ?? 'Genesis') ?>&c=<?= $h['chapter'] ?? 1 ?>" class="history-item">
+                                    <div class="history-icon">📚</div>
+                                    <div>
+                                        <strong><?= e($h['book_name'] ?? 'Chapter') ?> <?= $h['chapter'] ?? '' ?></strong>
+                                        <br><small style="color: var(--gray-500);"><?= time_ago($h['read_at'] ?? 'now') ?></small>
+                                    </div>
+                                </a>
+                            <?php endforeach; ?>
+                        </div>
+                    <?php else: ?>
+                        <div class="history-list">
+                            <a href="?b=Genesis&c=1" class="history-item">
+                                <div class="history-icon">📚</div>
+                                <div><strong>Start Reading</strong><br><small style="color: var(--gray-500);">Genesis 1</small></div>
+                            </a>
+                            <a href="?b=Matthew&c=1" class="history-item">
+                                <div class="history-icon">📚</div>
+                                <div><strong>New Testament</strong><br><small style="color: var(--gray-500);">Matthew 1</small></div>
+                            </a>
+                        </div>
                     <?php endif; ?>
                 </div>
             </div>
         </div>
-
-        <!-- Tools Panel -->
-        <aside class="bible-tools" id="toolsPanel">
-            <div class="tools-header">
-                <h3>Tools</h3>
-                <button class="close-tools" onclick="closeTools()">×</button>
-            </div>
-            <div class="tools-content">
-                <div id="toolsContentArea">
-                    <p class="tools-hint">Select a verse to see options</p>
-                </div>
-            </div>
-        </aside>
     </main>
-
-    <!-- Verse Action Menu -->
-    <div class="verse-menu" id="verseMenu" style="display:none;">
-        <button onclick="highlightVerse('yellow')">🟡 Highlight</button>
-        <button onclick="addNote()">📝 Add Note</button>
-        <button onclick="addTag()">🏷️ Add Tag</button>
-        <button onclick="copyVerse()">📋 Copy</button>
-        <button onclick="shareVerse()">📤 Share</button>
-        <button onclick="aiExplain()">✨ AI Explain</button>
-    </div>
-
-    <div id="toast" class="toast"></div>
 
     <script>
         const currentVersion = '<?= e($version) ?>';
@@ -309,7 +461,33 @@ try {
         const currentChapter = <?= $chapter ?>;
         const bookIndex = <?= $bookIndex ?>;
         const highlights = <?= json_encode($highlightMap) ?>;
+
+        function changeBook(bookName) {
+            window.location = '?v=' + currentVersion + '&b=' + encodeURIComponent(bookName) + '&c=1';
+        }
+
+        function changeChapter(chapter) {
+            window.location = '?v=' + currentVersion + '&b=' + encodeURIComponent(currentBook) + '&c=' + chapter;
+        }
+
+        // Load verses
+        document.addEventListener('DOMContentLoaded', function() {
+            fetch('/bible/api/verses.php?v=' + currentVersion + '&b=' + encodeURIComponent(currentBook) + '&c=' + currentChapter)
+                .then(r => r.json())
+                .then(data => {
+                    if (data.verses) {
+                        let html = '';
+                        data.verses.forEach(v => {
+                            const highlight = highlights[v.verse] ? 'style="background: rgba(255,255,0,0.3);"' : '';
+                            html += '<span ' + highlight + '><sup class="verse-num">' + v.verse + '</sup>' + v.text + ' </span>';
+                        });
+                        document.getElementById('versesContainer').innerHTML = html;
+                    }
+                })
+                .catch(() => {
+                    document.getElementById('versesContainer').innerHTML = '<p>Unable to load verses. Please try again.</p>';
+                });
+        });
     </script>
-    <script src="/bible/js/bible.js"></script>
 </body>
 </html>

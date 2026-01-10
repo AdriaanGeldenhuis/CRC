@@ -1,7 +1,6 @@
 <?php
 /**
- * CRC Diary - Main Page
- * Rewritten for reliability
+ * CRC Diary - Dashboard Layout
  */
 
 require_once __DIR__ . '/../core/bootstrap.php';
@@ -12,14 +11,8 @@ Auth::requireAuth();
 
 function getMoodEmoji($mood) {
     $emojis = [
-        'grateful' => '🙏',
-        'joyful' => '😊',
-        'peaceful' => '😌',
-        'hopeful' => '🌟',
-        'anxious' => '😰',
-        'sad' => '😢',
-        'angry' => '😤',
-        'confused' => '😕'
+        'grateful' => '🙏', 'joyful' => '😊', 'peaceful' => '😌', 'hopeful' => '🌟',
+        'anxious' => '😰', 'sad' => '😢', 'angry' => '😤', 'confused' => '😕'
     ];
     return $emojis[$mood] ?? '📝';
 }
@@ -27,128 +20,53 @@ function getMoodEmoji($mood) {
 $user = Auth::user();
 $pageTitle = 'My Diary - CRC';
 
-// Get filters from URL
-$search = input('search');
-$tag = input('tag');
-$mood = input('mood');
-$year = (int)($_GET['year'] ?? date('Y'));
-$month = (int)($_GET['month'] ?? 0);
-
-// Initialize variables
 $entries = [];
-$tags = [];
+$recentEntries = [];
 $totalEntries = 0;
 $streak = 0;
-$archives = [];
+$thisWeekCount = 0;
 $moods = ['grateful', 'joyful', 'peaceful', 'hopeful', 'anxious', 'sad', 'angry', 'confused'];
 
 // Get total entries count
 try {
-    $totalEntries = Database::fetchColumn(
-        "SELECT COUNT(*) FROM diary_entries WHERE user_id = ?",
+    $totalEntries = Database::fetchColumn("SELECT COUNT(*) FROM diary_entries WHERE user_id = ?", [$user['id']]) ?: 0;
+} catch (Exception $e) {}
+
+// Get this week entries
+try {
+    $thisWeekCount = Database::fetchColumn(
+        "SELECT COUNT(*) FROM diary_entries WHERE user_id = ? AND entry_date >= DATE_SUB(CURDATE(), INTERVAL 7 DAY)",
         [$user['id']]
     ) ?: 0;
-} catch (Exception $e) {
-    $totalEntries = 0;
-}
+} catch (Exception $e) {}
 
-// Get streak (days this week)
+// Get recent entries
 try {
-    $streak = Database::fetchColumn(
-        "SELECT COUNT(DISTINCT DATE(entry_date)) FROM diary_entries
-         WHERE user_id = ? AND entry_date >= DATE_SUB(CURDATE(), INTERVAL 7 DAY)",
-        [$user['id']]
-    ) ?: 0;
-} catch (Exception $e) {
-    $streak = 0;
-}
-
-// Get entries based on filters
-try {
-    $where = ['user_id = ?'];
-    $params = [$user['id']];
-
-    if ($search) {
-        $where[] = "(title LIKE ? OR content LIKE ?)";
-        $params[] = '%' . $search . '%';
-        $params[] = '%' . $search . '%';
-    }
-
-    if ($mood) {
-        $where[] = "mood = ?";
-        $params[] = $mood;
-    }
-
-    if ($month) {
-        $where[] = "YEAR(entry_date) = ? AND MONTH(entry_date) = ?";
-        $params[] = $year;
-        $params[] = $month;
-    } else {
-        $where[] = "YEAR(entry_date) = ?";
-        $params[] = $year;
-    }
-
-    $whereClause = implode(' AND ', $where);
-
-    $entries = Database::fetchAll(
-        "SELECT * FROM diary_entries WHERE $whereClause ORDER BY entry_date DESC, created_at DESC",
-        $params
-    ) ?: [];
-} catch (Exception $e) {
-    $entries = [];
-}
-
-// Get tags if filtering by tag
-if ($tag) {
-    try {
-        $tagData = Database::fetchOne(
-            "SELECT * FROM diary_tags WHERE name = ? AND user_id = ?",
-            [$tag, $user['id']]
-        );
-        if ($tagData) {
-            $entries = Database::fetchAll(
-                "SELECT e.* FROM diary_entries e
-                 JOIN diary_entry_tags det ON e.id = det.entry_id
-                 WHERE det.tag_id = ? AND e.user_id = ?
-                 ORDER BY e.entry_date DESC",
-                [$tagData['id'], $user['id']]
-            ) ?: [];
-        }
-    } catch (Exception $e) {
-        // Keep existing entries
-    }
-}
-
-// Get user's tags for sidebar
-try {
-    $tags = Database::fetchAll(
-        "SELECT DISTINCT t.name, COUNT(*) as count
-         FROM diary_entry_tags det
-         JOIN diary_tags t ON det.tag_id = t.id
-         JOIN diary_entries e ON det.entry_id = e.id
-         WHERE e.user_id = ?
-         GROUP BY t.id, t.name
-         ORDER BY count DESC
-         LIMIT 20",
+    $recentEntries = Database::fetchAll(
+        "SELECT * FROM diary_entries WHERE user_id = ? ORDER BY entry_date DESC, created_at DESC LIMIT 5",
         [$user['id']]
     ) ?: [];
-} catch (Exception $e) {
-    $tags = [];
-}
+} catch (Exception $e) {}
 
-// Get archives for sidebar
+// Get mood distribution this month
+$moodStats = [];
 try {
-    $archives = Database::fetchAll(
-        "SELECT YEAR(entry_date) as year, MONTH(entry_date) as month, COUNT(*) as count
-         FROM diary_entries WHERE user_id = ?
-         GROUP BY YEAR(entry_date), MONTH(entry_date)
-         ORDER BY year DESC, month DESC
-         LIMIT 12",
+    $moodStats = Database::fetchAll(
+        "SELECT mood, COUNT(*) as count FROM diary_entries
+         WHERE user_id = ? AND entry_date >= DATE_SUB(CURDATE(), INTERVAL 30 DAY) AND mood IS NOT NULL
+         GROUP BY mood ORDER BY count DESC LIMIT 4",
         [$user['id']]
     ) ?: [];
-} catch (Exception $e) {
-    $archives = [];
-}
+} catch (Exception $e) {}
+
+// Get prayer requests
+$prayers = [];
+try {
+    $prayers = Database::fetchAll(
+        "SELECT * FROM prayer_requests WHERE user_id = ? ORDER BY created_at DESC LIMIT 3",
+        [$user['id']]
+    ) ?: [];
+} catch (Exception $e) {}
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -157,131 +75,223 @@ try {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><?= e($pageTitle) ?></title>
     <?= CSRF::meta() ?>
-    <link rel="stylesheet" href="/diary/css/diary.css">
+    <link rel="stylesheet" href="/home/css/home.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        .diary-card {
+            background: linear-gradient(135deg, #7C3AED 0%, #A78BFA 100%);
+            color: var(--white);
+        }
+        .diary-card .card-header h2 { color: var(--white); }
+        .stats-row {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+        .stat-box {
+            flex: 1;
+            background: rgba(255,255,255,0.15);
+            padding: 1rem;
+            border-radius: var(--radius);
+            text-align: center;
+        }
+        .stat-box .value { font-size: 1.5rem; font-weight: 700; }
+        .stat-box .label { font-size: 0.75rem; opacity: 0.9; }
+        .quick-actions-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 0.75rem;
+        }
+        .quick-action {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 1rem;
+            background: var(--gray-50);
+            border-radius: var(--radius);
+            text-decoration: none;
+            color: var(--gray-700);
+            transition: var(--transition);
+        }
+        .quick-action:hover { background: var(--primary); color: white; }
+        .quick-action-icon { font-size: 1.5rem; }
+        .entry-list {
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+        .entry-item {
+            display: flex;
+            gap: 1rem;
+            padding: 0.75rem;
+            background: var(--gray-50);
+            border-radius: var(--radius);
+            text-decoration: none;
+            transition: var(--transition);
+        }
+        .entry-item:hover { background: var(--gray-100); }
+        .entry-date {
+            min-width: 48px;
+            padding: 0.5rem;
+            background: var(--primary);
+            color: white;
+            border-radius: var(--radius);
+            text-align: center;
+        }
+        .entry-date .day { font-size: 1.25rem; font-weight: 700; line-height: 1; }
+        .entry-date .month { font-size: 0.7rem; text-transform: uppercase; }
+        .entry-info h4 { font-size: 0.875rem; color: var(--gray-800); margin-bottom: 0.25rem; }
+        .entry-info p { font-size: 0.75rem; color: var(--gray-500); }
+        .mood-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 0.5rem;
+        }
+        .mood-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.75rem;
+            background: var(--gray-50);
+            border-radius: var(--radius);
+        }
+        .mood-emoji { font-size: 1.25rem; }
+        .mood-count { font-weight: 600; color: var(--primary); }
+        .prayer-list {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+        .prayer-item {
+            padding: 0.75rem;
+            background: var(--gray-50);
+            border-radius: var(--radius);
+            font-size: 0.875rem;
+            color: var(--gray-700);
+        }
+        .prayer-item.answered { border-left: 3px solid var(--success); }
+    </style>
 </head>
 <body>
     <?php include __DIR__ . '/../home/partials/navbar.php'; ?>
 
     <main class="main-content">
         <div class="container">
-            <div class="diary-header">
-                <div class="diary-title">
+            <section class="welcome-section">
+                <div class="welcome-content">
                     <h1>My Diary</h1>
                     <p>Your private space for reflection and journaling</p>
                 </div>
-                <div class="diary-actions">
-                    <a href="/diary/prayers.php" class="btn btn-outline">Prayer Journal</a>
-                    <a href="/diary/entry.php" class="btn btn-primary">+ New Entry</a>
-                </div>
-            </div>
+            </section>
 
-            <div class="diary-stats">
-                <div class="stat-card">
-                    <span class="stat-value"><?= number_format($totalEntries) ?></span>
-                    <span class="stat-label">Total Entries</span>
-                </div>
-                <div class="stat-card">
-                    <span class="stat-value"><?= $streak ?></span>
-                    <span class="stat-label">Days This Week</span>
-                </div>
-            </div>
-
-            <div class="diary-layout">
-                <aside class="diary-sidebar">
-                    <!-- Search -->
-                    <div class="sidebar-section">
-                        <form method="get" class="search-form">
-                            <input type="text" name="search" value="<?= e($search ?? '') ?>" placeholder="Search entries...">
-                            <button type="submit">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                    <circle cx="11" cy="11" r="8"></circle>
-                                    <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
-                                </svg>
-                            </button>
-                        </form>
+            <div class="dashboard-grid">
+                <!-- Stats Card -->
+                <div class="dashboard-card diary-card">
+                    <div class="card-header">
+                        <h2>Your Journey</h2>
                     </div>
+                    <div class="stats-row">
+                        <div class="stat-box">
+                            <div class="value"><?= number_format($totalEntries) ?></div>
+                            <div class="label">Total Entries</div>
+                        </div>
+                        <div class="stat-box">
+                            <div class="value"><?= $thisWeekCount ?></div>
+                            <div class="label">This Week</div>
+                        </div>
+                    </div>
+                    <a href="/diary/entry.php" class="btn btn-primary" style="width: 100%; background: white; color: #7C3AED;">+ Write New Entry</a>
+                </div>
 
-                    <!-- Filter by Mood -->
-                    <div class="sidebar-section">
-                        <h3>Filter by Mood</h3>
-                        <div class="mood-filters">
-                            <a href="?" class="mood-btn <?= !$mood ? 'active' : '' ?>">All</a>
-                            <?php foreach ($moods as $m): ?>
-                                <a href="?mood=<?= $m ?>" class="mood-btn <?= $mood === $m ? 'active' : '' ?>">
-                                    <?= getMoodEmoji($m) ?> <?= ucfirst($m) ?>
+                <!-- Quick Actions -->
+                <div class="dashboard-card">
+                    <h2 style="margin-bottom: 1rem;">Quick Actions</h2>
+                    <div class="quick-actions-grid">
+                        <a href="/diary/entry.php" class="quick-action">
+                            <span class="quick-action-icon">✏️</span>
+                            <span>New Entry</span>
+                        </a>
+                        <a href="/diary/prayers.php" class="quick-action">
+                            <span class="quick-action-icon">🙏</span>
+                            <span>Prayers</span>
+                        </a>
+                        <a href="/diary/archive.php" class="quick-action">
+                            <span class="quick-action-icon">📚</span>
+                            <span>Archive</span>
+                        </a>
+                        <a href="/diary/gratitude.php" class="quick-action">
+                            <span class="quick-action-icon">💜</span>
+                            <span>Gratitude</span>
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Recent Entries -->
+                <div class="dashboard-card">
+                    <div class="card-header">
+                        <h2>Recent Entries</h2>
+                        <a href="/diary/all.php" class="view-all-link">View All</a>
+                    </div>
+                    <?php if ($recentEntries): ?>
+                        <div class="entry-list">
+                            <?php foreach ($recentEntries as $entry): ?>
+                                <a href="/diary/entry.php?id=<?= $entry['id'] ?>" class="entry-item">
+                                    <div class="entry-date">
+                                        <div class="day"><?= date('d', strtotime($entry['entry_date'])) ?></div>
+                                        <div class="month"><?= date('M', strtotime($entry['entry_date'])) ?></div>
+                                    </div>
+                                    <div class="entry-info">
+                                        <h4><?= e($entry['title'] ?: 'Untitled Entry') ?></h4>
+                                        <p><?= e(truncate(strip_tags($entry['content'] ?? ''), 60)) ?></p>
+                                    </div>
                                 </a>
                             <?php endforeach; ?>
-                        </div>
-                    </div>
-
-                    <!-- Tags -->
-                    <?php if (!empty($tags)): ?>
-                        <div class="sidebar-section">
-                            <h3>Tags</h3>
-                            <div class="tag-cloud">
-                                <?php foreach ($tags as $t): ?>
-                                    <a href="?tag=<?= urlencode($t['name']) ?>" class="tag <?= $tag === $t['name'] ? 'active' : '' ?>">
-                                        <?= e($t['name']) ?>
-                                        <span class="tag-count"><?= $t['count'] ?></span>
-                                    </a>
-                                <?php endforeach; ?>
-                            </div>
-                        </div>
-                    <?php endif; ?>
-
-                    <!-- Archive -->
-                    <?php if (!empty($archives)): ?>
-                        <div class="sidebar-section">
-                            <h3>Archive</h3>
-                            <div class="archive-links">
-                                <?php foreach ($archives as $archive): ?>
-                                    <?php $monthName = date('F', mktime(0, 0, 0, $archive['month'], 1)); ?>
-                                    <a href="?year=<?= $archive['year'] ?>&month=<?= $archive['month'] ?>">
-                                        <?= $monthName ?> <?= $archive['year'] ?>
-                                        <span><?= $archive['count'] ?></span>
-                                    </a>
-                                <?php endforeach; ?>
-                            </div>
-                        </div>
-                    <?php endif; ?>
-                </aside>
-
-                <div class="diary-main">
-                    <?php if (empty($entries)): ?>
-                        <div class="empty-state">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-                                <path d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path>
-                            </svg>
-                            <h3>No entries yet</h3>
-                            <p>Start writing to capture your thoughts and reflections</p>
-                            <a href="/diary/entry.php" class="btn btn-primary">Write Your First Entry</a>
                         </div>
                     <?php else: ?>
-                        <div class="entries-grid">
-                            <?php foreach ($entries as $entry): ?>
-                                <a href="/diary/entry.php?id=<?= $entry['id'] ?>" class="entry-card">
-                                    <div class="entry-date">
-                                        <span class="day"><?= date('d', strtotime($entry['entry_date'])) ?></span>
-                                        <span class="month"><?= date('M', strtotime($entry['entry_date'])) ?></span>
-                                    </div>
-                                    <div class="entry-content">
-                                        <h3><?= e($entry['title'] ?: 'Untitled Entry') ?></h3>
-                                        <p><?= e(truncate(strip_tags($entry['content'] ?? ''), 120)) ?></p>
-                                        <?php if (!empty($entry['mood'])): ?>
-                                            <span class="entry-mood"><?= getMoodEmoji($entry['mood']) ?> <?= ucfirst($entry['mood']) ?></span>
-                                        <?php endif; ?>
-                                    </div>
-                                </a>
+                        <div style="text-align: center; padding: 2rem; color: var(--gray-500);">
+                            <p>No entries yet</p>
+                            <a href="/diary/entry.php" class="btn btn-primary" style="margin-top: 0.5rem;">Write First Entry</a>
+                        </div>
+                    <?php endif; ?>
+                </div>
+
+                <!-- Mood & Prayers -->
+                <div class="dashboard-card">
+                    <div class="card-header">
+                        <h2>This Month</h2>
+                    </div>
+                    <?php if ($moodStats): ?>
+                        <h4 style="font-size: 0.875rem; color: var(--gray-600); margin-bottom: 0.5rem;">Mood Tracker</h4>
+                        <div class="mood-grid">
+                            <?php foreach ($moodStats as $ms): ?>
+                                <div class="mood-item">
+                                    <span class="mood-emoji"><?= getMoodEmoji($ms['mood']) ?></span>
+                                    <span><?= ucfirst($ms['mood']) ?></span>
+                                    <span class="mood-count"><?= $ms['count'] ?></span>
+                                </div>
                             <?php endforeach; ?>
+                        </div>
+                    <?php endif; ?>
+
+                    <?php if ($prayers): ?>
+                        <h4 style="font-size: 0.875rem; color: var(--gray-600); margin: 1rem 0 0.5rem;">Recent Prayers</h4>
+                        <div class="prayer-list">
+                            <?php foreach ($prayers as $p): ?>
+                                <div class="prayer-item <?= $p['answered_at'] ? 'answered' : '' ?>">
+                                    <?= e(truncate($p['content'], 50)) ?>
+                                </div>
+                            <?php endforeach; ?>
+                        </div>
+                    <?php else: ?>
+                        <div style="text-align: center; padding: 1rem; color: var(--gray-500);">
+                            <a href="/diary/prayers.php" class="btn btn-outline">Add Prayer Request</a>
                         </div>
                     <?php endif; ?>
                 </div>
             </div>
         </div>
     </main>
-
-    <script src="/diary/js/diary.js"></script>
 </body>
 </html>

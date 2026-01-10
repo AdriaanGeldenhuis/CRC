@@ -1,6 +1,6 @@
 <?php
 /**
- * CRC Morning Study - Today's Session
+ * CRC Morning Study - Dashboard Layout
  */
 
 require_once __DIR__ . '/../core/bootstrap.php';
@@ -12,26 +12,19 @@ $primaryCong = Auth::primaryCongregation();
 $pageTitle = "Morning Study - CRC";
 
 $today = date('Y-m-d');
-
-// Initialize with defaults
 $session = null;
 $userEntry = null;
 $streak = null;
-$prayerPoints = [];
-$studyQuestions = [];
-$hasRecap = false;
+$recentSessions = [];
 
-// Get today's session (global or congregation-specific)
+// Get today's session
 try {
     $session = Database::fetchOne(
-        "SELECT ms.*, u.name as author_name
-         FROM morning_sessions ms
+        "SELECT ms.*, u.name as author_name FROM morning_sessions ms
          LEFT JOIN users u ON ms.created_by = u.id
-         WHERE ms.session_date = ?
-         AND (ms.scope = 'global' OR ms.congregation_id = ?)
+         WHERE ms.session_date = ? AND (ms.scope = 'global' OR ms.congregation_id = ?)
          AND ms.published_at IS NOT NULL
-         ORDER BY ms.scope = 'congregation' DESC
-         LIMIT 1",
+         ORDER BY ms.scope = 'congregation' DESC LIMIT 1",
         [$today, $primaryCong['id'] ?? 0]
     );
 } catch (Exception $e) {}
@@ -40,46 +33,30 @@ try {
 if ($session) {
     try {
         $userEntry = Database::fetchOne(
-            "SELECT *, personal_notes as application, prayer_notes as prayer
-             FROM morning_user_entries
-             WHERE user_id = ? AND session_id = ?",
+            "SELECT * FROM morning_user_entries WHERE user_id = ? AND session_id = ?",
             [$user['id'], $session['id']]
         );
-    } catch (Exception $e) {}
-
-    // Check if recap exists
-    try {
-        $recap = Database::fetchOne(
-            "SELECT id FROM morning_study_recaps WHERE session_id = ?",
-            [$session['id']]
-        );
-        $hasRecap = $recap ? true : false;
     } catch (Exception $e) {}
 }
 
 // Get user's streak
 try {
     $streak = Database::fetchOne(
-        "SELECT current_streak, longest_streak, total_completions as total_entries
-         FROM morning_streaks
-         WHERE user_id = ?",
+        "SELECT current_streak, longest_streak, total_completions FROM morning_streaks WHERE user_id = ?",
         [$user['id']]
     );
 } catch (Exception $e) {}
 
-// Parse prayer points and study questions
-if ($session && !empty($session['prayer_points'])) {
-    $prayerPoints = json_decode($session['prayer_points'], true) ?? [];
-}
-if ($session && !empty($session['study_questions'])) {
-    $studyQuestions = json_decode($session['study_questions'], true) ?? [];
-}
-
-// Check if this is a live study session
-$isStudyMode = $session && ($session['content_mode'] ?? 'watch') === 'study';
-$isLive = $session && ($session['live_status'] ?? 'scheduled') === 'live';
-$isEnded = $session && ($session['live_status'] ?? 'scheduled') === 'ended';
-$hasStream = $session && ($session['stream_url'] || $session['replay_url']);
+// Get recent sessions
+try {
+    $recentSessions = Database::fetchAll(
+        "SELECT * FROM morning_sessions
+         WHERE (scope = 'global' OR congregation_id = ?) AND published_at IS NOT NULL
+         AND session_date < CURDATE()
+         ORDER BY session_date DESC LIMIT 5",
+        [$primaryCong['id'] ?? 0]
+    ) ?: [];
+} catch (Exception $e) {}
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -88,30 +65,108 @@ $hasStream = $session && ($session['stream_url'] || $session['replay_url']);
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><?= e($pageTitle) ?></title>
     <?= CSRF::meta() ?>
-    <link rel="stylesheet" href="/morning_watch/css/morning_watch.css">
+    <link rel="stylesheet" href="/home/css/home.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Merriweather:wght@400;700&display=swap" rel="stylesheet">
     <style>
-        .live-study-card { background: linear-gradient(135deg, #1E1B4B 0%, #312E81 100%); border-radius: 12px; padding: 1.5rem; margin-bottom: 1.5rem; color: white; }
-        .live-study-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1rem; }
-        .live-badge { display: inline-flex; align-items: center; gap: 0.5rem; background: #EF4444; padding: 0.375rem 0.75rem; border-radius: 6px; font-size: 0.8rem; font-weight: 600; text-transform: uppercase; }
-        .live-badge.ended { background: #6B7280; }
-        .live-badge.scheduled { background: #F59E0B; }
-        .live-badge::before { content: ''; width: 8px; height: 8px; background: white; border-radius: 50%; animation: pulse 1.5s infinite; }
-        .live-badge.ended::before, .live-badge.scheduled::before { animation: none; }
-        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
-        .live-study-title { font-size: 1.5rem; font-weight: 700; margin: 0 0 0.5rem; }
-        .live-study-scripture { color: #A5B4FC; font-size: 0.95rem; }
-        .live-study-key-verse { background: rgba(255,255,255,0.1); padding: 0.75rem 1rem; border-radius: 8px; margin-top: 1rem; border-left: 3px solid #6366F1; font-style: italic; }
-        .live-study-questions { margin-top: 1rem; }
-        .live-study-questions h4 { font-size: 0.8rem; text-transform: uppercase; color: #A5B4FC; margin: 0 0 0.5rem; letter-spacing: 0.05em; }
-        .live-study-questions ul { margin: 0; padding-left: 1.25rem; }
-        .live-study-questions li { margin-bottom: 0.375rem; color: #E0E7FF; font-size: 0.9rem; }
-        .live-study-actions { display: flex; gap: 0.75rem; margin-top: 1.25rem; flex-wrap: wrap; }
-        .btn-live { background: white; color: #312E81; font-weight: 600; }
-        .btn-live:hover { background: #E0E7FF; }
-        .btn-recap { background: rgba(255,255,255,0.15); color: white; border: 1px solid rgba(255,255,255,0.3); }
-        .btn-recap:hover { background: rgba(255,255,255,0.25); }
+        .study-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: var(--white);
+        }
+        .study-card .card-header h2 { color: var(--white); }
+        .streak-row {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+        }
+        .streak-box {
+            flex: 1;
+            background: rgba(255,255,255,0.15);
+            padding: 0.75rem;
+            border-radius: var(--radius);
+            text-align: center;
+        }
+        .streak-box .icon { font-size: 1.25rem; }
+        .streak-box .value { font-size: 1.25rem; font-weight: 700; }
+        .streak-box .label { font-size: 0.65rem; opacity: 0.9; }
+        .scripture-box {
+            background: rgba(255,255,255,0.1);
+            padding: 1rem;
+            border-radius: var(--radius);
+            margin-top: 1rem;
+            font-family: 'Merriweather', serif;
+            font-style: italic;
+            line-height: 1.6;
+        }
+        .scripture-ref {
+            font-size: 0.875rem;
+            font-style: normal;
+            opacity: 0.9;
+            margin-top: 0.5rem;
+        }
+        .quick-actions-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 0.75rem;
+        }
+        .quick-action {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 1rem;
+            background: var(--gray-50);
+            border-radius: var(--radius);
+            text-decoration: none;
+            color: var(--gray-700);
+            transition: var(--transition);
+        }
+        .quick-action:hover { background: var(--primary); color: white; }
+        .quick-action-icon { font-size: 1.5rem; }
+        .session-list {
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+        .session-item {
+            display: flex;
+            gap: 1rem;
+            padding: 0.75rem;
+            background: var(--gray-50);
+            border-radius: var(--radius);
+            text-decoration: none;
+            transition: var(--transition);
+        }
+        .session-item:hover { background: var(--gray-100); }
+        .session-date {
+            min-width: 48px;
+            padding: 0.5rem;
+            background: var(--primary);
+            color: white;
+            border-radius: var(--radius);
+            text-align: center;
+        }
+        .session-date .day { font-size: 1.25rem; font-weight: 700; line-height: 1; }
+        .session-date .month { font-size: 0.7rem; text-transform: uppercase; }
+        .session-info h4 { font-size: 0.875rem; color: var(--gray-800); margin-bottom: 0.25rem; }
+        .session-info p { font-size: 0.75rem; color: var(--gray-500); }
+        .notes-form textarea {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid var(--gray-200);
+            border-radius: var(--radius);
+            resize: none;
+            font-family: inherit;
+            margin-bottom: 0.5rem;
+        }
+        .completed-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            background: rgba(255,255,255,0.2);
+            padding: 0.5rem 1rem;
+            border-radius: var(--radius);
+        }
     </style>
 </head>
 <body>
@@ -119,197 +174,119 @@ $hasStream = $session && ($session['stream_url'] || $session['replay_url']);
 
     <main class="main-content">
         <div class="container">
-            <!-- Header -->
-            <div class="mw-header">
-                <div class="mw-title">
+            <section class="welcome-section">
+                <div class="welcome-content">
                     <h1>Morning Study</h1>
                     <p><?= date('l, F j, Y') ?></p>
                 </div>
-                <div class="mw-actions">
-                    <a href="/morning_watch/archive.php" class="btn btn-outline">View Archive</a>
-                </div>
-            </div>
+            </section>
 
-            <!-- Streak Info -->
-            <div class="streak-bar">
-                <div class="streak-item">
-                    <span class="streak-icon">🔥</span>
-                    <span class="streak-value"><?= $streak['current_streak'] ?? 0 ?></span>
-                    <span class="streak-label">Day Streak</span>
-                </div>
-                <div class="streak-item">
-                    <span class="streak-icon">🏆</span>
-                    <span class="streak-value"><?= $streak['longest_streak'] ?? 0 ?></span>
-                    <span class="streak-label">Best Streak</span>
-                </div>
-                <div class="streak-item">
-                    <span class="streak-icon">📖</span>
-                    <span class="streak-value"><?= $streak['total_entries'] ?? 0 ?></span>
-                    <span class="streak-label">Total Days</span>
-                </div>
-            </div>
-
-            <?php if ($session): ?>
-                <?php if ($isStudyMode && $hasStream): ?>
-                    <!-- Live Study Card -->
-                    <div class="live-study-card">
-                        <div class="live-study-header">
-                            <?php if ($isLive): ?>
-                                <span class="live-badge">Live Now</span>
-                            <?php elseif ($isEnded): ?>
-                                <span class="live-badge ended">Replay Available</span>
-                            <?php else: ?>
-                                <span class="live-badge scheduled">
-                                    <?= $session['live_starts_at'] ? 'Starts ' . date('g:i A', strtotime($session['live_starts_at'])) : 'Coming Soon' ?>
-                                </span>
-                            <?php endif; ?>
-                        </div>
-
-                        <h2 class="live-study-title"><?= e($session['title']) ?></h2>
-                        <p class="live-study-scripture"><?= e($session['scripture_ref']) ?></p>
-
-                        <?php if ($session['key_verse']): ?>
-                            <div class="live-study-key-verse">
-                                <strong>Key Verse:</strong> <?= e($session['key_verse']) ?>
-                            </div>
-                        <?php endif; ?>
-
-                        <?php if ($studyQuestions): ?>
-                            <div class="live-study-questions">
-                                <h4>Today's Study Questions</h4>
-                                <ul>
-                                    <?php foreach (array_slice($studyQuestions, 0, 5) as $q): ?>
-                                        <li><?= e($q) ?></li>
-                                    <?php endforeach; ?>
-                                </ul>
-                            </div>
-                        <?php endif; ?>
-
-                        <div class="live-study-actions">
-                            <a href="/morning_watch/room.php?session_id=<?= $session['id'] ?>" class="btn btn-live">
-                                <?php if ($isLive): ?>
-                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
-                                    Join Live Room
-                                <?php elseif ($isEnded): ?>
-                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
-                                    Watch Replay
-                                <?php else: ?>
-                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
-                                    Enter Waiting Room
-                                <?php endif; ?>
-                            </a>
-                            <?php if ($hasRecap): ?>
-                                <a href="/morning_watch/recap.php?session_id=<?= $session['id'] ?>" class="btn btn-recap">
-                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line></svg>
-                                    View Recap
-                                </a>
-                            <?php endif; ?>
-                        </div>
-                    </div>
-                <?php endif; ?>
-
-                <!-- Today's Devotional -->
-                <div class="devotional-card">
-                    <div class="devotional-header">
-                        <span class="devotional-badge"><?= $isStudyMode ? 'Study' : ucfirst($session['scope']) ?></span>
-                        <?php if ($session['theme']): ?>
-                            <span class="devotional-theme"><?= e($session['theme']) ?></span>
+            <div class="dashboard-grid">
+                <!-- Today's Study Card -->
+                <div class="dashboard-card study-card">
+                    <div class="card-header">
+                        <h2><?= $session ? e($session['title']) : "Today's Study" ?></h2>
+                        <?php if ($userEntry && $userEntry['completed_at']): ?>
+                            <span class="completed-badge">✓ Done</span>
                         <?php endif; ?>
                     </div>
-
-                    <h2 class="devotional-title"><?= e($session['title']) ?></h2>
-
-                    <!-- Scripture -->
-                    <div class="scripture-section">
-                        <div class="scripture-ref">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <path d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path>
-                            </svg>
-                            <?= e($session['scripture_ref']) ?>
-                            <span class="version-badge"><?= e($session['version_code'] ?? 'KJV') ?></span>
+                    <div class="streak-row">
+                        <div class="streak-box">
+                            <div class="icon">🔥</div>
+                            <div class="value"><?= $streak['current_streak'] ?? 0 ?></div>
+                            <div class="label">Streak</div>
                         </div>
-                        <?php if ($session['scripture_text']): ?>
-                            <blockquote class="scripture-text">
-                                <?= nl2br(e($session['scripture_text'])) ?>
-                            </blockquote>
-                        <?php endif; ?>
+                        <div class="streak-box">
+                            <div class="icon">🏆</div>
+                            <div class="value"><?= $streak['longest_streak'] ?? 0 ?></div>
+                            <div class="label">Best</div>
+                        </div>
+                        <div class="streak-box">
+                            <div class="icon">📖</div>
+                            <div class="value"><?= $streak['total_completions'] ?? 0 ?></div>
+                            <div class="label">Total</div>
+                        </div>
                     </div>
-
-                    <!-- Devotional Content (for watch mode) -->
-                    <?php if ($session['devotional']): ?>
-                        <div class="devotional-content">
-                            <h3>Today's Reflection</h3>
-                            <div class="content-text">
-                                <?= nl2br(e($session['devotional'])) ?>
-                            </div>
+                    <?php if ($session): ?>
+                        <div class="scripture-box">
+                            <?= e(truncate($session['scripture_text'] ?? '', 200)) ?>
+                            <div class="scripture-ref">— <?= e($session['scripture_ref']) ?></div>
                         </div>
-                    <?php endif; ?>
-
-                    <!-- Prayer Points -->
-                    <?php if ($prayerPoints): ?>
-                        <div class="prayer-section">
-                            <h3>Prayer Points</h3>
-                            <ul class="prayer-list">
-                                <?php foreach ($prayerPoints as $point): ?>
-                                    <li><?= e($point) ?></li>
-                                <?php endforeach; ?>
-                            </ul>
-                        </div>
-                    <?php endif; ?>
-
-                    <?php if ($session['author_name']): ?>
-                        <div class="devotional-author">
-                            Written by <?= e($session['author_name']) ?>
+                        <a href="/morning_watch/session.php?id=<?= $session['id'] ?>" class="btn" style="width: 100%; margin-top: 1rem; background: white; color: #667eea;">
+                            <?= $userEntry ? 'Continue Study' : 'Start Today\'s Study' ?>
+                        </a>
+                    <?php else: ?>
+                        <div style="text-align: center; padding: 2rem;">
+                            <p>No study session for today yet.</p>
                         </div>
                     <?php endif; ?>
                 </div>
 
-                <!-- User Entry Form (Private Notes) -->
-                <div class="entry-card">
-                    <h3><?= $userEntry ? 'Your Private Notes' : 'My Notes (Private)' ?></h3>
-                    <p class="entry-subtitle">Record what God is speaking to you today</p>
+                <!-- Quick Actions -->
+                <div class="dashboard-card">
+                    <h2 style="margin-bottom: 1rem;">Quick Actions</h2>
+                    <div class="quick-actions-grid">
+                        <a href="/morning_watch/archive.php" class="quick-action">
+                            <span class="quick-action-icon">📚</span>
+                            <span>Archive</span>
+                        </a>
+                        <a href="/morning_watch/my-notes.php" class="quick-action">
+                            <span class="quick-action-icon">📝</span>
+                            <span>My Notes</span>
+                        </a>
+                        <a href="/bible/" class="quick-action">
+                            <span class="quick-action-icon">📖</span>
+                            <span>Bible</span>
+                        </a>
+                        <a href="/morning_watch/stats.php" class="quick-action">
+                            <span class="quick-action-icon">📊</span>
+                            <span>Stats</span>
+                        </a>
+                    </div>
+                </div>
 
-                    <form id="entry-form" data-session-id="<?= $session['id'] ?>">
-                        <div class="form-group">
-                            <label for="reflection">My Reflection</label>
-                            <textarea id="reflection" name="reflection" rows="4"
-                                      placeholder="What stood out to you from today's reading?"><?= e($userEntry['reflection'] ?? '') ?></textarea>
-                        </div>
-
-                        <div class="form-group">
-                            <label for="prayer">My Prayer Notes</label>
-                            <textarea id="prayer" name="prayer" rows="3"
-                                      placeholder="Write your prayer response..."><?= e($userEntry['prayer'] ?? '') ?></textarea>
-                        </div>
-
-                        <div class="form-group">
-                            <label for="application">Personal Application</label>
-                            <textarea id="application" name="application" rows="2"
-                                      placeholder="How will you apply this today?"><?= e($userEntry['application'] ?? '') ?></textarea>
-                        </div>
-
-                        <div class="form-actions">
-                            <?php if ($userEntry): ?>
-                                <span class="saved-indicator">✓ Saved at <?= date('g:i A', strtotime($userEntry['updated_at'])) ?></span>
-                            <?php endif; ?>
-                            <button type="submit" class="btn btn-primary">
-                                <?= $userEntry ? 'Update Notes' : 'Save Notes' ?>
-                            </button>
+                <!-- My Notes Card -->
+                <div class="dashboard-card">
+                    <div class="card-header">
+                        <h2>Quick Notes</h2>
+                    </div>
+                    <form id="quick-notes-form">
+                        <div class="notes-form">
+                            <textarea placeholder="What is God speaking to you today?" rows="4"><?= e($userEntry['reflection'] ?? '') ?></textarea>
+                            <button type="submit" class="btn btn-primary" style="width: 100%;">Save Notes</button>
                         </div>
                     </form>
                 </div>
-            <?php else: ?>
-                <!-- No Session Today -->
-                <div class="empty-state">
-                    <div class="empty-icon">☀️</div>
-                    <h2>No study session for today yet</h2>
-                    <p>Check back later or explore the archive for past sessions.</p>
-                    <a href="/morning_watch/archive.php" class="btn btn-primary">View Archive</a>
+
+                <!-- Recent Sessions -->
+                <div class="dashboard-card">
+                    <div class="card-header">
+                        <h2>Past Sessions</h2>
+                        <a href="/morning_watch/archive.php" class="view-all-link">View All</a>
+                    </div>
+                    <?php if ($recentSessions): ?>
+                        <div class="session-list">
+                            <?php foreach ($recentSessions as $s): ?>
+                                <a href="/morning_watch/session.php?id=<?= $s['id'] ?>" class="session-item">
+                                    <div class="session-date">
+                                        <div class="day"><?= date('d', strtotime($s['session_date'])) ?></div>
+                                        <div class="month"><?= date('M', strtotime($s['session_date'])) ?></div>
+                                    </div>
+                                    <div class="session-info">
+                                        <h4><?= e($s['title']) ?></h4>
+                                        <p><?= e($s['scripture_ref']) ?></p>
+                                    </div>
+                                </a>
+                            <?php endforeach; ?>
+                        </div>
+                    <?php else: ?>
+                        <div style="text-align: center; padding: 2rem; color: var(--gray-500);">
+                            <p>No past sessions yet</p>
+                        </div>
+                    <?php endif; ?>
                 </div>
-            <?php endif; ?>
+            </div>
         </div>
     </main>
-
-    <script src="/morning_watch/js/morning_watch.js"></script>
 </body>
 </html>

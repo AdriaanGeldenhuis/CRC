@@ -1,6 +1,6 @@
 <?php
 /**
- * CRC Learning - Courses List
+ * CRC Learning - Dashboard Layout
  */
 
 require_once __DIR__ . '/../core/bootstrap.php';
@@ -11,58 +11,10 @@ $user = Auth::user();
 $primaryCong = Auth::primaryCongregation();
 $pageTitle = "Bible School - CRC";
 
-// Filters
-$category = input('category');
-$level = input('level');
-$search = input('search');
-
-// Build query
-$where = ["c.status = 'published'"];
-$params = [];
-
-// Show global courses or congregation-specific
-$where[] = "(c.scope = 'global' OR c.congregation_id = ?)";
-$params[] = $primaryCong['id'] ?? 0;
-
-if ($category) {
-    $where[] = "c.category = ?";
-    $params[] = $category;
-}
-
-if ($level) {
-    $where[] = "c.level = ?";
-    $params[] = $level;
-}
-
-if ($search) {
-    $where[] = "(c.title LIKE ? OR c.description LIKE ?)";
-    $params[] = '%' . $search . '%';
-    $params[] = '%' . $search . '%';
-}
-
-$whereClause = implode(' AND ', $where);
-
-// Get courses
 $courses = [];
 $enrolledCourses = [];
-
-try {
-    $courses = Database::fetchAll(
-        "SELECT c.*,
-                u.name as instructor_name,
-                (SELECT COUNT(*) FROM lessons WHERE course_id = c.id) as lesson_count,
-                (SELECT COUNT(*) FROM enrollments WHERE course_id = c.id) as student_count,
-                (SELECT id FROM enrollments WHERE course_id = c.id AND user_id = ?) as enrollment_id,
-                (SELECT COUNT(*) FROM lesson_progress lp
-                 JOIN lessons l ON lp.lesson_id = l.id
-                 WHERE l.course_id = c.id AND lp.user_id = ? AND lp.completed_at IS NOT NULL) as completed_lessons
-         FROM courses c
-         LEFT JOIN users u ON c.instructor_id = u.id
-         WHERE $whereClause
-         ORDER BY c.featured DESC, c.created_at DESC",
-        array_merge([$user['id'], $user['id']], $params)
-    ) ?: [];
-} catch (Exception $e) {}
+$totalCourses = 0;
+$completedCourses = 0;
 
 // Get user's enrolled courses
 try {
@@ -72,14 +24,40 @@ try {
          FROM enrollments e
          JOIN courses c ON e.course_id = c.id
          WHERE e.user_id = ?
-         ORDER BY e.last_accessed_at DESC
-         LIMIT 4",
+         ORDER BY e.last_accessed_at DESC LIMIT 4",
         [$user['id']]
     ) ?: [];
 } catch (Exception $e) {}
 
-$categories = ['biblical_studies', 'theology', 'discipleship', 'leadership', 'evangelism', 'family', 'other'];
-$levels = ['beginner', 'intermediate', 'advanced'];
+// Get completed courses count
+try {
+    $completedCourses = Database::fetchColumn(
+        "SELECT COUNT(*) FROM enrollments WHERE user_id = ? AND progress_percent = 100",
+        [$user['id']]
+    ) ?: 0;
+} catch (Exception $e) {}
+
+// Get featured/recommended courses
+try {
+    $courses = Database::fetchAll(
+        "SELECT c.*, u.name as instructor_name,
+                (SELECT COUNT(*) FROM lessons WHERE course_id = c.id) as lesson_count,
+                (SELECT COUNT(*) FROM enrollments WHERE course_id = c.id) as student_count
+         FROM courses c
+         LEFT JOIN users u ON c.instructor_id = u.id
+         WHERE c.status = 'published' AND (c.scope = 'global' OR c.congregation_id = ?)
+         ORDER BY c.featured DESC, c.created_at DESC LIMIT 4",
+        [$primaryCong['id'] ?? 0]
+    ) ?: [];
+} catch (Exception $e) {}
+
+// Get categories
+$categories = [
+    ['name' => 'biblical_studies', 'icon' => '📖', 'label' => 'Biblical Studies'],
+    ['name' => 'theology', 'icon' => '⛪', 'label' => 'Theology'],
+    ['name' => 'discipleship', 'icon' => '🙏', 'label' => 'Discipleship'],
+    ['name' => 'leadership', 'icon' => '👑', 'label' => 'Leadership'],
+];
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -88,163 +66,190 @@ $levels = ['beginner', 'intermediate', 'advanced'];
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><?= e($pageTitle) ?></title>
     <?= CSRF::meta() ?>
-    <link rel="stylesheet" href="/learning/css/learning.css">
+    <link rel="stylesheet" href="/home/css/home.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        .learning-card {
+            background: linear-gradient(135deg, #F59E0B 0%, #FBBF24 100%);
+            color: var(--white);
+        }
+        .learning-card .card-header h2 { color: var(--white); }
+        .stats-row {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+        .stat-box {
+            flex: 1;
+            background: rgba(255,255,255,0.15);
+            padding: 1rem;
+            border-radius: var(--radius);
+            text-align: center;
+        }
+        .stat-box .value { font-size: 1.5rem; font-weight: 700; }
+        .stat-box .label { font-size: 0.75rem; opacity: 0.9; }
+        .category-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 0.75rem;
+        }
+        .category-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 1rem;
+            background: var(--gray-50);
+            border-radius: var(--radius);
+            text-decoration: none;
+            color: var(--gray-700);
+            transition: var(--transition);
+        }
+        .category-item:hover { background: var(--primary); color: white; }
+        .category-icon { font-size: 1.5rem; }
+        .course-list {
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+        .course-item {
+            display: flex;
+            gap: 1rem;
+            padding: 0.75rem;
+            background: var(--gray-50);
+            border-radius: var(--radius);
+            text-decoration: none;
+            transition: var(--transition);
+        }
+        .course-item:hover { background: var(--gray-100); }
+        .course-thumb {
+            width: 60px;
+            height: 60px;
+            background: var(--primary);
+            border-radius: var(--radius);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            color: white;
+        }
+        .course-info h4 { font-size: 0.875rem; color: var(--gray-800); margin-bottom: 0.25rem; }
+        .course-info p { font-size: 0.75rem; color: var(--gray-500); }
+        .progress-bar {
+            height: 6px;
+            background: var(--gray-200);
+            border-radius: 3px;
+            overflow: hidden;
+            margin-top: 0.5rem;
+        }
+        .progress-fill {
+            height: 100%;
+            background: var(--primary);
+            border-radius: 3px;
+        }
+        .enrolled-item { border-left: 3px solid var(--primary); }
+    </style>
 </head>
 <body>
     <?php include __DIR__ . '/../home/partials/navbar.php'; ?>
 
     <main class="main-content">
         <div class="container">
-            <!-- Header -->
-            <div class="page-header">
-                <div class="page-title">
+            <section class="welcome-section">
+                <div class="welcome-content">
                     <h1>Bible School</h1>
                     <p>Grow in faith through structured learning</p>
                 </div>
-            </div>
+            </section>
 
-            <!-- Continue Learning -->
-            <?php if ($enrolledCourses): ?>
-                <section class="section">
-                    <h2 class="section-title">Continue Learning</h2>
-                    <div class="enrolled-grid">
-                        <?php foreach ($enrolledCourses as $course): ?>
-                            <a href="/learning/course.php?id=<?= $course['id'] ?>" class="enrolled-card">
-                                <?php if ($course['thumbnail']): ?>
-                                    <img src="<?= e($course['thumbnail']) ?>" alt="" class="enrolled-thumb">
-                                <?php else: ?>
-                                    <div class="enrolled-thumb placeholder">📚</div>
-                                <?php endif; ?>
-                                <div class="enrolled-info">
-                                    <h3><?= e($course['title']) ?></h3>
-                                    <div class="progress-bar">
-                                        <div class="progress-fill" style="width: <?= $course['progress_percent'] ?>%"></div>
-                                    </div>
-                                    <span class="progress-text"><?= $course['progress_percent'] ?>% complete</span>
-                                </div>
+            <div class="dashboard-grid">
+                <!-- Stats Card -->
+                <div class="dashboard-card learning-card">
+                    <div class="card-header">
+                        <h2>Your Progress</h2>
+                    </div>
+                    <div class="stats-row">
+                        <div class="stat-box">
+                            <div class="value"><?= count($enrolledCourses) ?></div>
+                            <div class="label">Enrolled</div>
+                        </div>
+                        <div class="stat-box">
+                            <div class="value"><?= $completedCourses ?></div>
+                            <div class="label">Completed</div>
+                        </div>
+                    </div>
+                    <a href="/learning/my-courses.php" class="btn" style="width: 100%; background: white; color: #F59E0B;">View My Courses</a>
+                </div>
+
+                <!-- Categories -->
+                <div class="dashboard-card">
+                    <h2 style="margin-bottom: 1rem;">Categories</h2>
+                    <div class="category-grid">
+                        <?php foreach ($categories as $cat): ?>
+                            <a href="/learning/?category=<?= $cat['name'] ?>" class="category-item">
+                                <span class="category-icon"><?= $cat['icon'] ?></span>
+                                <span><?= $cat['label'] ?></span>
                             </a>
                         <?php endforeach; ?>
                     </div>
-                </section>
-            <?php endif; ?>
+                </div>
 
-            <!-- Filters -->
-            <div class="filters-bar">
-                <form class="search-form" method="get">
-                    <input type="text" name="search" value="<?= e($search) ?>" placeholder="Search courses...">
-                    <button type="submit">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <circle cx="11" cy="11" r="8"></circle>
-                            <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
-                        </svg>
-                    </button>
-                </form>
-                <div class="filter-group">
-                    <select onchange="applyFilter('category', this.value)">
-                        <option value="">All Categories</option>
-                        <?php foreach ($categories as $cat): ?>
-                            <option value="<?= $cat ?>" <?= $category === $cat ? 'selected' : '' ?>>
-                                <?= ucwords(str_replace('_', ' ', $cat)) ?>
-                            </option>
-                        <?php endforeach; ?>
-                    </select>
-                    <select onchange="applyFilter('level', this.value)">
-                        <option value="">All Levels</option>
-                        <?php foreach ($levels as $lvl): ?>
-                            <option value="<?= $lvl ?>" <?= $level === $lvl ? 'selected' : '' ?>>
-                                <?= ucfirst($lvl) ?>
-                            </option>
-                        <?php endforeach; ?>
-                    </select>
+                <!-- Continue Learning -->
+                <div class="dashboard-card">
+                    <div class="card-header">
+                        <h2>Continue Learning</h2>
+                        <a href="/learning/my-courses.php" class="view-all-link">View All</a>
+                    </div>
+                    <?php if ($enrolledCourses): ?>
+                        <div class="course-list">
+                            <?php foreach (array_slice($enrolledCourses, 0, 3) as $course): ?>
+                                <a href="/learning/course.php?id=<?= $course['id'] ?>" class="course-item enrolled-item">
+                                    <div class="course-thumb">📚</div>
+                                    <div class="course-info" style="flex: 1;">
+                                        <h4><?= e($course['title']) ?></h4>
+                                        <p><?= $course['lesson_count'] ?> lessons</p>
+                                        <div class="progress-bar">
+                                            <div class="progress-fill" style="width: <?= $course['progress_percent'] ?>%"></div>
+                                        </div>
+                                    </div>
+                                </a>
+                            <?php endforeach; ?>
+                        </div>
+                    <?php else: ?>
+                        <div style="text-align: center; padding: 2rem; color: var(--gray-500);">
+                            <p>No courses enrolled yet</p>
+                            <a href="/learning/browse.php" class="btn btn-primary" style="margin-top: 0.5rem;">Browse Courses</a>
+                        </div>
+                    <?php endif; ?>
+                </div>
+
+                <!-- Recommended Courses -->
+                <div class="dashboard-card">
+                    <div class="card-header">
+                        <h2>Recommended</h2>
+                        <a href="/learning/browse.php" class="view-all-link">Browse All</a>
+                    </div>
+                    <?php if ($courses): ?>
+                        <div class="course-list">
+                            <?php foreach (array_slice($courses, 0, 3) as $course): ?>
+                                <a href="/learning/course.php?id=<?= $course['id'] ?>" class="course-item">
+                                    <div class="course-thumb">📖</div>
+                                    <div class="course-info">
+                                        <h4><?= e($course['title']) ?></h4>
+                                        <p><?= $course['lesson_count'] ?> lessons • <?= $course['student_count'] ?> students</p>
+                                    </div>
+                                </a>
+                            <?php endforeach; ?>
+                        </div>
+                    <?php else: ?>
+                        <div style="text-align: center; padding: 2rem; color: var(--gray-500);">
+                            <p>No courses available yet</p>
+                        </div>
+                    <?php endif; ?>
                 </div>
             </div>
-
-            <!-- Course Grid -->
-            <section class="section">
-                <h2 class="section-title">All Courses</h2>
-                <?php if ($courses): ?>
-                    <div class="courses-grid">
-                        <?php foreach ($courses as $course): ?>
-                            <div class="course-card <?= $course['featured'] ? 'featured' : '' ?>">
-                                <?php if ($course['thumbnail']): ?>
-                                    <img src="<?= e($course['thumbnail']) ?>" alt="" class="course-thumb">
-                                <?php else: ?>
-                                    <div class="course-thumb placeholder">
-                                        <?= getCategoryIcon($course['category']) ?>
-                                    </div>
-                                <?php endif; ?>
-
-                                <div class="course-content">
-                                    <div class="course-meta">
-                                        <span class="course-level <?= $course['level'] ?>"><?= ucfirst($course['level']) ?></span>
-                                        <?php if ($course['featured']): ?>
-                                            <span class="course-featured">⭐ Featured</span>
-                                        <?php endif; ?>
-                                    </div>
-
-                                    <h3 class="course-title"><?= e($course['title']) ?></h3>
-                                    <p class="course-desc"><?= e(truncate($course['description'], 100)) ?></p>
-
-                                    <div class="course-stats">
-                                        <span>📖 <?= $course['lesson_count'] ?> lessons</span>
-                                        <span>👥 <?= $course['student_count'] ?> students</span>
-                                    </div>
-
-                                    <?php if ($course['instructor_name']): ?>
-                                        <div class="course-instructor">
-                                            By <?= e($course['instructor_name']) ?>
-                                        </div>
-                                    <?php endif; ?>
-
-                                    <div class="course-actions">
-                                        <?php if ($course['enrollment_id']): ?>
-                                            <a href="/learning/course.php?id=<?= $course['id'] ?>" class="btn btn-secondary">Continue</a>
-                                            <div class="enrolled-badge">✓ Enrolled</div>
-                                        <?php else: ?>
-                                            <a href="/learning/course.php?id=<?= $course['id'] ?>" class="btn btn-primary">View Course</a>
-                                        <?php endif; ?>
-                                    </div>
-                                </div>
-                            </div>
-                        <?php endforeach; ?>
-                    </div>
-                <?php else: ?>
-                    <div class="empty-state">
-                        <div class="empty-icon">📚</div>
-                        <h3>No courses found</h3>
-                        <p>Try adjusting your filters or check back later for new courses.</p>
-                    </div>
-                <?php endif; ?>
-            </section>
         </div>
     </main>
-
-    <script>
-        function applyFilter(name, value) {
-            const url = new URL(window.location);
-            if (value) {
-                url.searchParams.set(name, value);
-            } else {
-                url.searchParams.delete(name);
-            }
-            window.location = url;
-        }
-    </script>
 </body>
 </html>
-<?php
-
-function getCategoryIcon($category) {
-    $icons = [
-        'biblical_studies' => '📖',
-        'theology' => '⛪',
-        'discipleship' => '🙏',
-        'leadership' => '👑',
-        'evangelism' => '🌍',
-        'family' => '👨‍👩‍👧',
-        'other' => '📚'
-    ];
-    return $icons[$category] ?? '📚';
-}
