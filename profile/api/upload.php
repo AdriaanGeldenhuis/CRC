@@ -13,7 +13,10 @@ try {
         Response::json(['success' => false, 'error' => 'Not authenticated'], 401);
     }
 
-    CSRF::verify();
+    // Validate CSRF token
+    if (!CSRF::validate()) {
+        Response::json(['success' => false, 'error' => 'Invalid security token. Please refresh the page.'], 403);
+    }
 
     if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
         Response::json(['success' => false, 'error' => 'Invalid request method'], 405);
