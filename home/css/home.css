@@ -718,13 +718,13 @@ body::after {
 /* ===== GLASSMORPHIC CARDS ===== */
 .dashboard-card {
   position: relative;
-  background: var(--glass-bg);
+  background: rgba(0, 0, 0, 0.6);
   backdrop-filter: var(--blur-lg) saturate(180%);
   -webkit-backdrop-filter: var(--blur-lg) saturate(180%);
-  border: 1px solid var(--glass-border);
+  border: 1px solid rgba(139, 92, 246, 0.2);
   border-radius: var(--radius-xl);
   padding: 2rem;
-  box-shadow: var(--shadow-lg);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.05);
   transition: var(--transition-bounce);
   overflow: hidden;
   animation: cardAppear 0.6s var(--ease-out-expo) backwards;
@@ -746,7 +746,7 @@ body::after {
   }
 }
 
-/* Top glossy shine */
+/* Top glossy shine - rainbow glow */
 .dashboard-card::before {
   content: '';
   position: absolute;
@@ -754,7 +754,8 @@ body::after {
   left: 0;
   right: 0;
   height: 1px;
-  background: linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.3) 50%, transparent 100%);
+  background: linear-gradient(90deg, transparent, var(--primary), var(--accent), var(--secondary), transparent);
+  opacity: 0.5;
 }
 
 /* Hover glow effect */
@@ -774,8 +775,10 @@ body::after {
 
 .dashboard-card:hover {
   transform: translateY(-8px) scale(1.02);
-  border-color: transparent;
-  box-shadow: var(--shadow-xl), var(--shadow-glow-primary);
+  border-color: rgba(139, 92, 246, 0.4);
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.7),
+              0 0 40px rgba(139, 92, 246, 0.3),
+              0 0 80px rgba(139, 92, 246, 0.15);
 }
 
 .dashboard-card:hover::after {
