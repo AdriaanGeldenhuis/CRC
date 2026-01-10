@@ -5,6 +5,9 @@
 
 require_once __DIR__ . '/../core/bootstrap.php';
 
+// Ensure correct content type
+header('Content-Type: text/html; charset=UTF-8');
+
 Auth::requireAuth();
 
 function getMoodEmoji($mood) {
