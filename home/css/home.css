@@ -184,6 +184,7 @@ body {
     visibility: hidden;
     transform: translateY(-10px);
     transition: var(--transition);
+    z-index: 1000;
 }
 
 .user-dropdown.show {
@@ -268,7 +269,7 @@ body {
     visibility: hidden;
     transform: translateY(-10px);
     transition: var(--transition);
-    z-index: 101;
+    z-index: 1000;
 }
 
 .more-dropdown.show {

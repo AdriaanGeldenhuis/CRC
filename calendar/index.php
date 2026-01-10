@@ -602,42 +602,6 @@ $hours = range(0, 23);
 
                 <!-- Sidebar -->
                 <div class="calendar-sidebar">
-                    <!-- Mini Calendar -->
-                    <div class="mini-calendar">
-                        <div class="mini-calendar-header">
-                            <a href="?view=<?= $view ?>&month=<?= $prevMonth ?>&year=<?= $prevYear ?>" class="mini-nav">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><polyline points="15 18 9 12 15 6"></polyline></svg>
-                            </a>
-                            <span><?= date('M Y', $firstDay) ?></span>
-                            <a href="?view=<?= $view ?>&month=<?= $nextMonth ?>&year=<?= $nextYear ?>" class="mini-nav">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><polyline points="9 18 15 12 9 6"></polyline></svg>
-                            </a>
-                        </div>
-                        <div class="mini-calendar-grid">
-                            <span class="mini-day-header">S</span>
-                            <span class="mini-day-header">M</span>
-                            <span class="mini-day-header">T</span>
-                            <span class="mini-day-header">W</span>
-                            <span class="mini-day-header">T</span>
-                            <span class="mini-day-header">F</span>
-                            <span class="mini-day-header">S</span>
-                            <?php for ($i = 0; $i < $startDayOfWeek; $i++): ?>
-                                <span class="mini-day empty"></span>
-                            <?php endfor; ?>
-                            <?php for ($d = 1; $d <= $daysInMonth; $d++):
-                                $date = sprintf('%04d-%02d-%02d', $year, $month, $d);
-                                $isToday = $date === $today;
-                                $isSelected = ($view === 'day' && $date === $currentDate);
-                                $hasEvents = !empty($eventsByDate[$date]);
-                            ?>
-                                <a href="?view=day&year=<?= $year ?>&month=<?= $month ?>&day=<?= $d ?>"
-                                   class="mini-day <?= $isToday ? 'today' : '' ?> <?= $isSelected ? 'selected' : '' ?> <?= $hasEvents ? 'has-events' : '' ?>">
-                                    <?= $d ?>
-                                </a>
-                            <?php endfor; ?>
-                        </div>
-                    </div>
-
                     <!-- Upcoming Events -->
                     <div class="upcoming-section">
                         <h3>Upcoming Events</h3>

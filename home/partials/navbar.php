@@ -43,7 +43,7 @@ $isActive = function($path) use ($currentPath) {
 .more-menu{position:relative;}
 .more-menu-btn{background:none;border:none;cursor:pointer;width:40px;height:40px;display:flex;align-items:center;justify-content:center;color:#4B5563;border-radius:8px;transition:all 0.2s;}
 .more-menu-btn:hover{background:#F3F4F6;color:#1F2937;}
-.more-dropdown{position:absolute;top:100%;right:0;margin-top:0.5rem;min-width:200px;background:#fff;border-radius:12px;box-shadow:0 10px 15px -3px rgba(0,0,0,0.1);border:1px solid #E5E7EB;opacity:0;visibility:hidden;transform:translateY(-10px);transition:all 0.2s;z-index:101;}
+.more-dropdown{position:absolute;top:100%;right:0;margin-top:0.5rem;min-width:200px;background:#fff;border-radius:12px;box-shadow:0 10px 15px -3px rgba(0,0,0,0.1);border:1px solid #E5E7EB;opacity:0;visibility:hidden;transform:translateY(-10px);transition:all 0.2s;z-index:1000;}
 .more-dropdown.show{opacity:1;visibility:visible;transform:translateY(0);}
 .more-dropdown-item{display:flex;align-items:center;gap:0.75rem;padding:0.75rem 1rem;color:#374151;text-decoration:none;font-size:0.875rem;transition:all 0.2s;}
 .more-dropdown-item:hover{background:#F9FAFB;}
@@ -56,7 +56,7 @@ $isActive = function($path) use ($currentPath) {
 .user-menu-btn:hover{background:#F3F4F6;}
 .user-avatar{width:36px;height:36px;border-radius:50%;object-fit:cover;}
 .user-avatar-placeholder{width:36px;height:36px;border-radius:50%;background:#4F46E5;color:#fff;display:flex;align-items:center;justify-content:center;font-weight:600;font-size:14px;}
-.user-dropdown{position:absolute;top:100%;right:0;margin-top:0.5rem;min-width:200px;background:#fff;border-radius:12px;box-shadow:0 10px 15px -3px rgba(0,0,0,0.1);border:1px solid #E5E7EB;opacity:0;visibility:hidden;transform:translateY(-10px);transition:all 0.2s;z-index:101;}
+.user-dropdown{position:absolute;top:100%;right:0;margin-top:0.5rem;min-width:200px;background:#fff;border-radius:12px;box-shadow:0 10px 15px -3px rgba(0,0,0,0.1);border:1px solid #E5E7EB;opacity:0;visibility:hidden;transform:translateY(-10px);transition:all 0.2s;z-index:1000;}
 .user-dropdown.show{opacity:1;visibility:visible;transform:translateY(0);}
 .user-dropdown-header{padding:1rem;display:flex;flex-direction:column;}
 .user-dropdown-header strong{color:#1F2937;}
