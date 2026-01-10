@@ -91,6 +91,11 @@ $unreadNotifications = Database::fetchColumn(
     <link rel="stylesheet" href="/home/css/home.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        /* Fallback styles in case CSS fails to load */
+        svg { max-width: 24px; max-height: 24px; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; margin: 0; }
+    </style>
 </head>
 <body>
     <!-- Navigation -->
@@ -108,7 +113,7 @@ $unreadNotifications = Database::fetchColumn(
 
             <div class="nav-actions">
                 <a href="/notifications/" class="nav-icon-btn" title="Notifications">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
                         <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
                     </svg>
