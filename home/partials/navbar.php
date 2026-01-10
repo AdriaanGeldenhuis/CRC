@@ -9,22 +9,32 @@ $navCong = Auth::primaryCongregation();
 $navUnread = 0;
 
 if ($navUser) {
-    $navUnread = Database::fetchColumn(
-        "SELECT COUNT(*) FROM notifications WHERE user_id = ? AND is_read = 0",
-        [$navUser['id']]
-    ) ?: 0;
+    try {
+        $navUnread = Database::fetchColumn(
+            "SELECT COUNT(*) FROM notifications WHERE user_id = ? AND read_at IS NULL",
+            [$navUser['id']]
+        ) ?: 0;
+    } catch (Exception $e) {
+        $navUnread = 0;
+    }
 }
+
+// Helper to check current path
+$currentPath = $_SERVER['REQUEST_URI'] ?? '';
+$isActive = function($path) use ($currentPath) {
+    return strpos($currentPath, $path) === 0;
+};
 ?>
 <nav class="navbar">
     <div class="nav-container">
         <a href="/" class="nav-logo">CRC</a>
 
         <div class="nav-links">
-            <a href="/gospel_media/" class="nav-link <?= is_current_path('/gospel_media') ? 'active' : '' ?>">Feed</a>
-            <a href="/bible/" class="nav-link <?= is_current_path('/bible') ? 'active' : '' ?>">Bible</a>
-            <a href="/morning_watch/" class="nav-link <?= is_current_path('/morning_watch') ? 'active' : '' ?>">Morning Watch</a>
-            <a href="/calendar/" class="nav-link <?= is_current_path('/calendar') ? 'active' : '' ?>">Calendar</a>
-            <a href="/media/" class="nav-link <?= is_current_path('/media') ? 'active' : '' ?>">Media</a>
+            <a href="/gospel_media/" class="nav-link <?= $isActive('/gospel_media') ? 'active' : '' ?>">Feed</a>
+            <a href="/bible/" class="nav-link <?= $isActive('/bible') ? 'active' : '' ?>">Bible</a>
+            <a href="/morning_watch/" class="nav-link <?= $isActive('/morning_watch') ? 'active' : '' ?>">Morning Watch</a>
+            <a href="/calendar/" class="nav-link <?= $isActive('/calendar') ? 'active' : '' ?>">Calendar</a>
+            <a href="/media/" class="nav-link <?= $isActive('/media') ? 'active' : '' ?>">Media</a>
         </div>
 
         <div class="nav-actions">

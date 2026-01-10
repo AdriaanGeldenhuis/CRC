@@ -13,40 +13,50 @@ $pageTitle = "Morning Watch - CRC";
 
 $today = date('Y-m-d');
 
+// Initialize with defaults
+$session = null;
+$userEntry = null;
+$streak = null;
+$prayerPoints = [];
+
 // Get today's session (global or congregation-specific)
-$session = Database::fetchOne(
-    "SELECT ms.*, u.name as author_name
-     FROM morning_sessions ms
-     LEFT JOIN users u ON ms.created_by = u.id
-     WHERE ms.session_date = ?
-     AND (ms.scope = 'global' OR ms.congregation_id = ?)
-     AND ms.published_at IS NOT NULL
-     ORDER BY ms.scope = 'congregation' DESC
-     LIMIT 1",
-    [$today, $primaryCong['id'] ?? 0]
-);
+try {
+    $session = Database::fetchOne(
+        "SELECT ms.*, u.name as author_name
+         FROM morning_sessions ms
+         LEFT JOIN users u ON ms.created_by = u.id
+         WHERE ms.session_date = ?
+         AND (ms.scope = 'global' OR ms.congregation_id = ?)
+         AND ms.published_at IS NOT NULL
+         ORDER BY ms.scope = 'congregation' DESC
+         LIMIT 1",
+        [$today, $primaryCong['id'] ?? 0]
+    );
+} catch (Exception $e) {}
 
 // Get user's entry for today
-$userEntry = null;
 if ($session) {
-    $userEntry = Database::fetchOne(
-        "SELECT * FROM morning_watch_entries
-         WHERE user_id = ? AND session_id = ?",
-        [$user['id'], $session['id']]
-    );
+    try {
+        $userEntry = Database::fetchOne(
+            "SELECT * FROM morning_watch_entries
+             WHERE user_id = ? AND session_id = ?",
+            [$user['id'], $session['id']]
+        );
+    } catch (Exception $e) {}
 }
 
 // Get user's streak
-$streak = Database::fetchOne(
-    "SELECT current_streak, longest_streak, total_entries
-     FROM morning_watch_streaks
-     WHERE user_id = ?",
-    [$user['id']]
-);
+try {
+    $streak = Database::fetchOne(
+        "SELECT current_streak, longest_streak, total_entries
+         FROM morning_watch_streaks
+         WHERE user_id = ?",
+        [$user['id']]
+    );
+} catch (Exception $e) {}
 
 // Parse prayer points
-$prayerPoints = [];
-if ($session && $session['prayer_points']) {
+if ($session && !empty($session['prayer_points'])) {
     $prayerPoints = json_decode($session['prayer_points'], true) ?? [];
 }
 ?>

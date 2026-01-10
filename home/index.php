@@ -18,68 +18,86 @@ if (!$primaryCong) {
 $user = Auth::user();
 $pageTitle = 'Home - CRC';
 
-// Get today's morning watch
-$todaySession = Database::fetchOne(
-    "SELECT * FROM morning_sessions
-     WHERE (scope = 'global' OR congregation_id = ?)
-       AND session_date = CURDATE()
-       AND published_at IS NOT NULL
-     ORDER BY scope = 'congregation' DESC
-     LIMIT 1",
-    [$primaryCong['id']]
-);
+// Get today's morning watch (with error handling for missing tables)
+$todaySession = null;
+$completedToday = false;
+$streak = null;
+$upcomingEvents = [];
+$recentPosts = [];
+$unreadNotifications = 0;
+
+try {
+    $todaySession = Database::fetchOne(
+        "SELECT * FROM morning_sessions
+         WHERE (scope = 'global' OR congregation_id = ?)
+           AND session_date = CURDATE()
+           AND published_at IS NOT NULL
+         ORDER BY scope = 'congregation' DESC
+         LIMIT 1",
+        [$primaryCong['id']]
+    );
+} catch (Exception $e) {}
 
 // Check if user completed today's morning watch
-$completedToday = false;
 if ($todaySession) {
-    $entry = Database::fetchOne(
-        "SELECT completed_at FROM morning_user_entries
-         WHERE user_id = ? AND session_id = ?",
-        [$user['id'], $todaySession['id']]
-    );
-    $completedToday = $entry && $entry['completed_at'];
+    try {
+        $entry = Database::fetchOne(
+            "SELECT completed_at FROM morning_user_entries
+             WHERE user_id = ? AND session_id = ?",
+            [$user['id'], $todaySession['id']]
+        );
+        $completedToday = $entry && $entry['completed_at'];
+    } catch (Exception $e) {}
 }
 
 // Get user's streak
-$streak = Database::fetchOne(
-    "SELECT current_streak, longest_streak FROM morning_streaks WHERE user_id = ?",
-    [$user['id']]
-);
+try {
+    $streak = Database::fetchOne(
+        "SELECT current_streak, longest_streak FROM morning_streaks WHERE user_id = ?",
+        [$user['id']]
+    );
+} catch (Exception $e) {}
 
 // Get upcoming events (next 7 days)
-$upcomingEvents = Database::fetchAll(
-    "SELECT e.*, c.name as congregation_name
-     FROM events e
-     LEFT JOIN congregations c ON e.congregation_id = c.id
-     WHERE (e.scope = 'global' OR e.congregation_id = ?)
-       AND e.start_datetime >= NOW()
-       AND e.start_datetime <= DATE_ADD(NOW(), INTERVAL 7 DAY)
-       AND e.status = 'published'
-     ORDER BY e.start_datetime ASC
-     LIMIT 5",
-    [$primaryCong['id']]
-);
+try {
+    $upcomingEvents = Database::fetchAll(
+        "SELECT e.*, c.name as congregation_name
+         FROM events e
+         LEFT JOIN congregations c ON e.congregation_id = c.id
+         WHERE (e.scope = 'global' OR e.congregation_id = ?)
+           AND e.start_datetime >= NOW()
+           AND e.start_datetime <= DATE_ADD(NOW(), INTERVAL 7 DAY)
+           AND e.status = 'published'
+         ORDER BY e.start_datetime ASC
+         LIMIT 5",
+        [$primaryCong['id']]
+    ) ?: [];
+} catch (Exception $e) {}
 
 // Get recent posts from congregation
-$recentPosts = Database::fetchAll(
-    "SELECT p.*, u.name as author_name, u.avatar as author_avatar,
-            (SELECT COUNT(*) FROM reactions WHERE reactable_type = 'post' AND reactable_id = p.id) as reaction_count,
-            (SELECT COUNT(*) FROM comments WHERE post_id = p.id AND status = 'active') as comment_count
-     FROM posts p
-     JOIN users u ON p.user_id = u.id
-     WHERE (p.scope = 'global' OR p.congregation_id = ?)
-       AND p.status = 'active'
-       AND p.group_id IS NULL
-     ORDER BY p.is_pinned DESC, p.created_at DESC
-     LIMIT 5",
-    [$primaryCong['id']]
-);
+try {
+    $recentPosts = Database::fetchAll(
+        "SELECT p.*, u.name as author_name, u.avatar as author_avatar,
+                (SELECT COUNT(*) FROM reactions WHERE reactable_type = 'post' AND reactable_id = p.id) as reaction_count,
+                (SELECT COUNT(*) FROM comments WHERE post_id = p.id AND status = 'active') as comment_count
+         FROM posts p
+         JOIN users u ON p.user_id = u.id
+         WHERE (p.scope = 'global' OR p.congregation_id = ?)
+           AND p.status = 'active'
+           AND p.group_id IS NULL
+         ORDER BY p.is_pinned DESC, p.created_at DESC
+         LIMIT 5",
+        [$primaryCong['id']]
+    ) ?: [];
+} catch (Exception $e) {}
 
 // Get unread notifications count
-$unreadNotifications = Database::fetchColumn(
-    "SELECT COUNT(*) FROM notifications WHERE user_id = ? AND is_read = 0",
-    [$user['id']]
-);
+try {
+    $unreadNotifications = Database::fetchColumn(
+        "SELECT COUNT(*) FROM notifications WHERE user_id = ? AND read_at IS NULL",
+        [$user['id']]
+    ) ?: 0;
+} catch (Exception $e) {}
 ?>
 <!DOCTYPE html>
 <html lang="en">
