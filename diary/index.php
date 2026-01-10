@@ -1,11 +1,11 @@
 <?php
 /**
  * CRC Diary - Main Page
+ * Rewritten for reliability
  */
 
 require_once __DIR__ . '/../core/bootstrap.php';
 
-// Ensure correct content type
 header('Content-Type: text/html; charset=UTF-8');
 
 Auth::requireAuth();
@@ -27,14 +27,14 @@ function getMoodEmoji($mood) {
 $user = Auth::user();
 $pageTitle = 'My Diary - CRC';
 
-// Filters
+// Get filters from URL
 $search = input('search');
 $tag = input('tag');
 $mood = input('mood');
 $year = (int)($_GET['year'] ?? date('Y'));
 $month = (int)($_GET['month'] ?? 0);
 
-// Initialize defaults
+// Initialize variables
 $entries = [];
 $tags = [];
 $totalEntries = 0;
@@ -42,8 +42,29 @@ $streak = 0;
 $archives = [];
 $moods = ['grateful', 'joyful', 'peaceful', 'hopeful', 'anxious', 'sad', 'angry', 'confused'];
 
+// Get total entries count
 try {
-    // Build query
+    $totalEntries = Database::fetchColumn(
+        "SELECT COUNT(*) FROM diary_entries WHERE user_id = ?",
+        [$user['id']]
+    ) ?: 0;
+} catch (Exception $e) {
+    $totalEntries = 0;
+}
+
+// Get streak (days this week)
+try {
+    $streak = Database::fetchColumn(
+        "SELECT COUNT(DISTINCT DATE(entry_date)) FROM diary_entries
+         WHERE user_id = ? AND entry_date >= DATE_SUB(CURDATE(), INTERVAL 7 DAY)",
+        [$user['id']]
+    ) ?: 0;
+} catch (Exception $e) {
+    $streak = 0;
+}
+
+// Get entries based on filters
+try {
     $where = ['user_id = ?'];
     $params = [$user['id']];
 
@@ -69,31 +90,15 @@ try {
 
     $whereClause = implode(' AND ', $where);
 
-    // Get entries
     $entries = Database::fetchAll(
-        "SELECT * FROM diary_entries
-         WHERE $whereClause
-         ORDER BY entry_date DESC, created_at DESC",
+        "SELECT * FROM diary_entries WHERE $whereClause ORDER BY entry_date DESC, created_at DESC",
         $params
     ) ?: [];
-} catch (Exception $e) {}
+} catch (Exception $e) {
+    $entries = [];
+}
 
-// Get tags for filter
-try {
-    $tags = Database::fetchAll(
-        "SELECT DISTINCT t.name, COUNT(*) as count
-         FROM diary_entry_tags det
-         JOIN diary_tags t ON det.tag_id = t.id
-         JOIN diary_entries e ON det.entry_id = e.id
-         WHERE e.user_id = ?
-         GROUP BY t.id
-         ORDER BY count DESC
-         LIMIT 20",
-        [$user['id']]
-    ) ?: [];
-} catch (Exception $e) {}
-
-// Get user's tags for entry
+// Get tags if filtering by tag
 if ($tag) {
     try {
         $tagData = Database::fetchOne(
@@ -109,24 +114,41 @@ if ($tag) {
                 [$tagData['id'], $user['id']]
             ) ?: [];
         }
-    } catch (Exception $e) {}
+    } catch (Exception $e) {
+        // Keep existing entries
+    }
 }
 
-// Stats
+// Get user's tags for sidebar
 try {
-    $totalEntries = Database::fetchColumn(
-        "SELECT COUNT(*) FROM diary_entries WHERE user_id = ?",
+    $tags = Database::fetchAll(
+        "SELECT DISTINCT t.name, COUNT(*) as count
+         FROM diary_entry_tags det
+         JOIN diary_tags t ON det.tag_id = t.id
+         JOIN diary_entries e ON det.entry_id = e.id
+         WHERE e.user_id = ?
+         GROUP BY t.id, t.name
+         ORDER BY count DESC
+         LIMIT 20",
         [$user['id']]
-    ) ?: 0;
-} catch (Exception $e) {}
+    ) ?: [];
+} catch (Exception $e) {
+    $tags = [];
+}
 
+// Get archives for sidebar
 try {
-    $streak = Database::fetchColumn(
-        "SELECT COUNT(DISTINCT DATE(entry_date)) FROM diary_entries
-         WHERE user_id = ? AND entry_date >= DATE_SUB(CURDATE(), INTERVAL 7 DAY)",
+    $archives = Database::fetchAll(
+        "SELECT YEAR(entry_date) as year, MONTH(entry_date) as month, COUNT(*) as count
+         FROM diary_entries WHERE user_id = ?
+         GROUP BY YEAR(entry_date), MONTH(entry_date)
+         ORDER BY year DESC, month DESC
+         LIMIT 12",
         [$user['id']]
-    ) ?: 0;
-} catch (Exception $e) {}
+    ) ?: [];
+} catch (Exception $e) {
+    $archives = [];
+}
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -171,7 +193,7 @@ try {
                     <!-- Search -->
                     <div class="sidebar-section">
                         <form method="get" class="search-form">
-                            <input type="text" name="search" value="<?= e($search) ?>" placeholder="Search entries...">
+                            <input type="text" name="search" value="<?= e($search ?? '') ?>" placeholder="Search entries...">
                             <button type="submit">
                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                     <circle cx="11" cy="11" r="8"></circle>
@@ -195,7 +217,7 @@ try {
                     </div>
 
                     <!-- Tags -->
-                    <?php if ($tags): ?>
+                    <?php if (!empty($tags)): ?>
                         <div class="sidebar-section">
                             <h3>Tags</h3>
                             <div class="tag-cloud">
@@ -210,30 +232,20 @@ try {
                     <?php endif; ?>
 
                     <!-- Archive -->
-                    <div class="sidebar-section">
-                        <h3>Archive</h3>
-                        <div class="archive-links">
-                            <?php
-                            try {
-                                $archives = Database::fetchAll(
-                                    "SELECT YEAR(entry_date) as year, MONTH(entry_date) as month, COUNT(*) as count
-                                     FROM diary_entries WHERE user_id = ?
-                                     GROUP BY year, month
-                                     ORDER BY year DESC, month DESC
-                                     LIMIT 12",
-                                    [$user['id']]
-                                ) ?: [];
-                            } catch (Exception $e) { $archives = []; }
-                            foreach ($archives as $archive):
-                                $monthName = date('F', mktime(0, 0, 0, $archive['month'], 1));
-                            ?>
-                                <a href="?year=<?= $archive['year'] ?>&month=<?= $archive['month'] ?>">
-                                    <?= $monthName ?> <?= $archive['year'] ?>
-                                    <span><?= $archive['count'] ?></span>
-                                </a>
-                            <?php endforeach; ?>
+                    <?php if (!empty($archives)): ?>
+                        <div class="sidebar-section">
+                            <h3>Archive</h3>
+                            <div class="archive-links">
+                                <?php foreach ($archives as $archive): ?>
+                                    <?php $monthName = date('F', mktime(0, 0, 0, $archive['month'], 1)); ?>
+                                    <a href="?year=<?= $archive['year'] ?>&month=<?= $archive['month'] ?>">
+                                        <?= $monthName ?> <?= $archive['year'] ?>
+                                        <span><?= $archive['count'] ?></span>
+                                    </a>
+                                <?php endforeach; ?>
+                            </div>
                         </div>
-                    </div>
+                    <?php endif; ?>
                 </aside>
 
                 <div class="diary-main">
@@ -256,8 +268,8 @@ try {
                                     </div>
                                     <div class="entry-content">
                                         <h3><?= e($entry['title'] ?: 'Untitled Entry') ?></h3>
-                                        <p><?= e(truncate(strip_tags($entry['content']), 120)) ?></p>
-                                        <?php if ($entry['mood']): ?>
+                                        <p><?= e(truncate(strip_tags($entry['content'] ?? ''), 120)) ?></p>
+                                        <?php if (!empty($entry['mood'])): ?>
                                             <span class="entry-mood"><?= getMoodEmoji($entry['mood']) ?> <?= ucfirst($entry['mood']) ?></span>
                                         <?php endif; ?>
                                     </div>
