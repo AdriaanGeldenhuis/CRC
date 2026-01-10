@@ -109,69 +109,18 @@ try {
     <link rel="stylesheet" href="/home/css/home.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <style>
-        /* Fallback styles in case CSS fails to load */
-        svg { max-width: 24px; max-height: 24px; }
-        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; margin: 0; }
-    </style>
+    <script>
+        // Load theme BEFORE page renders to prevent flash
+        (function() {
+            var theme = localStorage.getItem('theme');
+            if (theme === 'light') {
+                document.documentElement.setAttribute('data-theme', 'light');
+            }
+        })();
+    </script>
 </head>
 <body>
-    <!-- Navigation -->
-    <nav class="navbar">
-        <div class="nav-container">
-            <a href="/" class="nav-logo">CRC</a>
-
-            <div class="nav-links">
-                <a href="/gospel_media/" class="nav-link">Feed</a>
-                <a href="/bible/" class="nav-link">Bible</a>
-                <a href="/morning_watch/" class="nav-link">Morning Study</a>
-                <a href="/calendar/" class="nav-link">Calendar</a>
-                <a href="/media/" class="nav-link">Media</a>
-            </div>
-
-            <div class="nav-actions">
-                <a href="/notifications/" class="nav-icon-btn" title="Notifications">
-                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
-                        <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
-                    </svg>
-                    <?php if ($unreadNotifications > 0): ?>
-                        <span class="notification-badge"><?= $unreadNotifications > 9 ? '9+' : $unreadNotifications ?></span>
-                    <?php endif; ?>
-                </a>
-
-                <div class="user-menu">
-                    <button class="user-menu-btn">
-                        <?php if ($user['avatar']): ?>
-                            <img src="<?= e($user['avatar']) ?>" alt="" class="user-avatar">
-                        <?php else: ?>
-                            <div class="user-avatar-placeholder"><?= strtoupper(substr($user['name'], 0, 1)) ?></div>
-                        <?php endif; ?>
-                    </button>
-                    <div class="user-dropdown">
-                        <div class="user-dropdown-header">
-                            <strong><?= e($user['name']) ?></strong>
-                            <span><?= e($primaryCong['name']) ?></span>
-                        </div>
-                        <div class="user-dropdown-divider"></div>
-                        <a href="/profile/" class="user-dropdown-item">Profile</a>
-                        <a href="/diary/" class="user-dropdown-item">My Diary</a>
-                        <a href="/homecells/" class="user-dropdown-item">Homecells</a>
-                        <a href="/learning/" class="user-dropdown-item">Courses</a>
-                        <?php if (Auth::isCongregationAdmin($primaryCong['id'])): ?>
-                            <div class="user-dropdown-divider"></div>
-                            <a href="/admin_congregation/" class="user-dropdown-item">Manage Congregation</a>
-                        <?php endif; ?>
-                        <?php if (Auth::isAdmin()): ?>
-                            <a href="/admin/" class="user-dropdown-item">Admin Panel</a>
-                        <?php endif; ?>
-                        <div class="user-dropdown-divider"></div>
-                        <a href="/auth/logout.php" class="user-dropdown-item logout">Logout</a>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </nav>
+    <?php include __DIR__ . '/partials/navbar.php'; ?>
 
     <main class="main-content">
         <div class="container">
@@ -327,19 +276,5 @@ try {
             </div>
         </div>
     </main>
-
-    <script>
-        // User menu dropdown
-        document.querySelector('.user-menu-btn').addEventListener('click', function() {
-            document.querySelector('.user-dropdown').classList.toggle('show');
-        });
-
-        // Close dropdown when clicking outside
-        document.addEventListener('click', function(e) {
-            if (!e.target.closest('.user-menu')) {
-                document.querySelector('.user-dropdown').classList.remove('show');
-            }
-        });
-    </script>
 </body>
 </html>
