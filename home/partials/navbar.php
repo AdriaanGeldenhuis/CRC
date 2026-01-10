@@ -37,9 +37,9 @@ $isActive = function($path) use ($currentPath) {
             <a href="/media/" class="nav-link <?= $isActive('/media') ? 'active' : '' ?>">Media</a>
         </div>
 
-        <div class="nav-actions">
+        <div class="nav-actions" style="display:flex;align-items:center;gap:8px;">
             <a href="/notifications/" class="nav-icon-btn" title="Notifications">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="max-width:22px;max-height:22px;">
                     <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
                     <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
                 </svg>
@@ -49,11 +49,11 @@ $isActive = function($path) use ($currentPath) {
             </a>
 
             <div class="user-menu">
-                <button class="user-menu-btn" onclick="toggleUserMenu()">
-                    <?php if ($navUser['avatar']): ?>
-                        <img src="<?= e($navUser['avatar']) ?>" alt="" class="user-avatar">
+                <button class="user-menu-btn" onclick="toggleUserMenu()" style="background:none;border:none;cursor:pointer;padding:4px;">
+                    <?php if (!empty($navUser['avatar'])): ?>
+                        <img src="<?= e($navUser['avatar']) ?>" alt="" class="user-avatar" style="width:36px;height:36px;border-radius:50%;object-fit:cover;">
                     <?php else: ?>
-                        <div class="user-avatar-placeholder"><?= strtoupper(substr($navUser['name'], 0, 1)) ?></div>
+                        <div class="user-avatar-placeholder" style="width:36px;height:36px;border-radius:50%;background:#4F46E5;color:#fff;display:flex;align-items:center;justify-content:center;font-weight:600;font-size:14px;"><?= strtoupper(substr($navUser['name'] ?? 'U', 0, 1)) ?></div>
                     <?php endif; ?>
                 </button>
                 <div class="user-dropdown" id="userDropdown">
