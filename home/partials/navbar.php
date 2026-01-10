@@ -1,6 +1,6 @@
 <?php
 /**
- * CRC Navbar Partial - Modern Glass Morphism Design with Theme Toggle
+ * CRC Navbar Partial - Ultra Glossy 3D Premium Design
  * Include: <?php include __DIR__ . '/../home/partials/navbar.php'; ?>
  */
 
@@ -33,120 +33,243 @@ $isActive = function($path) use ($currentPath) {
 })();
 </script>
 <style>
-/* ===== CSS VARIABLES FOR THEMING ===== */
+/* ===== ULTRA GLOSSY 3D NAVBAR - Premium Design ===== */
 :root {
-  --nav-primary: #6366F1;
-  --nav-primary-light: #818CF8;
-  --nav-primary-glow: rgba(99, 102, 241, 0.4);
-  --nav-accent-glow: rgba(34, 211, 238, 0.3);
+  /* Primary Palette */
+  --nav-primary: #7C3AED;
+  --nav-primary-light: #A78BFA;
+  --nav-primary-glow: rgba(124, 58, 237, 0.5);
+  --nav-primary-intense: rgba(124, 58, 237, 0.8);
+
+  /* Accent - Electric Cyan */
+  --nav-accent: #06B6D4;
+  --nav-accent-glow: rgba(6, 182, 212, 0.5);
+
+  /* Secondary - Hot Pink */
+  --nav-secondary: #EC4899;
+  --nav-secondary-glow: rgba(236, 72, 153, 0.4);
+
+  /* Danger */
   --nav-danger: #EF4444;
-  --nav-bg-glass: rgba(255, 255, 255, 0.05);
-  --nav-bg-glass-hover: rgba(255, 255, 255, 0.08);
-  --nav-bg-card: rgba(26, 26, 46, 0.9);
-  --nav-text-primary: #F8FAFC;
-  --nav-text-secondary: #94A3B8;
-  --nav-text-muted: #64748B;
-  --nav-border-primary: rgba(255, 255, 255, 0.1);
-  --nav-border-accent: rgba(99, 102, 241, 0.3);
-  --nav-shadow-md: 0 4px 16px rgba(0, 0, 0, 0.4);
-  --nav-shadow-xl: 0 16px 48px rgba(0, 0, 0, 0.6);
-  --nav-blur: blur(16px);
-  --nav-radius-md: 12px;
-  --nav-radius-lg: 16px;
+  --nav-danger-glow: rgba(239, 68, 68, 0.5);
+
+  /* Backgrounds */
+  --nav-bg-base: #030014;
+  --nav-glass-bg: rgba(255, 255, 255, 0.03);
+  --nav-glass-bg-strong: rgba(255, 255, 255, 0.12);
+  --nav-glass-bg-hover: rgba(255, 255, 255, 0.08);
+  --nav-glass-border: rgba(255, 255, 255, 0.1);
+  --nav-glass-border-hover: rgba(255, 255, 255, 0.2);
+
+  /* Text */
+  --nav-text-primary: #FFFFFF;
+  --nav-text-secondary: #A1A1C7;
+  --nav-text-muted: #6B6B8D;
+
+  /* Shadows */
+  --nav-shadow-md: 0 8px 24px rgba(0, 0, 0, 0.5);
+  --nav-shadow-xl: 0 24px 64px rgba(0, 0, 0, 0.7);
+  --nav-shadow-glow: 0 0 40px var(--nav-primary-glow), 0 0 80px rgba(124, 58, 237, 0.2);
+
+  /* 3D Button Shadows */
+  --nav-btn-shadow: 0 4px 0 rgba(0, 0, 0, 0.3), 0 8px 24px rgba(0, 0, 0, 0.4);
+  --nav-btn-shadow-hover: 0 6px 0 rgba(0, 0, 0, 0.3), 0 12px 32px rgba(0, 0, 0, 0.5);
+  --nav-btn-shadow-active: 0 2px 0 rgba(0, 0, 0, 0.3), 0 4px 12px rgba(0, 0, 0, 0.3);
+
+  /* Effects */
+  --nav-blur: blur(20px);
+  --nav-radius-md: 16px;
+  --nav-radius-lg: 24px;
+  --nav-radius-xl: 32px;
   --nav-radius-full: 9999px;
-  --nav-transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+
+  /* Transitions */
+  --nav-ease-spring: cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  --nav-ease-expo: cubic-bezier(0.16, 1, 0.3, 1);
+  --nav-transition: all 0.5s var(--nav-ease-spring);
+  --nav-transition-fast: all 0.2s var(--nav-ease-expo);
+
+  /* Font */
   --nav-font: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+
+  /* Gradient */
+  --nav-gradient-primary: linear-gradient(135deg, var(--nav-primary) 0%, var(--nav-primary-light) 50%, var(--nav-accent) 100%);
 }
 
 [data-theme="light"] {
-  --nav-bg-glass: rgba(255, 255, 255, 0.7);
-  --nav-bg-glass-hover: rgba(255, 255, 255, 0.9);
-  --nav-bg-card: rgba(255, 255, 255, 0.95);
-  --nav-text-primary: #0F172A;
-  --nav-text-secondary: #475569;
-  --nav-text-muted: #94A3B8;
-  --nav-border-primary: rgba(0, 0, 0, 0.1);
-  --nav-shadow-md: 0 4px 16px rgba(0, 0, 0, 0.1);
-  --nav-shadow-xl: 0 16px 48px rgba(0, 0, 0, 0.15);
+  --nav-bg-base: #F0F4FF;
+  --nav-glass-bg: rgba(255, 255, 255, 0.7);
+  --nav-glass-bg-strong: rgba(255, 255, 255, 0.95);
+  --nav-glass-bg-hover: rgba(255, 255, 255, 0.9);
+  --nav-glass-border: rgba(124, 58, 237, 0.15);
+  --nav-glass-border-hover: rgba(124, 58, 237, 0.3);
+
+  --nav-text-primary: #1E1B4B;
+  --nav-text-secondary: #4C4687;
+  --nav-text-muted: #8B85B1;
+
+  --nav-shadow-md: 0 8px 24px rgba(124, 58, 237, 0.12);
+  --nav-shadow-xl: 0 24px 64px rgba(124, 58, 237, 0.18);
+  --nav-shadow-glow: 0 0 40px rgba(124, 58, 237, 0.2);
+
+  --nav-btn-shadow: 0 4px 0 rgba(124, 58, 237, 0.2), 0 8px 24px rgba(124, 58, 237, 0.15);
+  --nav-btn-shadow-hover: 0 6px 0 rgba(124, 58, 237, 0.2), 0 12px 32px rgba(124, 58, 237, 0.2);
+  --nav-btn-shadow-active: 0 2px 0 rgba(124, 58, 237, 0.2), 0 4px 12px rgba(124, 58, 237, 0.1);
 }
 
-/* ===== NAVBAR STYLES ===== */
+/* ===== NAVBAR ===== */
 .navbar {
   position: sticky;
   top: 0;
   z-index: 1000;
-  background: var(--nav-bg-glass);
-  backdrop-filter: var(--nav-blur);
-  -webkit-backdrop-filter: var(--nav-blur);
-  border-bottom: 1px solid var(--nav-border-primary);
+  background: var(--nav-glass-bg);
+  backdrop-filter: var(--nav-blur) saturate(180%);
+  -webkit-backdrop-filter: var(--nav-blur) saturate(180%);
+  border-bottom: 1px solid var(--nav-glass-border);
   font-family: var(--nav-font);
   transition: var(--nav-transition);
+}
+
+/* Top glossy shine line */
+.navbar::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.3) 50%, transparent 100%);
 }
 
 .nav-container {
   max-width: 1400px;
   margin: 0 auto;
-  padding: 0 1.5rem;
+  padding: 0 2rem;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  height: 70px;
+  height: 80px;
 }
 
+/* ===== LOGO ===== */
 .nav-logo {
-  font-size: 1.75rem;
-  font-weight: 800;
-  background: linear-gradient(135deg, var(--nav-primary) 0%, var(--nav-primary-light) 100%);
+  font-size: 2rem;
+  font-weight: 900;
+  background: var(--nav-gradient-primary);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
   text-decoration: none;
-  letter-spacing: -0.5px;
+  letter-spacing: -1px;
   transition: var(--nav-transition);
+  position: relative;
+}
+
+.nav-logo::after {
+  content: '';
+  position: absolute;
+  bottom: -4px;
+  left: 0;
+  width: 100%;
+  height: 3px;
+  background: var(--nav-gradient-primary);
+  border-radius: var(--nav-radius-full);
+  transform: scaleX(0);
+  transition: var(--nav-transition-fast);
 }
 
 .nav-logo:hover {
-  transform: scale(1.05);
-  filter: brightness(1.2);
+  transform: scale(1.1) rotate(-2deg);
+  filter: drop-shadow(0 0 20px var(--nav-primary-glow));
+}
+
+.nav-logo:hover::after {
+  transform: scaleX(1);
 }
 
 .nav-actions {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
+  gap: 1rem;
 }
 
-/* Theme Toggle Button */
-.theme-toggle {
+/* ===== 3D GLOSSY BUTTONS ===== */
+.theme-toggle,
+.nav-icon-btn,
+.more-menu-btn {
   position: relative;
-  width: 44px;
-  height: 44px;
-  background: var(--nav-bg-glass);
-  border: 1px solid var(--nav-border-primary);
+  width: 52px;
+  height: 52px;
+  background: var(--nav-glass-bg-strong);
+  border: 1px solid var(--nav-glass-border);
   border-radius: var(--nav-radius-md);
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
   color: var(--nav-text-secondary);
+  text-decoration: none;
   transition: var(--nav-transition);
   overflow: hidden;
+  box-shadow: var(--nav-btn-shadow);
+  transform-style: preserve-3d;
 }
 
-.theme-toggle:hover {
-  background: var(--nav-bg-glass-hover);
-  border-color: var(--nav-border-accent);
+/* Glossy shine effect on top */
+.theme-toggle::before,
+.nav-icon-btn::before,
+.more-menu-btn::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 50%;
+  background: linear-gradient(180deg, rgba(255,255,255,0.2) 0%, rgba(255,255,255,0) 100%);
+  border-radius: var(--nav-radius-md) var(--nav-radius-md) 0 0;
+  pointer-events: none;
+}
+
+/* Inner glow effect */
+.theme-toggle::after,
+.nav-icon-btn::after,
+.more-menu-btn::after {
+  content: '';
+  position: absolute;
+  inset: 2px;
+  border-radius: calc(var(--nav-radius-md) - 2px);
+  background: transparent;
+  box-shadow: inset 0 0 20px rgba(255,255,255,0.05);
+  pointer-events: none;
+}
+
+.theme-toggle:hover,
+.nav-icon-btn:hover,
+.more-menu-btn:hover {
+  transform: translateY(-4px) scale(1.08);
+  background: var(--nav-glass-bg-strong);
+  border-color: var(--nav-primary);
   color: var(--nav-primary);
-  transform: translateY(-2px);
-  box-shadow: var(--nav-shadow-md), 0 0 20px var(--nav-primary-glow);
+  box-shadow: var(--nav-btn-shadow-hover), var(--nav-shadow-glow);
 }
 
-.theme-toggle svg {
-  width: 20px;
-  height: 20px;
+.theme-toggle:active,
+.nav-icon-btn:active,
+.more-menu-btn:active {
+  transform: translateY(2px) scale(0.98);
+  box-shadow: var(--nav-btn-shadow-active);
+}
+
+.theme-toggle svg,
+.nav-icon-btn svg,
+.more-menu-btn svg {
+  width: 22px;
+  height: 22px;
   transition: var(--nav-transition);
+  filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));
 }
 
+/* ===== THEME TOGGLE ICONS ===== */
 .theme-toggle .sun-icon {
   position: absolute;
   opacity: 0;
@@ -169,256 +292,227 @@ $isActive = function($path) use ($currentPath) {
   transform: rotate(90deg) scale(0);
 }
 
-/* Nav Icon Button */
-.nav-icon-btn {
-  position: relative;
-  width: 44px;
-  height: 44px;
-  background: var(--nav-bg-glass);
-  border: 1px solid var(--nav-border-primary);
-  border-radius: var(--nav-radius-md);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: var(--nav-text-secondary);
-  text-decoration: none;
-  transition: var(--nav-transition);
-}
-
-.nav-icon-btn:hover {
-  background: var(--nav-bg-glass-hover);
-  border-color: var(--nav-border-accent);
-  color: var(--nav-primary);
-  transform: translateY(-2px);
-  box-shadow: var(--nav-shadow-md), 0 0 20px var(--nav-primary-glow);
-}
-
-.nav-icon-btn svg {
-  width: 20px;
-  height: 20px;
-}
-
+/* ===== NOTIFICATION BADGE ===== */
 .notification-badge {
   position: absolute;
-  top: -4px;
-  right: -4px;
-  min-width: 20px;
-  height: 20px;
+  top: -6px;
+  right: -6px;
+  min-width: 22px;
+  height: 22px;
   padding: 0 6px;
-  background: var(--nav-danger);
+  background: linear-gradient(135deg, var(--nav-secondary) 0%, var(--nav-primary) 100%);
   color: white;
   font-size: 0.7rem;
-  font-weight: 700;
+  font-weight: 800;
   border-radius: var(--nav-radius-full);
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 0 10px rgba(239, 68, 68, 0.4);
+  box-shadow: 0 4px 12px var(--nav-secondary-glow), 0 0 0 3px var(--nav-bg-base);
   animation: pulse-badge 2s ease-in-out infinite;
+  z-index: 10;
 }
 
 @keyframes pulse-badge {
   0%, 100% { transform: scale(1); }
-  50% { transform: scale(1.1); }
+  50% { transform: scale(1.15); }
 }
 
-/* More Menu */
-.more-menu {
+/* ===== DROPDOWN MENUS ===== */
+.more-menu,
+.user-menu {
   position: relative;
 }
 
-.more-menu-btn {
-  width: 44px;
-  height: 44px;
-  background: var(--nav-bg-glass);
-  border: 1px solid var(--nav-border-primary);
-  border-radius: var(--nav-radius-md);
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: var(--nav-text-secondary);
-  transition: var(--nav-transition);
-}
-
-.more-menu-btn:hover {
-  background: var(--nav-bg-glass-hover);
-  border-color: var(--nav-border-accent);
-  color: var(--nav-primary);
-  transform: translateY(-2px);
-  box-shadow: var(--nav-shadow-md), 0 0 20px var(--nav-primary-glow);
-}
-
-.more-menu-btn svg {
-  width: 20px;
-  height: 20px;
-}
-
-.more-dropdown {
+.more-dropdown,
+.user-dropdown {
   position: absolute;
-  top: calc(100% + 8px);
+  top: calc(100% + 12px);
   right: 0;
-  min-width: 220px;
-  background: var(--nav-bg-card);
-  backdrop-filter: var(--nav-blur);
-  -webkit-backdrop-filter: var(--nav-blur);
-  border: 1px solid var(--nav-border-primary);
-  border-radius: var(--nav-radius-lg);
-  box-shadow: var(--nav-shadow-xl);
+  min-width: 260px;
+  background: var(--nav-glass-bg-strong);
+  backdrop-filter: var(--nav-blur) saturate(200%);
+  -webkit-backdrop-filter: var(--nav-blur) saturate(200%);
+  border: 1px solid var(--nav-glass-border);
+  border-radius: var(--nav-radius-xl);
+  box-shadow: var(--nav-shadow-xl), var(--nav-shadow-glow);
   opacity: 0;
   visibility: hidden;
-  transform: translateY(-10px) scale(0.95);
+  transform: translateY(-20px) scale(0.9) rotateX(-10deg);
+  transform-origin: top right;
   transition: var(--nav-transition);
   z-index: 1000;
   overflow: hidden;
 }
 
-.more-dropdown.show {
-  opacity: 1;
-  visibility: visible;
-  transform: translateY(0) scale(1);
+/* Glossy top shine on dropdowns */
+.more-dropdown::before,
+.user-dropdown::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.4) 50%, transparent 100%);
 }
 
+.more-dropdown.show,
+.user-dropdown.show {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0) scale(1) rotateX(0deg);
+}
+
+/* ===== DROPDOWN ITEMS ===== */
 .more-dropdown-item {
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 12px 16px;
+  gap: 14px;
+  padding: 14px 20px;
   color: var(--nav-text-secondary);
   text-decoration: none;
-  font-size: 0.9rem;
+  font-size: 0.95rem;
   font-weight: 500;
-  transition: all 0.15s ease;
+  transition: var(--nav-transition-fast);
+  position: relative;
+  overflow: hidden;
+}
+
+/* Left accent bar on hover */
+.more-dropdown-item::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 4px;
+  background: var(--nav-gradient-primary);
+  transform: scaleY(0);
+  transition: var(--nav-transition-fast);
 }
 
 .more-dropdown-item:hover {
-  background: var(--nav-bg-glass-hover);
+  background: var(--nav-glass-bg-hover);
   color: var(--nav-text-primary);
+  padding-left: 28px;
+}
+
+.more-dropdown-item:hover::before {
+  transform: scaleY(1);
 }
 
 .more-dropdown-item:hover svg {
   color: var(--nav-primary);
-  transform: scale(1.1);
+  transform: scale(1.2) rotate(5deg);
 }
 
 .more-dropdown-item svg {
-  width: 18px;
-  height: 18px;
+  width: 20px;
+  height: 20px;
   color: var(--nav-text-muted);
-  transition: all 0.15s ease;
+  transition: var(--nav-transition);
 }
 
 .more-dropdown-divider {
   height: 1px;
-  background: var(--nav-border-primary);
-  margin: 4px 0;
+  background: linear-gradient(90deg, transparent 0%, var(--nav-glass-border) 50%, transparent 100%);
+  margin: 8px 20px;
 }
 
-/* User Menu */
-.user-menu {
-  position: relative;
-}
-
+/* ===== USER MENU ===== */
 .user-menu-btn {
   background: none;
-  border: 2px solid var(--nav-border-primary);
+  border: 3px solid var(--nav-glass-border);
   border-radius: var(--nav-radius-full);
   cursor: pointer;
-  padding: 2px;
+  padding: 3px;
   transition: var(--nav-transition);
+  box-shadow: var(--nav-btn-shadow);
 }
 
 .user-menu-btn:hover {
   border-color: var(--nav-primary);
-  box-shadow: 0 0 20px var(--nav-primary-glow);
-  transform: scale(1.05);
+  box-shadow: var(--nav-btn-shadow-hover), var(--nav-shadow-glow);
+  transform: scale(1.1);
 }
 
 .user-avatar {
-  width: 40px;
-  height: 40px;
+  width: 44px;
+  height: 44px;
   border-radius: var(--nav-radius-full);
   object-fit: cover;
 }
 
 .user-avatar-placeholder {
-  width: 40px;
-  height: 40px;
+  width: 44px;
+  height: 44px;
   border-radius: var(--nav-radius-full);
-  background: linear-gradient(135deg, var(--nav-primary) 0%, var(--nav-primary-light) 100%);
+  background: var(--nav-gradient-primary);
   color: white;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-weight: 700;
-  font-size: 1rem;
+  font-weight: 800;
+  font-size: 1.1rem;
+  text-shadow: 0 2px 4px rgba(0,0,0,0.3);
 }
 
-.user-dropdown {
-  position: absolute;
-  top: calc(100% + 8px);
-  right: 0;
-  min-width: 220px;
-  background: var(--nav-bg-card);
-  backdrop-filter: var(--nav-blur);
-  -webkit-backdrop-filter: var(--nav-blur);
-  border: 1px solid var(--nav-border-primary);
-  border-radius: var(--nav-radius-lg);
-  box-shadow: var(--nav-shadow-xl);
-  opacity: 0;
-  visibility: hidden;
-  transform: translateY(-10px) scale(0.95);
-  transition: var(--nav-transition);
-  z-index: 1000;
+/* User dropdown header with gradient */
+.user-dropdown-header {
+  padding: 20px;
+  background: var(--nav-gradient-primary);
+  position: relative;
   overflow: hidden;
 }
 
-.user-dropdown.show {
-  opacity: 1;
-  visibility: visible;
-  transform: translateY(0) scale(1);
-}
-
-.user-dropdown-header {
-  padding: 16px;
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0.05) 100%);
-  border-bottom: 1px solid var(--nav-border-primary);
-}
-
-[data-theme="light"] .user-dropdown-header {
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.9) 0%, rgba(255, 255, 255, 0.7) 100%);
+/* Glossy shine on header */
+.user-dropdown-header::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(135deg, rgba(255,255,255,0.25) 0%, rgba(255,255,255,0) 50%);
 }
 
 .user-dropdown-header strong {
   display: block;
-  color: var(--nav-text-primary);
-  font-weight: 600;
-  margin-bottom: 2px;
+  color: white;
+  font-weight: 700;
+  font-size: 1.1rem;
+  margin-bottom: 4px;
+  position: relative;
+  text-shadow: 0 2px 4px rgba(0,0,0,0.2);
 }
 
 .user-dropdown-header span {
-  font-size: 0.8rem;
-  color: var(--nav-text-muted);
+  font-size: 0.85rem;
+  color: rgba(255,255,255,0.85);
+  position: relative;
 }
 
 .user-dropdown-divider {
   height: 1px;
-  background: var(--nav-border-primary);
+  background: linear-gradient(90deg, transparent 0%, var(--nav-glass-border) 50%, transparent 100%);
 }
 
 .user-dropdown-item {
   display: block;
-  padding: 12px 16px;
+  padding: 14px 20px;
   color: var(--nav-text-secondary);
   text-decoration: none;
-  font-size: 0.9rem;
+  font-size: 0.95rem;
   font-weight: 500;
-  transition: all 0.15s ease;
+  transition: var(--nav-transition-fast);
+  position: relative;
 }
 
 .user-dropdown-item:hover {
-  background: var(--nav-bg-glass-hover);
+  background: var(--nav-glass-bg-hover);
   color: var(--nav-text-primary);
+  padding-left: 28px;
 }
 
 .user-dropdown-item.logout {
@@ -429,25 +523,39 @@ $isActive = function($path) use ($currentPath) {
   background: rgba(239, 68, 68, 0.1);
 }
 
-/* Responsive */
+/* ===== RESPONSIVE ===== */
 @media (max-width: 768px) {
   .nav-container {
-    padding: 0 1rem;
-    height: 60px;
+    padding: 0 1.25rem;
+    height: 70px;
   }
   .nav-logo {
-    font-size: 1.5rem;
+    font-size: 1.75rem;
   }
-  .nav-icon-btn, .more-menu-btn, .theme-toggle {
+  .nav-actions {
+    gap: 0.75rem;
+  }
+  .theme-toggle, .nav-icon-btn, .more-menu-btn {
+    width: 46px;
+    height: 46px;
+  }
+  .user-avatar, .user-avatar-placeholder {
     width: 40px;
     height: 40px;
   }
-  .user-avatar, .user-avatar-placeholder {
-    width: 36px;
-    height: 36px;
-  }
+}
+
+@media (max-width: 480px) {
   .nav-actions {
     gap: 0.5rem;
+  }
+  .theme-toggle, .nav-icon-btn, .more-menu-btn {
+    width: 42px;
+    height: 42px;
+  }
+  .theme-toggle svg, .nav-icon-btn svg, .more-menu-btn svg {
+    width: 18px;
+    height: 18px;
   }
 }
 </style>
@@ -457,7 +565,7 @@ $isActive = function($path) use ($currentPath) {
 
         <div class="nav-actions">
             <!-- Theme Toggle -->
-            <button class="theme-toggle" onclick="toggleTheme()" title="Toggle theme">
+            <button class="theme-toggle" onclick="toggleTheme()" title="Toggle theme (Ctrl+Shift+L)">
                 <svg class="sun-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <circle cx="12" cy="12" r="5"></circle>
                     <line x1="12" y1="1" x2="12" y2="3"></line>
@@ -475,7 +583,7 @@ $isActive = function($path) use ($currentPath) {
             </button>
 
             <a href="/notifications/" class="nav-icon-btn" title="Notifications">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
                     <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
                 </svg>
@@ -486,11 +594,11 @@ $isActive = function($path) use ($currentPath) {
 
             <!-- 3-dot More Menu -->
             <div class="more-menu">
-                <button class="more-menu-btn" onclick="toggleMoreMenu()" title="More">
+                <button class="more-menu-btn" onclick="toggleMoreMenu()" title="More options">
                     <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor">
-                        <circle cx="12" cy="5" r="2"></circle>
-                        <circle cx="12" cy="12" r="2"></circle>
-                        <circle cx="12" cy="19" r="2"></circle>
+                        <circle cx="12" cy="5" r="2.5"></circle>
+                        <circle cx="12" cy="12" r="2.5"></circle>
+                        <circle cx="12" cy="19" r="2.5"></circle>
                     </svg>
                 </button>
                 <div class="more-dropdown" id="moreDropdown">
@@ -602,17 +710,17 @@ $isActive = function($path) use ($currentPath) {
 </nav>
 
 <script>
-// Theme toggle function
+// Theme toggle function with smooth animation
 function toggleTheme() {
     const html = document.documentElement;
     const currentTheme = html.getAttribute('data-theme') || 'dark';
     const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
 
+    // Add smooth transition to body
+    document.body.style.transition = 'background 0.6s cubic-bezier(0.16, 1, 0.3, 1), color 0.4s ease';
+
     html.setAttribute('data-theme', newTheme);
     localStorage.setItem('theme', newTheme);
-
-    // Add animation class
-    document.body.style.transition = 'background 0.5s ease, color 0.3s ease';
 }
 
 function toggleUserMenu() {
@@ -625,6 +733,7 @@ function toggleMoreMenu() {
     document.getElementById('moreDropdown').classList.toggle('show');
 }
 
+// Close dropdowns when clicking outside
 document.addEventListener('click', function(e) {
     if (!e.target.closest('.user-menu')) {
         document.getElementById('userDropdown')?.classList.remove('show');
