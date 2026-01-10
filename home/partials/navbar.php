@@ -35,15 +35,28 @@ $isActive = function($path) use ($currentPath) {
 .nav-link{padding:0.5rem 1rem;color:#4B5563;text-decoration:none;font-weight:500;border-radius:8px;transition:all 0.2s;}
 .nav-link:hover,.nav-link.active{color:#4F46E5;background:rgba(79,70,229,0.05);}
 .nav-actions{display:flex;align-items:center;gap:0.5rem;}
-.nav-icon-btn{position:relative;width:40px;height:40px;display:flex;align-items:center;justify-content:center;color:#4B5563;border-radius:8px;transition:all 0.2s;text-decoration:none;}
+.nav-icon-btn{position:relative;width:40px;height:40px;display:flex;align-items:center;justify-content:center;color:#4B5563;border-radius:8px;transition:all 0.2s;text-decoration:none;background:none;border:none;cursor:pointer;}
 .nav-icon-btn:hover{background:#F3F4F6;color:#1F2937;}
 .notification-badge{position:absolute;top:4px;right:4px;min-width:18px;height:18px;padding:0 4px;background:#EF4444;color:#fff;font-size:0.75rem;font-weight:600;border-radius:9px;display:flex;align-items:center;justify-content:center;}
+
+/* 3-dot More Menu */
+.more-menu{position:relative;}
+.more-menu-btn{background:none;border:none;cursor:pointer;width:40px;height:40px;display:flex;align-items:center;justify-content:center;color:#4B5563;border-radius:8px;transition:all 0.2s;}
+.more-menu-btn:hover{background:#F3F4F6;color:#1F2937;}
+.more-dropdown{position:absolute;top:100%;right:0;margin-top:0.5rem;min-width:200px;background:#fff;border-radius:12px;box-shadow:0 10px 15px -3px rgba(0,0,0,0.1);border:1px solid #E5E7EB;opacity:0;visibility:hidden;transform:translateY(-10px);transition:all 0.2s;z-index:101;}
+.more-dropdown.show{opacity:1;visibility:visible;transform:translateY(0);}
+.more-dropdown-item{display:flex;align-items:center;gap:0.75rem;padding:0.75rem 1rem;color:#374151;text-decoration:none;font-size:0.875rem;transition:all 0.2s;}
+.more-dropdown-item:hover{background:#F9FAFB;}
+.more-dropdown-item svg{width:18px;height:18px;color:#6B7280;}
+.more-dropdown-divider{height:1px;background:#E5E7EB;margin:0.25rem 0;}
+
+/* User Menu */
 .user-menu{position:relative;}
 .user-menu-btn{background:none;border:none;cursor:pointer;padding:4px;border-radius:50%;transition:all 0.2s;}
 .user-menu-btn:hover{background:#F3F4F6;}
 .user-avatar{width:36px;height:36px;border-radius:50%;object-fit:cover;}
 .user-avatar-placeholder{width:36px;height:36px;border-radius:50%;background:#4F46E5;color:#fff;display:flex;align-items:center;justify-content:center;font-weight:600;font-size:14px;}
-.user-dropdown{position:absolute;top:100%;right:0;margin-top:0.5rem;min-width:200px;background:#fff;border-radius:12px;box-shadow:0 10px 15px -3px rgba(0,0,0,0.1);border:1px solid #E5E7EB;opacity:0;visibility:hidden;transform:translateY(-10px);transition:all 0.2s;}
+.user-dropdown{position:absolute;top:100%;right:0;margin-top:0.5rem;min-width:200px;background:#fff;border-radius:12px;box-shadow:0 10px 15px -3px rgba(0,0,0,0.1);border:1px solid #E5E7EB;opacity:0;visibility:hidden;transform:translateY(-10px);transition:all 0.2s;z-index:101;}
 .user-dropdown.show{opacity:1;visibility:visible;transform:translateY(0);}
 .user-dropdown-header{padding:1rem;display:flex;flex-direction:column;}
 .user-dropdown-header strong{color:#1F2937;}
@@ -76,6 +89,43 @@ $isActive = function($path) use ($currentPath) {
                 <?php endif; ?>
             </a>
 
+            <!-- 3-dot More Menu -->
+            <div class="more-menu">
+                <button class="more-menu-btn" onclick="toggleMoreMenu()" title="More">
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor">
+                        <circle cx="12" cy="5" r="2"></circle>
+                        <circle cx="12" cy="12" r="2"></circle>
+                        <circle cx="12" cy="19" r="2"></circle>
+                    </svg>
+                </button>
+                <div class="more-dropdown" id="moreDropdown">
+                    <a href="/diary/" class="more-dropdown-item">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
+                            <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
+                        </svg>
+                        My Diary
+                    </a>
+                    <a href="/homecells/" class="more-dropdown-item">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                            <circle cx="9" cy="7" r="4"></circle>
+                            <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                            <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                        </svg>
+                        Homecells
+                    </a>
+                    <a href="/learning/" class="more-dropdown-item">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M22 10v6M2 10l10-5 10 5-10 5z"></path>
+                            <path d="M6 12v5c3 3 9 3 12 0v-5"></path>
+                        </svg>
+                        Courses
+                    </a>
+                </div>
+            </div>
+
+            <!-- User Profile Menu -->
             <div class="user-menu">
                 <button class="user-menu-btn" onclick="toggleUserMenu()">
                     <?php if (!empty($navUser['avatar'])): ?>
@@ -93,9 +143,6 @@ $isActive = function($path) use ($currentPath) {
                     </div>
                     <div class="user-dropdown-divider"></div>
                     <a href="/profile/" class="user-dropdown-item">Profile</a>
-                    <a href="/diary/" class="user-dropdown-item">My Diary</a>
-                    <a href="/homecells/" class="user-dropdown-item">Homecells</a>
-                    <a href="/learning/" class="user-dropdown-item">Courses</a>
                     <?php if ($navCong && Auth::isCongregationAdmin($navCong['id'])): ?>
                         <div class="user-dropdown-divider"></div>
                         <a href="/admin_congregation/" class="user-dropdown-item">Manage Congregation</a>
@@ -113,12 +160,21 @@ $isActive = function($path) use ($currentPath) {
 
 <script>
 function toggleUserMenu() {
+    document.getElementById('moreDropdown')?.classList.remove('show');
     document.getElementById('userDropdown').classList.toggle('show');
+}
+
+function toggleMoreMenu() {
+    document.getElementById('userDropdown')?.classList.remove('show');
+    document.getElementById('moreDropdown').classList.toggle('show');
 }
 
 document.addEventListener('click', function(e) {
     if (!e.target.closest('.user-menu')) {
         document.getElementById('userDropdown')?.classList.remove('show');
+    }
+    if (!e.target.closest('.more-menu')) {
+        document.getElementById('moreDropdown')?.classList.remove('show');
     }
 });
 </script>
