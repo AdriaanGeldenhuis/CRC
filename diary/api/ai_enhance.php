@@ -5,58 +5,66 @@
  */
 
 declare(strict_types=1);
+
+// Catch all errors early
+set_error_handler(function($severity, $message, $file, $line) {
+    throw new ErrorException($message, 0, $severity, $file, $line);
+});
+
 header('Content-Type: application/json; charset=utf-8');
 
-require_once dirname(__DIR__, 2) . '/core/bootstrap.php';
-
-// Require authentication
-if (!Auth::check()) {
-    http_response_code(401);
-    echo json_encode(['error' => 'unauthorized']);
-    exit;
-}
-
-$userId = user_id();
-
-// Get JSON input
-$input = json_decode(file_get_contents('php://input'), true);
-$text = trim((string)($input['text'] ?? ''));
-
-if (empty($text)) {
-    http_response_code(400);
-    echo json_encode(['error' => 'text_required']);
-    exit;
-}
-
-// Get OpenAI API Key from config
-$apiKey = defined('DIARY_OPENAI_API_KEY') ? DIARY_OPENAI_API_KEY : '';
-
-if (empty($apiKey)) {
-    http_response_code(500);
-    echo json_encode([
-        'error' => 'ai_not_configured',
-        'message' => 'AI key not configured'
-    ]);
-    exit;
-}
-
-// Get language preference (default to English)
-$lang = $_SESSION['language'] ?? 'en';
-
-// Get system prompt based on language
-if ($lang === 'af') {
-    $systemPrompt = defined('DIARY_AI_ENHANCE_PROMPT_AF') ? DIARY_AI_ENHANCE_PROMPT_AF : 'Verbeter die teks.';
-} else {
-    $systemPrompt = defined('DIARY_AI_ENHANCE_PROMPT_EN') ? DIARY_AI_ENHANCE_PROMPT_EN : 'Enhance the text.';
-}
-
-// Get AI settings from config
-$model = defined('DIARY_AI_MODEL') ? DIARY_AI_MODEL : 'gpt-4o-mini';
-$maxTokens = defined('DIARY_AI_MAX_TOKENS') ? DIARY_AI_MAX_TOKENS : 1000;
-$temperature = defined('DIARY_AI_TEMPERATURE') ? DIARY_AI_TEMPERATURE : 0.7;
-$timeout = defined('DIARY_AI_TIMEOUT') ? DIARY_AI_TIMEOUT : 30;
-
 try {
+    require_once dirname(__DIR__, 2) . '/core/bootstrap.php';
+
+    // Require authentication
+    if (!Auth::check()) {
+        http_response_code(401);
+        echo json_encode(['error' => 'unauthorized']);
+        exit;
+    }
+
+    $userId = Auth::user()['id'] ?? 0;
+
+    // Get JSON input
+    $input = json_decode(file_get_contents('php://input'), true);
+    $text = trim((string)($input['text'] ?? ''));
+
+    if (empty($text)) {
+        http_response_code(400);
+        echo json_encode(['error' => 'text_required']);
+        exit;
+    }
+
+    // Get OpenAI API Key - check config first, then fallback
+    $apiKey = '';
+    if (defined('DIARY_OPENAI_API_KEY') && !empty(DIARY_OPENAI_API_KEY)) {
+        $apiKey = DIARY_OPENAI_API_KEY;
+    }
+
+    if (empty($apiKey)) {
+        http_response_code(500);
+        echo json_encode([
+            'error' => 'ai_not_configured',
+            'message' => 'OpenAI API key not configured. Set DIARY_OPENAI_API_KEY in config or environment.'
+        ]);
+        exit;
+    }
+
+    // Get language preference (default to English)
+    $lang = $_SESSION['language'] ?? 'en';
+
+    // System prompts
+    $promptEn = 'You are a helpful writing assistant. Enhance the following diary entry to make it more expressive, clear, and engaging while maintaining the original meaning and personal voice. Keep it in the same language as the original. Only return the enhanced text, nothing else.';
+    $promptAf = 'Jy is \'n hulpvaardige skryfassistent. Verbeter die volgende dagboekinskrywing om dit meer ekspressief, duidelik en boeiend te maak terwyl jy die oorspronklike betekenis en persoonlike stem behou. Hou dit in dieselfde taal as die oorspronklike. Gee net die verbeterde teks terug, niks anders nie.';
+
+    $systemPrompt = ($lang === 'af') ? $promptAf : $promptEn;
+
+    // AI settings
+    $model = 'gpt-4o-mini';
+    $maxTokens = 1000;
+    $temperature = 0.7;
+    $timeout = 30;
+
     $messages = [
         ['role' => 'system', 'content' => $systemPrompt],
         ['role' => 'user', 'content' => $text]
@@ -85,7 +93,6 @@ try {
     $response = curl_exec($ch);
     $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
     $curlError = curl_error($ch);
-
     curl_close($ch);
 
     if ($response === false) {
@@ -94,51 +101,29 @@ try {
 
     if ($httpCode !== 200) {
         $errorData = json_decode($response, true);
-        $errorMsg = $errorData['error']['message'] ?? 'Unknown error';
-        throw new Exception('OpenAI API error (HTTP ' . $httpCode . '): ' . $errorMsg);
+        $errorMsg = $errorData['error']['message'] ?? 'Unknown API error';
+        throw new Exception('OpenAI error: ' . $errorMsg);
     }
 
     $result = json_decode($response, true);
 
     if (!isset($result['choices'][0]['message']['content'])) {
-        throw new Exception('Invalid OpenAI response format');
+        throw new Exception('Invalid response from OpenAI');
     }
 
     $enhancedText = trim($result['choices'][0]['message']['content']);
 
-    // Calculate tokens used
-    $inputTokens = $result['usage']['prompt_tokens'] ?? 0;
-    $outputTokens = $result['usage']['completion_tokens'] ?? 0;
-    $totalTokens = $result['usage']['total_tokens'] ?? 0;
-
-    // Calculate cost (gpt-4o-mini pricing)
-    $costInput = ($inputTokens / 1000000) * 0.150;  // $0.150 per 1M tokens
-    $costOutput = ($outputTokens / 1000000) * 0.600; // $0.600 per 1M tokens
-    $totalCost = $costInput + $costOutput;
-
-    // Log usage for monitoring
-    error_log(sprintf(
-        'AI Enhance: user=%d, model=%s, tokens=%d (in=%d, out=%d), cost=$%.6f',
-        $userId,
-        $model,
-        $totalTokens,
-        $inputTokens,
-        $outputTokens,
-        $totalCost
-    ));
+    // Log usage
+    $tokens = $result['usage']['total_tokens'] ?? 0;
+    error_log("AI Enhance: user=$userId, tokens=$tokens");
 
     echo json_encode([
         'success' => true,
-        'enhanced_text' => $enhancedText,
-        'original_length' => mb_strlen($text),
-        'enhanced_length' => mb_strlen($enhancedText),
-        'model' => $model,
-        'tokens_used' => $totalTokens,
-        'estimated_cost' => number_format($totalCost, 6)
+        'enhanced_text' => $enhancedText
     ]);
 
 } catch (Throwable $e) {
-    error_log('AI enhance error: ' . $e->getMessage());
+    error_log('AI enhance error: ' . $e->getMessage() . ' in ' . $e->getFile() . ':' . $e->getLine());
     http_response_code(500);
     echo json_encode([
         'error' => 'ai_error',
