@@ -1,25 +1,23 @@
 <?php
+/**
+ * CRC Diary API - Create Entry
+ * Creates a new diary entry
+ */
+
 declare(strict_types=1);
 header('Content-Type: application/json; charset=utf-8');
 
-require_once dirname(__DIR__, 2) . '/security/auth_gate.php';
+require_once dirname(__DIR__, 2) . '/core/bootstrap.php';
 
-if (!isset($pdo) || !($pdo instanceof PDO)) { 
-    http_response_code(500); 
-    echo json_encode(['error'=>'db_unavailable']); 
-    exit; 
+// Require authentication
+if (!Auth::check()) {
+    http_response_code(401);
+    echo json_encode(['error' => 'unauthorized']);
+    exit;
 }
 
-ini_set('display_errors', '0');
-ini_set('log_errors', '1');
-
-$userId = (int)($_SESSION['user_id'] ?? 0);
-
-if ($userId <= 0) { 
-    http_response_code(400); 
-    echo json_encode(['error'=>'unauthorized']); 
-    exit; 
-}
+$user = Auth::user();
+$userId = (int)$user['id'];
 
 // Get JSON input
 $input = json_decode(file_get_contents('php://input'), true);
@@ -32,118 +30,76 @@ $mood = trim((string)($input['mood'] ?? ''));
 $weather = trim((string)($input['weather'] ?? ''));
 $tags = $input['tags'] ?? [];
 $reminderMinutes = (int)($input['reminder_minutes'] ?? 60);
-$addToCalendar = (bool)($input['add_to_calendar'] ?? true); // NEW
+$addToCalendar = (bool)($input['add_to_calendar'] ?? true);
 
 if (empty($date)) {
     http_response_code(400);
-    echo json_encode(['error'=>'date_required']);
+    echo json_encode(['error' => 'date_required']);
     exit;
 }
 
 // Validate date format
 if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $date)) {
     http_response_code(400);
-    echo json_encode(['error'=>'invalid_date_format']);
+    echo json_encode(['error' => 'invalid_date_format']);
     exit;
 }
 
-// Validate time format
-if (!preg_match('/^\d{2}:\d{2}(:\d{2})?$/', $time)) {
-    $time = '00:00:00';
-} elseif (strlen($time) === 5) {
-    $time .= ':00';
-}
-
-// Process tags
-$tagsJson = null;
-if (is_array($tags) && count($tags) > 0) {
-    $tags = array_map('trim', $tags);
-    $tags = array_filter($tags, fn($t) => strlen($t) > 0);
-    $tagsJson = json_encode(array_values($tags), JSON_UNESCAPED_UNICODE);
-}
-
 try {
-    $pdo->beginTransaction();
-
-    // 1. Insert diary entry
-    $stmt = $pdo->prepare("
-        INSERT INTO diaries (user_id, date, time, title, body, mood, weather, tags, reminder_minutes, created_at, updated_at)
-        VALUES (:user_id, :date, :time, :title, :body, :mood, :weather, :tags, :reminder_minutes, NOW(), NOW())
-    ");
-    
-    $stmt->execute([
-        ':user_id' => $userId,
-        ':date' => $date,
-        ':time' => $time,
-        ':title' => $title ?: null,
-        ':body' => $body ?: null,
-        ':mood' => $mood ?: null,
-        ':weather' => $weather ?: null,
-        ':tags' => $tagsJson,
-        ':reminder_minutes' => $reminderMinutes
+    // Create diary entry
+    $entryId = Database::insert('diary_entries', [
+        'user_id' => $userId,
+        'entry_date' => $date,
+        'entry_time' => $time,
+        'title' => $title ?: null,
+        'body' => $body ?: null,
+        'mood' => $mood ?: null,
+        'weather' => $weather ?: null,
+        'tags' => !empty($tags) ? json_encode($tags) : null,
+        'reminder_minutes' => $reminderMinutes,
+        'created_at' => date('Y-m-d H:i:s'),
+        'updated_at' => date('Y-m-d H:i:s')
     ]);
-    
-    $diaryId = (int)$pdo->lastInsertId();
 
-    // 2. Add to your existing Calendar system
-    $calendarEventId = null;
-    if ($addToCalendar && $title) {
-        $startAt = $date . ' ' . $time;
-        
-        // Calculate end_at (1 hour later by default)
-        $endAt = date('Y-m-d H:i:s', strtotime($startAt . ' +1 hour'));
-        
-        // Build description with mood/weather
-        $description = '';
-        if ($mood) $description .= "Gemoed: $mood\n";
-        if ($weather) $description .= "Weer: $weather\n";
-        if ($body) $description .= "\n" . substr($body, 0, 200) . (strlen($body) > 200 ? '...' : '');
-        
-        $calStmt = $pdo->prepare("
-            INSERT INTO calendar_events (user_id, title, description, start_at, end_at, all_day, visibility, created_at)
-            VALUES (:user_id, :title, :description, :start_at, :end_at, 0, 'private', NOW())
-        ");
-        
-        $calStmt->execute([
-            ':user_id' => $userId,
-            ':title' => '📔 ' . $title, // Diary icon prefix
-            ':description' => $description,
-            ':start_at' => $startAt,
-            ':end_at' => $endAt
-        ]);
-        
-        $calendarEventId = (int)$pdo->lastInsertId();
-        
-        // Link back to diary
-        $updateDiary = $pdo->prepare("
-            UPDATE diaries 
-            SET calendar_event_id = :cal_id 
-            WHERE id = :diary_id
-        ");
-        $updateDiary->execute([
-            ':cal_id' => $calendarEventId,
-            ':diary_id' => $diaryId
-        ]);
+    // Optionally add to calendar
+    if ($addToCalendar && $entryId) {
+        try {
+            $startDatetime = $date . ' ' . $time . ':00';
+            $calendarEventId = Database::insert('calendar_events', [
+                'user_id' => $userId,
+                'title' => $title ?: 'Diary Entry',
+                'description' => $body ? substr($body, 0, 200) : null,
+                'start_datetime' => $startDatetime,
+                'end_datetime' => $startDatetime,
+                'event_type' => 'diary',
+                'reminder_minutes' => $reminderMinutes,
+                'created_at' => date('Y-m-d H:i:s')
+            ]);
+
+            // Link calendar event to diary
+            if ($calendarEventId) {
+                Database::execute(
+                    "UPDATE diary_entries SET calendar_event_id = ? WHERE id = ?",
+                    [$calendarEventId, $entryId]
+                );
+            }
+        } catch (Throwable $e) {
+            // Calendar is optional, don't fail if it errors
+            error_log('Diary calendar sync error: ' . $e->getMessage());
+        }
     }
 
-    $pdo->commit();
-    
     echo json_encode([
         'success' => true,
-        'diary_id' => $diaryId,
-        'calendar_event_id' => $calendarEventId,
-        'message' => 'Diary entry created successfully'
+        'id' => $entryId,
+        'message' => 'Entry created'
     ]);
 
 } catch (Throwable $e) {
-    if ($pdo->inTransaction()) {
-        $pdo->rollBack();
-    }
     error_log('Diary create error: ' . $e->getMessage());
     http_response_code(500);
     echo json_encode([
         'error' => 'server_error',
-        'message' => 'Could not create diary entry'
+        'message' => 'Could not create entry'
     ]);
 }
-

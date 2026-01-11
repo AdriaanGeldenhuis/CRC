@@ -1,41 +1,40 @@
 <?php
+/**
+ * CRC Diary API - Update Entry
+ * Updates an existing diary entry
+ */
+
 declare(strict_types=1);
 header('Content-Type: application/json; charset=utf-8');
 
-require_once dirname(__DIR__, 2) . '/security/auth_gate.php';
+require_once dirname(__DIR__, 2) . '/core/bootstrap.php';
 
-if (!isset($pdo) || !($pdo instanceof PDO)) { 
-    http_response_code(500); 
-    echo json_encode(['error'=>'db_unavailable']); 
-    exit; 
+// Require authentication
+if (!Auth::check()) {
+    http_response_code(401);
+    echo json_encode(['error' => 'unauthorized']);
+    exit;
 }
 
-ini_set('display_errors', '0');
-ini_set('log_errors', '1');
+$user = Auth::user();
+$userId = (int)$user['id'];
+$entryId = (int)($_GET['id'] ?? 0);
 
-$userId = (int)($_SESSION['user_id'] ?? 0);
-$diaryId = (int)($_GET['id'] ?? 0);
-
-if ($userId <= 0 || $diaryId <= 0) { 
-    http_response_code(400); 
-    echo json_encode(['error'=>'bad_request']); 
-    exit; 
+if ($entryId <= 0) {
+    http_response_code(400);
+    echo json_encode(['error' => 'bad_request']);
+    exit;
 }
 
-// Verify ownership and get calendar_event_id
-try {
-    $checkStmt = $pdo->prepare("SELECT calendar_event_id FROM diaries WHERE id = ? AND user_id = ?");
-    $checkStmt->execute([$diaryId, $userId]);
-    $existing = $checkStmt->fetch();
-    if (!$existing) {
-        http_response_code(403);
-        echo json_encode(['error'=>'forbidden']);
-        exit;
-    }
-    $existingCalendarEventId = $existing['calendar_event_id'];
-} catch (Exception $e) {
-    http_response_code(500);
-    echo json_encode(['error'=>'verification_failed']);
+// Verify ownership
+$existing = Database::fetchOne(
+    "SELECT id, calendar_event_id FROM diary_entries WHERE id = ? AND user_id = ?",
+    [$entryId, $userId]
+);
+
+if (!$existing) {
+    http_response_code(404);
+    echo json_encode(['error' => 'not_found']);
     exit;
 }
 
@@ -50,110 +49,76 @@ $mood = trim((string)($input['mood'] ?? ''));
 $weather = trim((string)($input['weather'] ?? ''));
 $tags = $input['tags'] ?? [];
 $reminderMinutes = (int)($input['reminder_minutes'] ?? 60);
-$syncToCalendar = (bool)($input['sync_to_calendar'] ?? true);
 
 if (empty($date)) {
     http_response_code(400);
-    echo json_encode(['error'=>'date_required']);
+    echo json_encode(['error' => 'date_required']);
     exit;
-}
-
-// Validate formats
-if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $date)) {
-    http_response_code(400);
-    echo json_encode(['error'=>'invalid_date_format']);
-    exit;
-}
-
-if (!preg_match('/^\d{2}:\d{2}(:\d{2})?$/', $time)) {
-    $time = '00:00:00';
-} elseif (strlen($time) === 5) {
-    $time .= ':00';
-}
-
-// Process tags
-$tagsJson = null;
-if (is_array($tags) && count($tags) > 0) {
-    $tags = array_map('trim', $tags);
-    $tags = array_filter($tags, fn($t) => strlen($t) > 0);
-    $tagsJson = json_encode(array_values($tags), JSON_UNESCAPED_UNICODE);
 }
 
 try {
-    $pdo->beginTransaction();
-
-    // 1. Update diary
-    $stmt = $pdo->prepare("
-        UPDATE diaries 
-        SET date = :date,
-            time = :time,
-            title = :title,
-            body = :body,
-            mood = :mood,
-            weather = :weather,
-            tags = :tags,
-            reminder_minutes = :reminder_minutes,
+    Database::execute(
+        "UPDATE diary_entries SET
+            entry_date = ?,
+            entry_time = ?,
+            title = ?,
+            body = ?,
+            mood = ?,
+            weather = ?,
+            tags = ?,
+            reminder_minutes = ?,
             updated_at = NOW()
-        WHERE id = :id AND user_id = :user_id
-    ");
-    
-    $stmt->execute([
-        ':date' => $date,
-        ':time' => $time,
-        ':title' => $title ?: null,
-        ':body' => $body ?: null,
-        ':mood' => $mood ?: null,
-        ':weather' => $weather ?: null,
-        ':tags' => $tagsJson,
-        ':reminder_minutes' => $reminderMinutes,
-        ':id' => $diaryId,
-        ':user_id' => $userId
-    ]);
+         WHERE id = ? AND user_id = ?",
+        [
+            $date,
+            $time,
+            $title ?: null,
+            $body ?: null,
+            $mood ?: null,
+            $weather ?: null,
+            !empty($tags) ? json_encode($tags) : null,
+            $reminderMinutes,
+            $entryId,
+            $userId
+        ]
+    );
 
-    // 2. Sync to calendar if linked
-    if ($syncToCalendar && $existingCalendarEventId && $title) {
-        $startAt = $date . ' ' . $time;
-        $endAt = date('Y-m-d H:i:s', strtotime($startAt . ' +1 hour'));
-        
-        $description = '';
-        if ($mood) $description .= "Gemoed: $mood\n";
-        if ($weather) $description .= "Weer: $weather\n";
-        if ($body) $description .= "\n" . substr($body, 0, 200) . (strlen($body) > 200 ? '...' : '');
-        
-        $calUpdate = $pdo->prepare("
-            UPDATE calendar_events 
-            SET title = :title,
-                description = :description,
-                start_at = :start_at,
-                end_at = :end_at
-            WHERE id = :cal_id AND user_id = :user_id
-        ");
-        
-        $calUpdate->execute([
-            ':title' => '📔 ' . $title,
-            ':description' => $description,
-            ':start_at' => $startAt,
-            ':end_at' => $endAt,
-            ':cal_id' => $existingCalendarEventId,
-            ':user_id' => $userId
-        ]);
+    // Update linked calendar event if exists
+    if ($existing['calendar_event_id']) {
+        try {
+            $startDatetime = $date . ' ' . $time . ':00';
+            Database::execute(
+                "UPDATE calendar_events SET
+                    title = ?,
+                    description = ?,
+                    start_datetime = ?,
+                    end_datetime = ?,
+                    reminder_minutes = ?
+                 WHERE id = ?",
+                [
+                    $title ?: 'Diary Entry',
+                    $body ? substr($body, 0, 200) : null,
+                    $startDatetime,
+                    $startDatetime,
+                    $reminderMinutes,
+                    $existing['calendar_event_id']
+                ]
+            );
+        } catch (Throwable $e) {
+            error_log('Diary calendar update error: ' . $e->getMessage());
+        }
     }
 
-    $pdo->commit();
-    
     echo json_encode([
         'success' => true,
-        'message' => 'Diary entry updated successfully'
+        'message' => 'Entry updated'
     ]);
 
 } catch (Throwable $e) {
-    if ($pdo->inTransaction()) {
-        $pdo->rollBack();
-    }
     error_log('Diary update error: ' . $e->getMessage());
     http_response_code(500);
     echo json_encode([
         'error' => 'server_error',
-        'message' => 'Could not update diary entry'
+        'message' => 'Could not update entry'
     ]);
 }

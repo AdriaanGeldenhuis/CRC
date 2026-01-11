@@ -1,25 +1,23 @@
 <?php
+/**
+ * CRC Diary API - Search
+ * Searches diary entries
+ */
+
 declare(strict_types=1);
 header('Content-Type: application/json; charset=utf-8');
 
-require_once dirname(__DIR__, 2) . '/security/auth_gate.php';
+require_once dirname(__DIR__, 2) . '/core/bootstrap.php';
 
-if (!isset($pdo) || !($pdo instanceof PDO)) { 
-    http_response_code(500); 
-    echo json_encode(['error'=>'db_unavailable']); 
-    exit; 
+// Require authentication
+if (!Auth::check()) {
+    http_response_code(401);
+    echo json_encode(['error' => 'unauthorized']);
+    exit;
 }
 
-ini_set('display_errors', '0');
-ini_set('log_errors', '1');
-
-$userId = (int)($_SESSION['user_id'] ?? 0);
-
-if ($userId <= 0) { 
-    http_response_code(400); 
-    echo json_encode(['error'=>'unauthorized']); 
-    exit; 
-}
+$user = Auth::user();
+$userId = (int)$user['id'];
 
 // Get JSON input
 $input = json_decode(file_get_contents('php://input'), true);
@@ -29,69 +27,51 @@ $searchTitle = (bool)($input['searchTitle'] ?? true);
 $searchBody = (bool)($input['searchBody'] ?? true);
 $searchTags = (bool)($input['searchTags'] ?? true);
 
-if ($query === '') {
+if (empty($query)) {
     echo json_encode(['success' => true, 'results' => []]);
     exit;
 }
-
-// Build search query
-$conditions = [];
-$params = [':user_id' => $userId];
-
-if ($searchTitle) {
-    $conditions[] = "title LIKE :query_title";
-    $params[':query_title'] = '%' . $query . '%';
-}
-
-if ($searchBody) {
-    $conditions[] = "body LIKE :query_body";
-    $params[':query_body'] = '%' . $query . '%';
-}
-
-if ($searchTags) {
-    $conditions[] = "tags LIKE :query_tags";
-    $params[':query_tags'] = '%' . $query . '%';
-}
-
-if (empty($conditions)) {
-    echo json_encode(['success' => true, 'results' => []]);
-    exit;
-}
-
-$whereClause = '(' . implode(' OR ', $conditions) . ')';
-
-$sql = "
-    SELECT 
-        id,
-        date,
-        time,
-        title,
-        body,
-        mood,
-        weather,
-        tags,
-        created_at
-    FROM diaries 
-    WHERE user_id = :user_id AND $whereClause
-    ORDER BY date DESC, time DESC
-    LIMIT 100
-";
 
 try {
-    $stmt = $pdo->prepare($sql);
-    $stmt->execute($params);
-    $results = $stmt->fetchAll(PDO::FETCH_ASSOC);
-    
-    // Process results
-    foreach ($results as &$result) {
-        if ($result['tags']) {
-            $result['tags'] = json_decode($result['tags'], true) ?: [];
-        } else {
-            $result['tags'] = [];
-        }
+    $conditions = [];
+    $params = [$userId];
+
+    if ($searchTitle) {
+        $conditions[] = 'title LIKE ?';
+        $params[] = '%' . $query . '%';
     }
-    unset($result);
-    
+    if ($searchBody) {
+        $conditions[] = 'body LIKE ?';
+        $params[] = '%' . $query . '%';
+    }
+    if ($searchTags) {
+        $conditions[] = 'tags LIKE ?';
+        $params[] = '%' . $query . '%';
+    }
+
+    if (empty($conditions)) {
+        echo json_encode(['success' => true, 'results' => []]);
+        exit;
+    }
+
+    $searchCondition = '(' . implode(' OR ', $conditions) . ')';
+
+    $results = Database::fetchAll(
+        "SELECT id, title, body, entry_date, entry_time, mood, weather, tags
+         FROM diary_entries
+         WHERE user_id = ? AND {$searchCondition}
+         ORDER BY entry_date DESC, entry_time DESC
+         LIMIT 50",
+        $params
+    ) ?: [];
+
+    // Process results
+    foreach ($results as &$row) {
+        $row['date'] = $row['entry_date'];
+        $row['time'] = $row['entry_time'];
+        $row['tags'] = $row['tags'] ? json_decode($row['tags'], true) : [];
+    }
+
     echo json_encode([
         'success' => true,
         'results' => $results,
@@ -106,4 +86,3 @@ try {
         'message' => 'Search failed'
     ]);
 }
-
