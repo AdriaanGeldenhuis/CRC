@@ -265,7 +265,39 @@ function buildCalendar($year, $month, $entryDates) {
     <link rel="stylesheet" href="/diary/css/diary.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Parisienne&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Parisienne&family=Noto+Color+Emoji&display=swap" rel="stylesheet">
+    <style>
+        /* Emoji font support */
+        .mood-btn, .mood-icon, .entry-mood, .mood-emoji {
+            font-family: 'Noto Color Emoji', 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', sans-serif;
+        }
+        .mood-filters {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+        .mood-filters .mood-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 8px 14px;
+            background: rgba(139, 92, 246, 0.1);
+            border: 1px solid rgba(139, 92, 246, 0.2);
+            border-radius: 20px;
+            color: #fff;
+            font-size: 14px;
+            text-decoration: none;
+            transition: all 0.2s ease;
+        }
+        .mood-filters .mood-btn:hover {
+            background: rgba(139, 92, 246, 0.2);
+            border-color: rgba(139, 92, 246, 0.4);
+        }
+        .mood-filters .mood-btn.active {
+            background: rgba(139, 92, 246, 0.3);
+            border-color: #8B5CF6;
+        }
+    </style>
 </head>
 <body>
     <?php include __DIR__ . '/../home/partials/navbar.php'; ?>
@@ -329,20 +361,6 @@ function buildCalendar($year, $month, $entryDates) {
             <div class="diary-layout">
                 <!-- Sidebar -->
                 <aside class="diary-sidebar">
-                    <!-- Mini Calendar -->
-                    <div class="sidebar-section">
-                        <h3>
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
-                                <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
-                                <line x1="16" y1="2" x2="16" y2="6"></line>
-                                <line x1="8" y1="2" x2="8" y2="6"></line>
-                                <line x1="3" y1="10" x2="21" y2="10"></line>
-                            </svg>
-                            Calendar
-                        </h3>
-                        <?= buildCalendar($calYear, $calMonth, $entryDates) ?>
-                    </div>
-
                     <!-- Search -->
                     <div class="sidebar-section">
                         <h3>
