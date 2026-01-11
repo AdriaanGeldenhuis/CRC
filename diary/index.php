@@ -24,8 +24,9 @@ $pageTitle = 'My Diary - CRC';
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
   <title><?= htmlspecialchars($pageTitle) ?></title>
+  <?= CSRF::meta() ?>
 
   <!-- Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -41,9 +42,10 @@ $pageTitle = 'My Diary - CRC';
   </style>
 
   <link rel="stylesheet" href="/diary/css/diary.css?v=<?= time() ?>">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 </head>
 <body class="diary-body">
-  <!-- Navigation will be added via home.css navbar styles -->
+  <?php include __DIR__ . '/../home/partials/navbar.php'; ?>
 
   <!-- Hero Section -->
   <div class="diary-hero">

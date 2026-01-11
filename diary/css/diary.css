@@ -2255,5 +2255,39 @@ a:focus-visible {
   background: white;
 }
 
+/* ===== MOBILE TOUCH FIXES ===== */
+.action-btn,
+.view-btn,
+.btn,
+.mood-btn,
+.weather-btn,
+.modal-close,
+button {
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+/* Ensure modal shows on mobile */
+.modal.active {
+  display: flex !important;
+  opacity: 1 !important;
+  pointer-events: auto !important;
+}
+
+/* Fix for iOS Safari */
+@supports (-webkit-touch-callout: none) {
+  .modal-container {
+    max-height: 85vh;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .diary-body {
+    min-height: -webkit-fill-available;
+  }
+}
+
 /* ===== END OF CSS ===== */
 
