@@ -159,7 +159,8 @@ body::before {
   box-shadow: var(--shadow), 0 0 40px var(--glow-primary);
 }
 
-.diary-title h1 {
+.diary-title h1,
+.diary-title h1.display-title {
   font-family: var(--font-display);
   font-size: clamp(2rem, 5vw, 2.5rem);
   font-weight: 200;
@@ -168,6 +169,11 @@ body::before {
   -webkit-text-fill-color: transparent;
   background-clip: text;
   margin-bottom: 0.25rem;
+}
+
+.diary-title p.subtitle {
+  color: var(--text-muted);
+  font-size: 0.9rem;
 }
 
 .diary-title p {
@@ -235,6 +241,47 @@ body::before {
   letter-spacing: 1px;
 }
 
+.stat-icon {
+  width: 48px;
+  height: 48px;
+  margin: 0 auto 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(139, 92, 246, 0.15);
+  border-radius: 50%;
+}
+
+.stat-icon svg {
+  width: 24px;
+  height: 24px;
+  color: var(--primary);
+}
+
+.stat-icon.accent {
+  background: rgba(6, 182, 212, 0.15);
+}
+
+.stat-icon.accent svg {
+  color: var(--accent);
+}
+
+.stat-icon.success {
+  background: rgba(16, 185, 129, 0.15);
+}
+
+.stat-icon.success svg {
+  color: var(--success);
+}
+
+.stat-icon.warning {
+  background: rgba(245, 158, 11, 0.15);
+}
+
+.stat-icon.warning svg {
+  color: var(--warning);
+}
+
 /* ===== DIARY LAYOUT ===== */
 .diary-layout {
   display: grid;
@@ -276,6 +323,17 @@ body::before {
   -webkit-text-fill-color: transparent;
   background-clip: text;
   margin-bottom: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.sidebar-section h3 svg {
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+  color: var(--primary);
+  -webkit-text-fill-color: initial;
 }
 
 /* ===== MINI CALENDAR ===== */
@@ -285,50 +343,53 @@ body::before {
   padding: 1rem;
 }
 
-.mini-calendar-header {
+.mini-calendar .calendar-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
   margin-bottom: 1rem;
 }
 
-.mini-calendar-title {
+.mini-calendar .calendar-title {
   font-size: 0.9rem;
   font-weight: 500;
   color: var(--text-primary);
 }
 
-.mini-calendar-nav {
-  display: flex;
-  gap: 0.5rem;
-}
-
-.mini-calendar-nav button {
+.mini-calendar .calendar-nav {
   width: 28px;
   height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   border: 1px solid var(--border);
   background: var(--bg-card);
   border-radius: 50%;
   color: var(--primary);
   cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  text-decoration: none;
+  font-size: 1.2rem;
   transition: all 0.3s ease;
 }
 
-.mini-calendar-nav button:hover {
+.mini-calendar .calendar-nav:hover {
   background: rgba(139, 92, 246, 0.2);
   border-color: var(--primary);
 }
 
-.mini-calendar-grid {
+.mini-calendar .calendar-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.mini-calendar .calendar-weekdays {
   display: grid;
   grid-template-columns: repeat(7, 1fr);
   gap: 2px;
 }
 
-.mini-calendar-day-header {
+.mini-calendar .calendar-weekdays span {
   font-size: 0.65rem;
   color: var(--text-muted);
   text-align: center;
@@ -336,7 +397,13 @@ body::before {
   text-transform: uppercase;
 }
 
-.mini-calendar-day {
+.mini-calendar .calendar-days {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 2px;
+}
+
+.mini-calendar .calendar-day {
   aspect-ratio: 1;
   display: flex;
   align-items: center;
@@ -347,20 +414,21 @@ body::before {
   cursor: pointer;
   transition: all 0.2s ease;
   position: relative;
+  text-decoration: none;
 }
 
-.mini-calendar-day:hover {
+.mini-calendar .calendar-day:hover {
   background: rgba(139, 92, 246, 0.2);
   color: var(--primary);
 }
 
-.mini-calendar-day.today {
+.mini-calendar .calendar-day.today {
   background: linear-gradient(135deg, var(--primary), var(--accent));
   color: #fff;
   font-weight: 600;
 }
 
-.mini-calendar-day.has-entry::after {
+.mini-calendar .calendar-day.has-entry::after {
   content: '';
   position: absolute;
   bottom: 2px;
@@ -370,15 +438,15 @@ body::before {
   border-radius: 50%;
 }
 
-.mini-calendar-day.today.has-entry::after {
+.mini-calendar .calendar-day.today.has-entry::after {
   background: #fff;
 }
 
-.mini-calendar-day.empty {
+.mini-calendar .calendar-day.empty {
   visibility: hidden;
 }
 
-.mini-calendar-day.other-month {
+.mini-calendar .calendar-day.other-month {
   color: var(--text-muted);
   opacity: 0.5;
 }
@@ -532,6 +600,40 @@ body::before {
   font-size: 0.7rem;
 }
 
+/* ===== QUICK LINKS ===== */
+.quick-links {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.quick-link {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem 1rem;
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--text-secondary);
+  text-decoration: none;
+  font-size: 0.9rem;
+  transition: all 0.3s ease;
+}
+
+.quick-link svg {
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+  color: var(--primary);
+}
+
+.quick-link:hover {
+  background: rgba(139, 92, 246, 0.15);
+  border-color: var(--primary);
+  color: var(--primary);
+}
+
 /* ===== ENTRIES GRID ===== */
 .diary-main {
   flex: 1;
@@ -633,16 +735,81 @@ body::before {
   overflow: hidden;
 }
 
+.entry-footer {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-top: 0.75rem;
+  flex-wrap: wrap;
+}
+
 .entry-mood {
   display: inline-flex;
   align-items: center;
   gap: 0.35rem;
   font-size: 0.75rem;
   color: var(--primary);
-  margin-top: 0.5rem;
   padding: 0.25rem 0.5rem;
   background: rgba(139, 92, 246, 0.1);
   border-radius: 100px;
+}
+
+.entry-scripture {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+
+.entry-scripture svg {
+  width: 14px;
+  height: 14px;
+}
+
+.entry-private {
+  position: absolute;
+  top: 0.75rem;
+  right: 0.75rem;
+  color: var(--text-muted);
+}
+
+.entry-private svg {
+  width: 16px;
+  height: 16px;
+}
+
+.entry-date .year {
+  font-size: 0.6rem;
+  color: var(--text-muted);
+}
+
+/* ===== FILTER BANNER ===== */
+.filter-banner {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.75rem 1rem;
+  background: rgba(139, 92, 246, 0.1);
+  border: 1px solid rgba(139, 92, 246, 0.2);
+  border-radius: var(--radius-sm);
+  margin-bottom: 1.5rem;
+}
+
+.filter-banner span {
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+}
+
+.filter-banner .clear-filter {
+  font-size: 0.85rem;
+  color: var(--primary);
+  text-decoration: none;
+  transition: all 0.3s ease;
+}
+
+.filter-banner .clear-filter:hover {
+  color: var(--accent);
 }
 
 /* ===== EMPTY STATE ===== */
@@ -654,12 +821,23 @@ body::before {
   border-radius: var(--radius-lg);
 }
 
-.empty-state svg {
+.empty-state .empty-icon {
   width: 80px;
   height: 80px;
+  margin: 0 auto 1.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(139, 92, 246, 0.1);
+  border-radius: 50%;
+}
+
+.empty-state .empty-icon svg,
+.empty-state svg {
+  width: 40px;
+  height: 40px;
   color: var(--primary);
-  opacity: 0.5;
-  margin-bottom: 1.5rem;
+  opacity: 0.7;
 }
 
 .empty-state h3 {
@@ -717,11 +895,49 @@ body::before {
 
 /* ===== ENTRY FORM ===== */
 .entry-form {
+  background: transparent;
+}
+
+.form-card {
   background: linear-gradient(135deg, var(--bg-card) 0%, var(--bg-surface) 100%);
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
-  padding: 2rem;
   box-shadow: var(--shadow);
+  overflow: hidden;
+}
+
+.form-card-header {
+  padding: 1.5rem 2rem;
+  background: var(--bg-surface);
+  border-bottom: 1px solid var(--border);
+}
+
+.form-card-header h2.display-title {
+  font-family: var(--font-display);
+  font-size: 1.75rem;
+  background: linear-gradient(135deg, var(--primary), var(--accent));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  margin-bottom: 0.25rem;
+}
+
+.form-card-header .subtitle {
+  font-size: 0.9rem;
+  color: var(--text-muted);
+}
+
+.form-card-body {
+  padding: 2rem;
+}
+
+.form-card-footer {
+  padding: 1.5rem 2rem;
+  background: var(--bg-surface);
+  border-top: 1px solid var(--border);
+  display: flex;
+  justify-content: flex-end;
+  gap: 1rem;
 }
 
 .form-row-inline {
@@ -739,11 +955,20 @@ body::before {
 }
 
 .form-group label {
-  display: block;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
   font-size: 0.85rem;
   font-weight: 400;
   color: var(--text-secondary);
   margin-bottom: 0.5rem;
+}
+
+.form-group label svg {
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+  color: var(--primary);
 }
 
 .title-input {
@@ -1011,6 +1236,21 @@ body::before {
   text-align: center;
   color: var(--text-muted);
   font-size: 0.85rem;
+  display: flex;
+  justify-content: center;
+  gap: 2rem;
+  flex-wrap: wrap;
+}
+
+.entry-meta .meta-item {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.entry-meta .meta-item svg {
+  width: 14px;
+  height: 14px;
 }
 
 /* ===== BUTTONS ===== */
@@ -1075,6 +1315,12 @@ body::before {
   transform: translateY(-2px);
 }
 
+.btn svg {
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+}
+
 /* ===== PRAYER JOURNAL ===== */
 .prayer-filters {
   display: flex;
@@ -1117,6 +1363,12 @@ body::before {
   border-color: transparent;
   color: #fff;
   box-shadow: 0 0 15px var(--glow-primary);
+}
+
+.filter-tab svg {
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
 }
 
 .filter-categories select {
@@ -1184,12 +1436,52 @@ body::before {
 }
 
 .prayer-category {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
   padding: 0.25rem 0.75rem;
   font-size: 0.75rem;
   background: rgba(139, 92, 246, 0.15);
   border: 1px solid rgba(139, 92, 246, 0.2);
   color: var(--primary);
   border-radius: var(--radius-sm);
+}
+
+.prayer-category svg {
+  width: 14px;
+  height: 14px;
+}
+
+.prayer-badges {
+  display: flex;
+  gap: 0.5rem;
+  margin-left: auto;
+}
+
+.prayer-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.2rem 0.6rem;
+  font-size: 0.7rem;
+  border-radius: var(--radius-sm);
+}
+
+.prayer-badge svg {
+  width: 12px;
+  height: 12px;
+}
+
+.prayer-badge.pinned {
+  background: rgba(245, 158, 11, 0.15);
+  border: 1px solid rgba(245, 158, 11, 0.2);
+  color: var(--warning);
+}
+
+.prayer-badge.answered {
+  background: rgba(16, 185, 129, 0.15);
+  border: 1px solid rgba(16, 185, 129, 0.2);
+  color: var(--success);
 }
 
 .prayer-pinned {
@@ -1222,10 +1514,30 @@ body::before {
 }
 
 .prayer-scripture {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
   font-size: 0.875rem;
   color: var(--primary);
   margin-bottom: 0.75rem;
   font-style: italic;
+}
+
+.prayer-scripture svg {
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+}
+
+.prayer-date {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.prayer-date svg {
+  width: 14px;
+  height: 14px;
 }
 
 .prayer-testimony {
@@ -1234,6 +1546,26 @@ body::before {
   border: 1px solid rgba(16, 185, 129, 0.2);
   border-radius: var(--radius-sm);
   margin-top: 1rem;
+}
+
+.prayer-testimony .testimony-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+  color: var(--success);
+  font-size: 0.875rem;
+}
+
+.prayer-testimony .testimony-header svg {
+  width: 16px;
+  height: 16px;
+}
+
+.prayer-testimony .testimony-header .answered-date {
+  margin-left: auto;
+  font-size: 0.75rem;
+  color: var(--text-muted);
 }
 
 .prayer-testimony strong {
@@ -1285,6 +1617,72 @@ body::before {
   background: rgba(139, 92, 246, 0.2);
   border-color: var(--primary);
   color: var(--primary);
+}
+
+.prayer-actions-menu button svg {
+  width: 16px;
+  height: 16px;
+}
+
+.prayer-actions-menu button.success:hover {
+  background: rgba(16, 185, 129, 0.2);
+  border-color: var(--success);
+  color: var(--success);
+}
+
+.prayer-actions-menu button.danger:hover {
+  background: rgba(239, 68, 68, 0.2);
+  border-color: var(--danger);
+  color: var(--danger);
+}
+
+.prayer-actions-menu button.active {
+  background: rgba(245, 158, 11, 0.2);
+  border-color: var(--warning);
+  color: var(--warning);
+}
+
+.action-btn {
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  cursor: pointer;
+  color: var(--text-muted);
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.action-btn svg {
+  width: 16px;
+  height: 16px;
+}
+
+.action-btn:hover {
+  background: rgba(139, 92, 246, 0.2);
+  border-color: var(--primary);
+  color: var(--primary);
+}
+
+.action-btn.success:hover {
+  background: rgba(16, 185, 129, 0.2);
+  border-color: var(--success);
+  color: var(--success);
+}
+
+.action-btn.danger:hover {
+  background: rgba(239, 68, 68, 0.2);
+  border-color: var(--danger);
+  color: var(--danger);
+}
+
+.action-btn.active {
+  background: rgba(245, 158, 11, 0.2);
+  border-color: var(--warning);
+  color: var(--warning);
 }
 
 /* ===== MODAL ===== */
@@ -1357,6 +1755,11 @@ body::before {
   border-color: var(--danger);
   color: var(--danger);
   transform: rotate(90deg);
+}
+
+.modal-close svg {
+  width: 20px;
+  height: 20px;
 }
 
 .modal-content form {
