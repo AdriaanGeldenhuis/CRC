@@ -52,6 +52,15 @@ define('AI_CACHE_ENABLED', true);
 define('AI_RATE_LIMIT_PER_DAY', 50);
 define('AI_API_KEY', getenv('AI_API_KEY') ?: '');
 
+// Diary AI Settings (OpenAI)
+define('DIARY_OPENAI_API_KEY', getenv('DIARY_OPENAI_API_KEY') ?: '');
+define('DIARY_AI_MODEL', 'gpt-4o-mini');
+define('DIARY_AI_MAX_TOKENS', 1000);
+define('DIARY_AI_TEMPERATURE', 0.7);
+define('DIARY_AI_TIMEOUT', 30);
+define('DIARY_AI_ENHANCE_PROMPT_EN', 'You are a helpful writing assistant. Enhance the following diary entry to make it more expressive, clear, and engaging while maintaining the original meaning and personal voice. Keep it in the same language as the original. Only return the enhanced text, nothing else.');
+define('DIARY_AI_ENHANCE_PROMPT_AF', 'Jy is \'n hulpvaardige skryfassistent. Verbeter die volgende dagboekinskrywing om dit meer ekspressief, duidelik en boeiend te maak terwyl jy die oorspronklike betekenis en persoonlike stem behou. Hou dit in dieselfde taal as die oorspronklike. Gee net die verbeterde teks terug, niks anders nie.');
+
 // Email Settings
 define('MAIL_FROM', 'noreply@crc.org.za');
 define('MAIL_FROM_NAME', 'CRC App');
