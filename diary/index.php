@@ -41,6 +41,7 @@ $pageTitle = 'My Diary - CRC';
     }
   </style>
 
+  <link rel="stylesheet" href="/home/css/home.css?v=<?= time() ?>">
   <link rel="stylesheet" href="/diary/css/diary.css?v=<?= time() ?>">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 </head>
