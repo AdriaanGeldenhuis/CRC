@@ -34,7 +34,7 @@ try {
 
     // Apply search filter
     if ($search !== '') {
-        $where[] = '(title LIKE ? OR body LIKE ?)';
+        $where[] = '(title LIKE ? OR content LIKE ?)';
         $params[] = '%' . $search . '%';
         $params[] = '%' . $search . '%';
     }
@@ -80,15 +80,15 @@ try {
 
     // Build ORDER BY
     $orderBy = match($sort) {
-        'oldest' => 'entry_date ASC, entry_time ASC',
+        'oldest' => 'entry_date ASC, created_at ASC',
         'title' => 'title ASC, entry_date DESC',
-        default => 'entry_date DESC, entry_time DESC'
+        default => 'entry_date DESC, created_at DESC'
     };
 
     $whereClause = implode(' AND ', $where);
 
     $entries = Database::fetchAll(
-        "SELECT id, title, body, entry_date, entry_time, mood, weather, tags, reminder_minutes, created_at, updated_at
+        "SELECT id, title, content, entry_date, mood, weather, created_at, updated_at
          FROM diary_entries
          WHERE {$whereClause}
          ORDER BY {$orderBy}
@@ -96,18 +96,21 @@ try {
         $params
     ) ?: [];
 
-    // Process entries
+    // Process entries and get tags
     foreach ($entries as &$entry) {
-        // Map to expected field names
+        // Map to expected field names for JS
         $entry['date'] = $entry['entry_date'];
-        $entry['time'] = $entry['entry_time'];
+        $entry['time'] = date('H:i', strtotime($entry['created_at']));
+        $entry['body'] = $entry['content']; // JS expects 'body'
 
-        // Decode tags
-        if ($entry['tags']) {
-            $entry['tags'] = json_decode($entry['tags'], true) ?: [];
-        } else {
-            $entry['tags'] = [];
-        }
+        // Get tags for this entry
+        $tags = Database::fetchAll(
+            "SELECT t.name FROM diary_tags t
+             JOIN diary_tag_links l ON t.id = l.tag_id
+             WHERE l.entry_id = ?",
+            [$entry['id']]
+        ) ?: [];
+        $entry['tags'] = array_column($tags, 'name');
     }
     unset($entry);
 

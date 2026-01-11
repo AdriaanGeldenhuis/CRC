@@ -23,14 +23,11 @@ $userId = (int)$user['id'];
 $input = json_decode(file_get_contents('php://input'), true);
 
 $date = trim((string)($input['date'] ?? ''));
-$time = trim((string)($input['time'] ?? '00:00'));
 $title = trim((string)($input['title'] ?? ''));
 $body = trim((string)($input['body'] ?? ''));
 $mood = trim((string)($input['mood'] ?? ''));
 $weather = trim((string)($input['weather'] ?? ''));
 $tags = $input['tags'] ?? [];
-$reminderMinutes = (int)($input['reminder_minutes'] ?? 60);
-$addToCalendar = (bool)($input['add_to_calendar'] ?? true);
 
 if (empty($date)) {
     http_response_code(400);
@@ -50,42 +47,44 @@ try {
     $entryId = Database::insert('diary_entries', [
         'user_id' => $userId,
         'entry_date' => $date,
-        'entry_time' => $time,
         'title' => $title ?: null,
-        'body' => $body ?: null,
+        'content' => $body ?: '',
         'mood' => $mood ?: null,
-        'weather' => $weather ?: null,
-        'tags' => !empty($tags) ? json_encode($tags) : null,
-        'reminder_minutes' => $reminderMinutes,
-        'created_at' => date('Y-m-d H:i:s'),
-        'updated_at' => date('Y-m-d H:i:s')
+        'weather' => $weather ?: null
     ]);
 
-    // Optionally add to calendar
-    if ($addToCalendar && $entryId) {
-        try {
-            $startDatetime = $date . ' ' . $time . ':00';
-            $calendarEventId = Database::insert('calendar_events', [
-                'user_id' => $userId,
-                'title' => $title ?: 'Diary Entry',
-                'description' => $body ? substr($body, 0, 200) : null,
-                'start_datetime' => $startDatetime,
-                'end_datetime' => $startDatetime,
-                'event_type' => 'diary',
-                'reminder_minutes' => $reminderMinutes,
-                'created_at' => date('Y-m-d H:i:s')
-            ]);
+    // Add tags
+    if (!empty($tags) && $entryId) {
+        foreach ($tags as $tagName) {
+            $tagName = trim($tagName);
+            if (empty($tagName)) continue;
 
-            // Link calendar event to diary
-            if ($calendarEventId) {
-                Database::execute(
-                    "UPDATE diary_entries SET calendar_event_id = ? WHERE id = ?",
-                    [$calendarEventId, $entryId]
-                );
+            // Get or create tag
+            $tag = Database::fetchOne(
+                "SELECT id FROM diary_tags WHERE user_id = ? AND name = ?",
+                [$userId, $tagName]
+            );
+
+            if (!$tag) {
+                $tagId = Database::insert('diary_tags', [
+                    'user_id' => $userId,
+                    'name' => $tagName
+                ]);
+            } else {
+                $tagId = $tag['id'];
             }
-        } catch (Throwable $e) {
-            // Calendar is optional, don't fail if it errors
-            error_log('Diary calendar sync error: ' . $e->getMessage());
+
+            // Link tag to entry
+            if ($tagId) {
+                try {
+                    Database::insert('diary_tag_links', [
+                        'entry_id' => $entryId,
+                        'tag_id' => $tagId
+                    ]);
+                } catch (Throwable $e) {
+                    // Ignore duplicate tag links
+                }
+            }
         }
     }
 

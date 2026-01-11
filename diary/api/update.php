@@ -28,7 +28,7 @@ if ($entryId <= 0) {
 
 // Verify ownership
 $existing = Database::fetchOne(
-    "SELECT id, calendar_event_id FROM diary_entries WHERE id = ? AND user_id = ?",
+    "SELECT id FROM diary_entries WHERE id = ? AND user_id = ?",
     [$entryId, $userId]
 );
 
@@ -42,13 +42,11 @@ if (!$existing) {
 $input = json_decode(file_get_contents('php://input'), true);
 
 $date = trim((string)($input['date'] ?? ''));
-$time = trim((string)($input['time'] ?? '00:00'));
 $title = trim((string)($input['title'] ?? ''));
 $body = trim((string)($input['body'] ?? ''));
 $mood = trim((string)($input['mood'] ?? ''));
 $weather = trim((string)($input['weather'] ?? ''));
 $tags = $input['tags'] ?? [];
-$reminderMinutes = (int)($input['reminder_minutes'] ?? 60);
 
 if (empty($date)) {
     http_response_code(400);
@@ -60,52 +58,57 @@ try {
     Database::execute(
         "UPDATE diary_entries SET
             entry_date = ?,
-            entry_time = ?,
             title = ?,
-            body = ?,
+            content = ?,
             mood = ?,
             weather = ?,
-            tags = ?,
-            reminder_minutes = ?,
             updated_at = NOW()
          WHERE id = ? AND user_id = ?",
         [
             $date,
-            $time,
             $title ?: null,
-            $body ?: null,
+            $body ?: '',
             $mood ?: null,
             $weather ?: null,
-            !empty($tags) ? json_encode($tags) : null,
-            $reminderMinutes,
             $entryId,
             $userId
         ]
     );
 
-    // Update linked calendar event if exists
-    if ($existing['calendar_event_id']) {
-        try {
-            $startDatetime = $date . ' ' . $time . ':00';
-            Database::execute(
-                "UPDATE calendar_events SET
-                    title = ?,
-                    description = ?,
-                    start_datetime = ?,
-                    end_datetime = ?,
-                    reminder_minutes = ?
-                 WHERE id = ?",
-                [
-                    $title ?: 'Diary Entry',
-                    $body ? substr($body, 0, 200) : null,
-                    $startDatetime,
-                    $startDatetime,
-                    $reminderMinutes,
-                    $existing['calendar_event_id']
-                ]
+    // Update tags - remove old links and add new ones
+    Database::execute("DELETE FROM diary_tag_links WHERE entry_id = ?", [$entryId]);
+
+    if (!empty($tags)) {
+        foreach ($tags as $tagName) {
+            $tagName = trim($tagName);
+            if (empty($tagName)) continue;
+
+            // Get or create tag
+            $tag = Database::fetchOne(
+                "SELECT id FROM diary_tags WHERE user_id = ? AND name = ?",
+                [$userId, $tagName]
             );
-        } catch (Throwable $e) {
-            error_log('Diary calendar update error: ' . $e->getMessage());
+
+            if (!$tag) {
+                $tagId = Database::insert('diary_tags', [
+                    'user_id' => $userId,
+                    'name' => $tagName
+                ]);
+            } else {
+                $tagId = $tag['id'];
+            }
+
+            // Link tag to entry
+            if ($tagId) {
+                try {
+                    Database::insert('diary_tag_links', [
+                        'entry_id' => $entryId,
+                        'tag_id' => $tagId
+                    ]);
+                } catch (Throwable $e) {
+                    // Ignore duplicate tag links
+                }
+            }
         }
     }
 

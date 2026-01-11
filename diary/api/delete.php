@@ -27,9 +27,9 @@ if ($entryId <= 0) {
 }
 
 try {
-    // Get calendar_event_id before deleting
+    // Verify entry exists and belongs to user
     $entry = Database::fetchOne(
-        "SELECT calendar_event_id FROM diary_entries WHERE id = ? AND user_id = ?",
+        "SELECT id FROM diary_entries WHERE id = ? AND user_id = ?",
         [$entryId, $userId]
     );
 
@@ -39,23 +39,14 @@ try {
         exit;
     }
 
+    // Delete tag links first (foreign key constraint)
+    Database::execute("DELETE FROM diary_tag_links WHERE entry_id = ?", [$entryId]);
+
     // Delete diary entry
     Database::execute(
         "DELETE FROM diary_entries WHERE id = ? AND user_id = ?",
         [$entryId, $userId]
     );
-
-    // Delete linked calendar event if exists
-    if ($entry['calendar_event_id']) {
-        try {
-            Database::execute(
-                "DELETE FROM calendar_events WHERE id = ?",
-                [$entry['calendar_event_id']]
-            );
-        } catch (Throwable $e) {
-            error_log('Diary calendar delete error: ' . $e->getMessage());
-        }
-    }
 
     echo json_encode([
         'success' => true,

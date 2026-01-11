@@ -37,15 +37,19 @@ try {
     $params = [$userId];
 
     if ($searchTitle) {
-        $conditions[] = 'title LIKE ?';
+        $conditions[] = 'e.title LIKE ?';
         $params[] = '%' . $query . '%';
     }
     if ($searchBody) {
-        $conditions[] = 'body LIKE ?';
+        $conditions[] = 'e.content LIKE ?';
         $params[] = '%' . $query . '%';
     }
+
+    // For tag search, we need to join the tags table
+    $tagJoin = '';
     if ($searchTags) {
-        $conditions[] = 'tags LIKE ?';
+        $tagJoin = 'LEFT JOIN diary_tag_links tl ON e.id = tl.entry_id LEFT JOIN diary_tags t ON tl.tag_id = t.id';
+        $conditions[] = 't.name LIKE ?';
         $params[] = '%' . $query . '%';
     }
 
@@ -57,19 +61,29 @@ try {
     $searchCondition = '(' . implode(' OR ', $conditions) . ')';
 
     $results = Database::fetchAll(
-        "SELECT id, title, body, entry_date, entry_time, mood, weather, tags
-         FROM diary_entries
-         WHERE user_id = ? AND {$searchCondition}
-         ORDER BY entry_date DESC, entry_time DESC
+        "SELECT DISTINCT e.id, e.title, e.content, e.entry_date, e.mood, e.weather, e.created_at
+         FROM diary_entries e
+         {$tagJoin}
+         WHERE e.user_id = ? AND {$searchCondition}
+         ORDER BY e.entry_date DESC, e.created_at DESC
          LIMIT 50",
         $params
     ) ?: [];
 
-    // Process results
+    // Process results and get tags
     foreach ($results as &$row) {
         $row['date'] = $row['entry_date'];
-        $row['time'] = $row['entry_time'];
-        $row['tags'] = $row['tags'] ? json_decode($row['tags'], true) : [];
+        $row['time'] = date('H:i', strtotime($row['created_at']));
+        $row['body'] = $row['content'];
+
+        // Get tags for this entry
+        $tags = Database::fetchAll(
+            "SELECT t.name FROM diary_tags t
+             JOIN diary_tag_links l ON t.id = l.tag_id
+             WHERE l.entry_id = ?",
+            [$row['id']]
+        ) ?: [];
+        $row['tags'] = array_column($tags, 'name');
     }
 
     echo json_encode([

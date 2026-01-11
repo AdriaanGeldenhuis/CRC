@@ -57,14 +57,14 @@ try {
     }
 
     // Total words
-    $bodies = Database::fetchAll(
-        "SELECT body FROM diary_entries WHERE user_id = ? AND body IS NOT NULL",
+    $contents = Database::fetchAll(
+        "SELECT content FROM diary_entries WHERE user_id = ? AND content IS NOT NULL",
         [$userId]
     ) ?: [];
 
     $totalWords = 0;
-    foreach ($bodies as $row) {
-        $words = preg_split('/\s+/', trim($row['body'] ?? ''), -1, PREG_SPLIT_NO_EMPTY);
+    foreach ($contents as $row) {
+        $words = preg_split('/\s+/', trim($row['content'] ?? ''), -1, PREG_SPLIT_NO_EMPTY);
         $totalWords += count($words);
     }
 

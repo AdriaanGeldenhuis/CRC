@@ -28,7 +28,7 @@ if ($entryId <= 0) {
 
 try {
     $entry = Database::fetchOne(
-        "SELECT id, title, body, entry_date, entry_time, mood, weather, tags, reminder_minutes, created_at, updated_at
+        "SELECT id, title, content, entry_date, mood, weather, created_at, updated_at
          FROM diary_entries
          WHERE id = ? AND user_id = ?",
         [$entryId, $userId]
@@ -40,12 +40,19 @@ try {
         exit;
     }
 
-    // Map fields
+    // Map fields for JS compatibility
     $entry['date'] = $entry['entry_date'];
-    $entry['time'] = $entry['entry_time'];
+    $entry['time'] = date('H:i', strtotime($entry['created_at']));
+    $entry['body'] = $entry['content'];
 
-    // Decode tags
-    $entry['tags'] = $entry['tags'] ? json_decode($entry['tags'], true) : [];
+    // Get tags for this entry
+    $tags = Database::fetchAll(
+        "SELECT t.name FROM diary_tags t
+         JOIN diary_tag_links l ON t.id = l.tag_id
+         WHERE l.entry_id = ?",
+        [$entryId]
+    ) ?: [];
+    $entry['tags'] = array_column($tags, 'name');
 
     echo json_encode([
         'success' => true,

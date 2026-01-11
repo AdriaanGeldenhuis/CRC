@@ -40,9 +40,16 @@ try {
         die('No entries found');
     }
 
-    // Process entries
+    // Process entries and get tags
     foreach ($entries as &$entry) {
-        $entry['tags'] = $entry['tags'] ? json_decode($entry['tags'], true) : [];
+        // Get tags for this entry
+        $tags = Database::fetchAll(
+            "SELECT t.name FROM diary_tags t
+             JOIN diary_tag_links l ON t.id = l.tag_id
+             WHERE l.entry_id = ?",
+            [$entry['id']]
+        ) ?: [];
+        $entry['tags'] = array_column($tags, 'name');
     }
 
     switch ($format) {
@@ -56,13 +63,12 @@ try {
             header('Content-Type: text/csv');
             header('Content-Disposition: attachment; filename="diary_export_' . date('Y-m-d') . '.csv"');
             $output = fopen('php://output', 'w');
-            fputcsv($output, ['Date', 'Time', 'Title', 'Content', 'Mood', 'Weather', 'Tags']);
+            fputcsv($output, ['Date', 'Title', 'Content', 'Mood', 'Weather', 'Tags']);
             foreach ($entries as $entry) {
                 fputcsv($output, [
                     $entry['entry_date'],
-                    $entry['entry_time'],
                     $entry['title'],
-                    $entry['body'],
+                    $entry['content'],
                     $entry['mood'],
                     $entry['weather'],
                     implode(', ', $entry['tags'])
@@ -75,11 +81,11 @@ try {
             header('Content-Type: text/plain');
             header('Content-Disposition: attachment; filename="diary_export_' . date('Y-m-d') . '.txt"');
             foreach ($entries as $entry) {
-                echo "=== " . $entry['entry_date'] . " " . $entry['entry_time'] . " ===\n";
+                echo "=== " . $entry['entry_date'] . " ===\n";
                 echo "Title: " . ($entry['title'] ?: 'Untitled') . "\n";
                 if ($entry['mood']) echo "Mood: " . $entry['mood'] . "\n";
                 if ($entry['weather']) echo "Weather: " . $entry['weather'] . "\n";
-                echo "\n" . $entry['body'] . "\n\n";
+                echo "\n" . $entry['content'] . "\n\n";
                 echo "---\n\n";
             }
             break;
@@ -96,7 +102,7 @@ try {
             echo '<h1>My Diary</h1>';
             foreach ($entries as $entry) {
                 echo '<div class="entry">';
-                echo '<div class="date">' . $entry['entry_date'] . ' ' . $entry['entry_time'] . '</div>';
+                echo '<div class="date">' . $entry['entry_date'] . '</div>';
                 echo '<h2 class="title">' . htmlspecialchars($entry['title'] ?: 'Untitled') . '</h2>';
                 if ($entry['mood'] || $entry['weather']) {
                     echo '<div class="meta">';
@@ -104,7 +110,7 @@ try {
                     if ($entry['weather']) echo 'Weather: ' . $entry['weather'];
                     echo '</div>';
                 }
-                echo '<div class="body">' . nl2br(htmlspecialchars($entry['body'] ?? '')) . '</div>';
+                echo '<div class="body">' . nl2br(htmlspecialchars($entry['content'] ?? '')) . '</div>';
                 echo '</div>';
             }
             echo '<script>window.print();</script></body></html>';
