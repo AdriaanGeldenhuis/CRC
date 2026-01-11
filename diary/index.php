@@ -1,396 +1,542 @@
 <?php
 /**
- * CRC Diary - AI-Enhanced Premium Diary
- * Main diary page with timeline, gallery, and search views
+ * CRC Diary - Main Page
+ * Premium OAC-style dark theme with mini calendar
  */
 
 require_once __DIR__ . '/../core/bootstrap.php';
 
-// Require authentication
+header('Content-Type: text/html; charset=UTF-8');
+
 Auth::requireAuth();
 
-// Check for primary congregation
-$primaryCong = Auth::primaryCongregation();
-if (!$primaryCong) {
-    Response::redirect('/onboarding/');
+function getMoodEmoji($mood) {
+    $emojis = [
+        'grateful' => '🙏',
+        'joyful' => '😊',
+        'peaceful' => '😌',
+        'hopeful' => '🌟',
+        'anxious' => '😰',
+        'sad' => '😢',
+        'angry' => '😤',
+        'confused' => '😕'
+    ];
+    return $emojis[$mood] ?? '📝';
+}
+
+function getMoodColor($mood) {
+    $colors = [
+        'grateful' => '#8B5CF6',
+        'joyful' => '#F59E0B',
+        'peaceful' => '#06B6D4',
+        'hopeful' => '#10B981',
+        'anxious' => '#EF4444',
+        'sad' => '#6366F1',
+        'angry' => '#DC2626',
+        'confused' => '#F97316'
+    ];
+    return $colors[$mood] ?? '#8B5CF6';
 }
 
 $user = Auth::user();
-$userId = $user['id'];
-$userName = trim(($user['name'] ?? '') . ' ' . ($user['surname'] ?? '')) ?: 'User';
 $pageTitle = 'My Diary - CRC';
 
-?><!doctype html>
+// Get filters from URL
+$search = input('search');
+$tag = input('tag');
+$mood = input('mood');
+$calYear = (int)($_GET['cal_year'] ?? date('Y'));
+$calMonth = (int)($_GET['cal_month'] ?? date('n'));
+$filterYear = (int)($_GET['year'] ?? 0);
+$filterMonth = (int)($_GET['month'] ?? 0);
+
+// Initialize variables
+$entries = [];
+$tags = [];
+$totalEntries = 0;
+$streak = 0;
+$longestStreak = 0;
+$archives = [];
+$entryDates = [];
+$moods = ['grateful', 'joyful', 'peaceful', 'hopeful', 'anxious', 'sad', 'angry', 'confused'];
+
+// Get total entries count
+try {
+    $totalEntries = Database::fetchColumn(
+        "SELECT COUNT(*) FROM diary_entries WHERE user_id = ?",
+        [$user['id']]
+    ) ?: 0;
+} catch (Exception $e) {
+    $totalEntries = 0;
+}
+
+// Get streak (days this week)
+try {
+    $streak = Database::fetchColumn(
+        "SELECT COUNT(DISTINCT DATE(entry_date)) FROM diary_entries
+         WHERE user_id = ? AND entry_date >= DATE_SUB(CURDATE(), INTERVAL 7 DAY)",
+        [$user['id']]
+    ) ?: 0;
+} catch (Exception $e) {
+    $streak = 0;
+}
+
+// Get longest streak
+try {
+    $longestStreak = Database::fetchColumn(
+        "SELECT COUNT(DISTINCT DATE(entry_date)) FROM diary_entries
+         WHERE user_id = ? AND entry_date >= DATE_SUB(CURDATE(), INTERVAL 30 DAY)",
+        [$user['id']]
+    ) ?: 0;
+} catch (Exception $e) {
+    $longestStreak = 0;
+}
+
+// Get entry dates for calendar highlighting
+try {
+    $entryDatesRaw = Database::fetchAll(
+        "SELECT DATE(entry_date) as date FROM diary_entries
+         WHERE user_id = ? AND YEAR(entry_date) = ? AND MONTH(entry_date) = ?",
+        [$user['id'], $calYear, $calMonth]
+    ) ?: [];
+    foreach ($entryDatesRaw as $d) {
+        $entryDates[] = $d['date'];
+    }
+} catch (Exception $e) {
+    $entryDates = [];
+}
+
+// Get entries based on filters
+try {
+    $where = ['user_id = ?'];
+    $params = [$user['id']];
+
+    if ($search) {
+        $where[] = "(title LIKE ? OR content LIKE ?)";
+        $params[] = '%' . $search . '%';
+        $params[] = '%' . $search . '%';
+    }
+
+    if ($mood) {
+        $where[] = "mood = ?";
+        $params[] = $mood;
+    }
+
+    if ($filterMonth && $filterYear) {
+        $where[] = "YEAR(entry_date) = ? AND MONTH(entry_date) = ?";
+        $params[] = $filterYear;
+        $params[] = $filterMonth;
+    } elseif ($filterYear) {
+        $where[] = "YEAR(entry_date) = ?";
+        $params[] = $filterYear;
+    }
+
+    $whereClause = implode(' AND ', $where);
+
+    $entries = Database::fetchAll(
+        "SELECT * FROM diary_entries WHERE $whereClause ORDER BY entry_date DESC, created_at DESC LIMIT 50",
+        $params
+    ) ?: [];
+} catch (Exception $e) {
+    $entries = [];
+}
+
+// Get tags if filtering by tag
+if ($tag) {
+    try {
+        $tagData = Database::fetchOne(
+            "SELECT * FROM diary_tags WHERE name = ? AND user_id = ?",
+            [$tag, $user['id']]
+        );
+        if ($tagData) {
+            $entries = Database::fetchAll(
+                "SELECT e.* FROM diary_entries e
+                 JOIN diary_entry_tags det ON e.id = det.entry_id
+                 WHERE det.tag_id = ? AND e.user_id = ?
+                 ORDER BY e.entry_date DESC",
+                [$tagData['id'], $user['id']]
+            ) ?: [];
+        }
+    } catch (Exception $e) {
+        // Keep existing entries
+    }
+}
+
+// Get user's tags for sidebar
+try {
+    $tags = Database::fetchAll(
+        "SELECT DISTINCT t.name, COUNT(*) as count
+         FROM diary_entry_tags det
+         JOIN diary_tags t ON det.tag_id = t.id
+         JOIN diary_entries e ON det.entry_id = e.id
+         WHERE e.user_id = ?
+         GROUP BY t.id, t.name
+         ORDER BY count DESC
+         LIMIT 15",
+        [$user['id']]
+    ) ?: [];
+} catch (Exception $e) {
+    $tags = [];
+}
+
+// Get archives for sidebar
+try {
+    $archives = Database::fetchAll(
+        "SELECT YEAR(entry_date) as year, MONTH(entry_date) as month, COUNT(*) as count
+         FROM diary_entries WHERE user_id = ?
+         GROUP BY YEAR(entry_date), MONTH(entry_date)
+         ORDER BY year DESC, month DESC
+         LIMIT 12",
+        [$user['id']]
+    ) ?: [];
+} catch (Exception $e) {
+    $archives = [];
+}
+
+// Calendar helper
+function buildCalendar($year, $month, $entryDates) {
+    $firstDay = mktime(0, 0, 0, $month, 1, $year);
+    $daysInMonth = date('t', $firstDay);
+    $startDay = date('w', $firstDay); // 0=Sunday
+    $today = date('Y-m-d');
+
+    $prevMonth = $month - 1;
+    $prevYear = $year;
+    if ($prevMonth < 1) {
+        $prevMonth = 12;
+        $prevYear--;
+    }
+
+    $nextMonth = $month + 1;
+    $nextYear = $year;
+    if ($nextMonth > 12) {
+        $nextMonth = 1;
+        $nextYear++;
+    }
+
+    $html = '<div class="mini-calendar">';
+    $html .= '<div class="calendar-header">';
+    $html .= '<a href="?cal_year=' . $prevYear . '&cal_month=' . $prevMonth . '" class="calendar-nav">&lsaquo;</a>';
+    $html .= '<span class="calendar-title">' . date('F Y', $firstDay) . '</span>';
+    $html .= '<a href="?cal_year=' . $nextYear . '&cal_month=' . $nextMonth . '" class="calendar-nav">&rsaquo;</a>';
+    $html .= '</div>';
+
+    $html .= '<div class="calendar-grid">';
+    $html .= '<div class="calendar-weekdays">';
+    foreach (['S', 'M', 'T', 'W', 'T', 'F', 'S'] as $day) {
+        $html .= '<span>' . $day . '</span>';
+    }
+    $html .= '</div>';
+
+    $html .= '<div class="calendar-days">';
+
+    // Empty cells before first day
+    for ($i = 0; $i < $startDay; $i++) {
+        $html .= '<span class="calendar-day empty"></span>';
+    }
+
+    // Days of month
+    for ($day = 1; $day <= $daysInMonth; $day++) {
+        $date = sprintf('%04d-%02d-%02d', $year, $month, $day);
+        $classes = ['calendar-day'];
+
+        if ($date === $today) {
+            $classes[] = 'today';
+        }
+        if (in_array($date, $entryDates)) {
+            $classes[] = 'has-entry';
+        }
+
+        $html .= '<a href="?year=' . $year . '&month=' . $month . '&day=' . $day . '" class="' . implode(' ', $classes) . '">' . $day . '</a>';
+    }
+
+    $html .= '</div></div></div>';
+
+    return $html;
+}
+?>
+<!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
-  <title><?= htmlspecialchars($pageTitle) ?></title>
-  <?= CSRF::meta() ?>
-
-  <!-- Fonts -->
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <style>
-    @font-face {
-      font-family: 'Parisienne';
-      src: url('/assets/fonts/Parisienne-Regular.ttf') format('truetype');
-      font-weight: normal;
-      font-style: normal;
-      font-display: swap;
-    }
-  </style>
-
-  <link rel="stylesheet" href="/home/css/home.css?v=<?= time() ?>">
-  <link rel="stylesheet" href="/diary/css/diary.css?v=<?= time() ?>">
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><?= e($pageTitle) ?></title>
+    <?= CSRF::meta() ?>
+    <link rel="stylesheet" href="/diary/css/diary.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Parisienne&display=swap" rel="stylesheet">
 </head>
-<body class="diary-body">
-  <?php include __DIR__ . '/../home/partials/navbar.php'; ?>
+<body>
+    <?php include __DIR__ . '/../home/partials/navbar.php'; ?>
 
-  <!-- Hero Section -->
-  <div class="diary-hero">
-    <div class="diary-hero-glow"></div>
-    <div class="diary-hero-content">
-      <h1 class="diary-hero-title">My Diary</h1>
-      <p class="diary-hero-subtitle">Preserve your thoughts, memories, and moments</p>
-    </div>
-    <div class="diary-sparkles">
-      <span class="diary-sparkle" style="--delay: 0s; --x: 15%; --y: 25%;"></span>
-      <span class="diary-sparkle" style="--delay: 0.7s; --x: 80%; --y: 35%;"></span>
-      <span class="diary-sparkle" style="--delay: 1.3s; --x: 45%; --y: 65%;"></span>
-      <span class="diary-sparkle" style="--delay: 1.9s; --x: 25%; --y: 75%;"></span>
-      <span class="diary-sparkle" style="--delay: 2.5s; --x: 85%; --y: 80%;"></span>
-    </div>
-  </div>
-
-  <main class="diary-main">
-
-    <!-- Quick Stats -->
-    <section class="diary-stats">
-      <div class="stat-card" data-stat="total">
-        <div class="stat-icon">📝</div>
-        <div class="stat-info">
-          <div class="stat-value" id="statTotal">0</div>
-          <div class="stat-label">Total Entries</div>
-        </div>
-      </div>
-      <div class="stat-card" data-stat="month">
-        <div class="stat-icon">📅</div>
-        <div class="stat-info">
-          <div class="stat-value" id="statMonth">0</div>
-          <div class="stat-label">This Month</div>
-        </div>
-      </div>
-      <div class="stat-card" data-stat="streak">
-        <div class="stat-icon">🔥</div>
-        <div class="stat-info">
-          <div class="stat-value" id="statStreak">0</div>
-          <div class="stat-label">Day Streak</div>
-        </div>
-      </div>
-      <div class="stat-card" data-stat="words">
-        <div class="stat-icon">✍️</div>
-        <div class="stat-info">
-          <div class="stat-value" id="statWords">0</div>
-          <div class="stat-label">Total Words</div>
-        </div>
-      </div>
-    </section>
-
-    <!-- View Toggle -->
-    <section class="diary-view-toggle">
-      <button class="view-btn active" data-view="timeline" title="Timeline">
-        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <path d="M3 10h18M3 14h18M8 6h13M8 18h13" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-        </svg>
-        <span>Timeline</span>
-      </button>
-      <button class="view-btn" data-view="gallery" title="Gallery">
-        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <rect x="3" y="3" width="7" height="7" rx="1" stroke="currentColor" stroke-width="2"/>
-          <rect x="14" y="3" width="7" height="7" rx="1" stroke="currentColor" stroke-width="2"/>
-          <rect x="3" y="14" width="7" height="7" rx="1" stroke="currentColor" stroke-width="2"/>
-          <rect x="14" y="14" width="7" height="7" rx="1" stroke="currentColor" stroke-width="2"/>
-        </svg>
-        <span>Gallery</span>
-      </button>
-      <button class="view-btn" data-view="search" title="Search">
-        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <circle cx="11" cy="11" r="8" stroke="currentColor" stroke-width="2"/>
-          <path d="M21 21l-4.35-4.35" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-        </svg>
-        <span>Search</span>
-      </button>
-    </section>
-
-    <!-- Quick Actions -->
-    <section class="diary-actions">
-      <button class="action-btn action-primary" id="newEntryBtn">
-        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-        </svg>
-        <span>New Entry</span>
-      </button>
-    </section>
-
-    <!-- Timeline View -->
-    <section class="diary-view diary-timeline" id="timelineView">
-      <div class="timeline-filters">
-        <input type="text" class="filter-input" id="timelineSearch" placeholder="Search entries...">
-        <select class="filter-select" id="timelineSort">
-          <option value="newest">Newest First</option>
-          <option value="oldest">Oldest First</option>
-          <option value="title">Title A-Z</option>
-        </select>
-        <select class="filter-select" id="timelineFilter">
-          <option value="all">All</option>
-          <option value="today">Today</option>
-          <option value="week">This Week</option>
-          <option value="month">This Month</option>
-          <option value="year">This Year</option>
-        </select>
-      </div>
-      <div class="timeline-container" id="timelineContainer">
-        <div class="timeline-loading">
-          <div class="loading-spinner"></div>
-          <p>Loading entries...</p>
-        </div>
-      </div>
-    </section>
-
-    <!-- Gallery View -->
-    <section class="diary-view diary-gallery" id="galleryView" style="display: none;">
-      <div class="gallery-grid" id="galleryGrid">
-        <div class="gallery-loading">
-          <div class="loading-spinner"></div>
-          <p>Loading gallery...</p>
-        </div>
-      </div>
-    </section>
-
-    <!-- Search View -->
-    <section class="diary-view diary-search" id="searchView" style="display: none;">
-      <div class="search-panel">
-        <div class="search-header">
-          <input type="text" class="search-input" id="searchInput" placeholder="Search through all your entries...">
-          <button class="search-btn" id="searchBtn">
-            <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <circle cx="11" cy="11" r="8" stroke="currentColor" stroke-width="2"/>
-              <path d="M21 21l-4.35-4.35" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-            </svg>
-          </button>
-        </div>
-        <div class="search-filters">
-          <label class="search-filter">
-            <input type="checkbox" id="searchTitle" checked>
-            <span>Titles</span>
-          </label>
-          <label class="search-filter">
-            <input type="checkbox" id="searchBody" checked>
-            <span>Content</span>
-          </label>
-          <label class="search-filter">
-            <input type="checkbox" id="searchTags" checked>
-            <span>Tags</span>
-          </label>
-        </div>
-        <div class="search-results" id="searchResults">
-          <div class="search-placeholder">
-            <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <circle cx="11" cy="11" r="8" stroke="currentColor" stroke-width="2"/>
-              <path d="M21 21l-4.35-4.35" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-            </svg>
-            <p>Start typing to search...</p>
-          </div>
-        </div>
-      </div>
-    </section>
-
-  </main>
-
-  <!-- Entry Modal -->
-  <div class="modal" id="entryModal">
-    <div class="modal-overlay" id="modalOverlay"></div>
-    <div class="modal-container">
-      <div class="modal-header">
-        <h2 class="modal-title" id="modalTitle">New Entry</h2>
-        <button class="modal-close" id="modalClose">
-          <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path d="M18 6L6 18M6 6l12 12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-          </svg>
-        </button>
-      </div>
-      <div class="modal-body">
-        <form id="entryForm">
-          <input type="hidden" id="entryId" value="">
-
-          <div class="form-group">
-            <label class="form-label">Date & Time</label>
-            <div class="form-row">
-              <input type="date" class="form-input" id="entryDate" required>
-              <input type="time" class="form-input" id="entryTime" value="00:00">
+    <main class="main-content">
+        <div class="container">
+            <!-- Premium Header -->
+            <div class="diary-header">
+                <div class="diary-title">
+                    <h1 class="display-title">My Diary</h1>
+                    <p class="subtitle">Your private space for reflection and spiritual journaling</p>
+                </div>
+                <div class="diary-actions">
+                    <a href="/diary/prayers.php" class="btn btn-outline">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
+                            <path d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path>
+                        </svg>
+                        Prayer Journal
+                    </a>
+                    <a href="/diary/entry.php" class="btn btn-primary">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
+                            <line x1="12" y1="5" x2="12" y2="19"></line>
+                            <line x1="5" y1="12" x2="19" y2="12"></line>
+                        </svg>
+                        New Entry
+                    </a>
+                </div>
             </div>
-          </div>
 
-          <div class="form-group">
-            <label class="form-label" for="entryTitle">Title</label>
-            <input type="text" class="form-input" id="entryTitle" placeholder="My thoughts today...">
-          </div>
-
-          <div class="form-group">
-            <label class="form-label" for="entryBody">Content</label>
-            <div class="editor-toolbar">
-              <button type="button" class="editor-btn" data-action="bold" title="Bold">
-                <strong>B</strong>
-              </button>
-              <button type="button" class="editor-btn" data-action="italic" title="Italic">
-                <em>I</em>
-              </button>
-              <button type="button" class="editor-btn" data-action="underline" title="Underline">
-                <u>U</u>
-              </button>
-              <button type="button" class="editor-btn" data-action="strikethrough" title="Strikethrough">
-                <s>S</s>
-              </button>
-              <span class="editor-divider"></span>
-              <button type="button" class="editor-btn" data-action="heading" title="Heading">
-                <span>H1</span>
-              </button>
-              <button type="button" class="editor-btn" data-action="bulletList" title="Bullet List">
-                <span>•</span>
-              </button>
-              <button type="button" class="editor-btn" data-action="numberedList" title="Numbered List">
-                <span>1.</span>
-              </button>
-              <span class="editor-divider"></span>
-              <button type="button" class="editor-btn" data-action="quote" title="Quote">
-                <span>"</span>
-              </button>
-              <button type="button" class="editor-btn" data-action="code" title="Code">
-                <span>&lt;/&gt;</span>
-              </button>
+            <!-- Stats Cards -->
+            <div class="diary-stats">
+                <div class="stat-card">
+                    <div class="stat-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path>
+                        </svg>
+                    </div>
+                    <span class="stat-value"><?= number_format($totalEntries) ?></span>
+                    <span class="stat-label">Total Entries</span>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon accent">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+                        </svg>
+                    </div>
+                    <span class="stat-value"><?= $streak ?></span>
+                    <span class="stat-label">Days This Week</span>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon success">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="20 6 9 17 4 12"></polyline>
+                        </svg>
+                    </div>
+                    <span class="stat-value"><?= $longestStreak ?></span>
+                    <span class="stat-label">This Month</span>
+                </div>
             </div>
-            <textarea class="form-textarea" id="entryBody" rows="10" placeholder="Write your thoughts here..."></textarea>
-            <div class="word-count" id="wordCount">0 words</div>
-          </div>
 
-          <div class="form-group">
-            <label class="form-label">Tags</label>
-            <div class="tags-container" id="tagsContainer"></div>
-            <input type="text" class="form-input" id="tagInput" placeholder="Type a tag and press Enter">
-          </div>
+            <div class="diary-layout">
+                <!-- Sidebar -->
+                <aside class="diary-sidebar">
+                    <!-- Mini Calendar -->
+                    <div class="sidebar-section">
+                        <h3>
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
+                                <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                                <line x1="16" y1="2" x2="16" y2="6"></line>
+                                <line x1="8" y1="2" x2="8" y2="6"></line>
+                                <line x1="3" y1="10" x2="21" y2="10"></line>
+                            </svg>
+                            Calendar
+                        </h3>
+                        <?= buildCalendar($calYear, $calMonth, $entryDates) ?>
+                    </div>
 
-          <div class="form-group">
-            <label class="form-label">Mood</label>
-            <div class="mood-selector">
-              <button type="button" class="mood-btn" data-mood="happy">😊</button>
-              <button type="button" class="mood-btn" data-mood="sad">😢</button>
-              <button type="button" class="mood-btn" data-mood="excited">🤗</button>
-              <button type="button" class="mood-btn" data-mood="calm">😌</button>
-              <button type="button" class="mood-btn" data-mood="thoughtful">🤔</button>
-              <button type="button" class="mood-btn" data-mood="grateful">🙏</button>
-              <button type="button" class="mood-btn" data-mood="inspired">✨</button>
-              <button type="button" class="mood-btn" data-mood="tired">😴</button>
+                    <!-- Search -->
+                    <div class="sidebar-section">
+                        <h3>
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
+                                <circle cx="11" cy="11" r="8"></circle>
+                                <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                            </svg>
+                            Search
+                        </h3>
+                        <form method="get" class="search-form">
+                            <input type="text" name="search" value="<?= e($search ?? '') ?>" placeholder="Search entries...">
+                            <button type="submit">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <circle cx="11" cy="11" r="8"></circle>
+                                    <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                                </svg>
+                            </button>
+                        </form>
+                    </div>
+
+                    <!-- Filter by Mood -->
+                    <div class="sidebar-section">
+                        <h3>
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
+                                <circle cx="12" cy="12" r="10"></circle>
+                                <path d="M8 14s1.5 2 4 2 4-2 4-2"></path>
+                                <line x1="9" y1="9" x2="9.01" y2="9"></line>
+                                <line x1="15" y1="9" x2="15.01" y2="9"></line>
+                            </svg>
+                            Filter by Mood
+                        </h3>
+                        <div class="mood-filters">
+                            <a href="?" class="mood-btn <?= !$mood ? 'active' : '' ?>">All</a>
+                            <?php foreach ($moods as $m): ?>
+                                <a href="?mood=<?= $m ?>" class="mood-btn <?= $mood === $m ? 'active' : '' ?>" style="--mood-color: <?= getMoodColor($m) ?>">
+                                    <?= getMoodEmoji($m) ?> <?= ucfirst($m) ?>
+                                </a>
+                            <?php endforeach; ?>
+                        </div>
+                    </div>
+
+                    <!-- Tags -->
+                    <?php if (!empty($tags)): ?>
+                        <div class="sidebar-section">
+                            <h3>
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
+                                    <path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"></path>
+                                    <line x1="7" y1="7" x2="7.01" y2="7"></line>
+                                </svg>
+                                Tags
+                            </h3>
+                            <div class="tag-cloud">
+                                <?php foreach ($tags as $t): ?>
+                                    <a href="?tag=<?= urlencode($t['name']) ?>" class="tag <?= $tag === $t['name'] ? 'active' : '' ?>">
+                                        <?= e($t['name']) ?>
+                                        <span class="tag-count"><?= $t['count'] ?></span>
+                                    </a>
+                                <?php endforeach; ?>
+                            </div>
+                        </div>
+                    <?php endif; ?>
+
+                    <!-- Archive -->
+                    <?php if (!empty($archives)): ?>
+                        <div class="sidebar-section">
+                            <h3>
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
+                                    <polyline points="22 12 16 12 14 15 10 15 8 12 2 12"></polyline>
+                                    <path d="M5.45 5.11L2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"></path>
+                                </svg>
+                                Archive
+                            </h3>
+                            <div class="archive-links">
+                                <?php foreach ($archives as $archive): ?>
+                                    <?php $monthName = date('F', mktime(0, 0, 0, $archive['month'], 1)); ?>
+                                    <a href="?year=<?= $archive['year'] ?>&month=<?= $archive['month'] ?>" class="<?= ($filterYear == $archive['year'] && $filterMonth == $archive['month']) ? 'active' : '' ?>">
+                                        <span class="archive-date"><?= $monthName ?> <?= $archive['year'] ?></span>
+                                        <span class="archive-count"><?= $archive['count'] ?></span>
+                                    </a>
+                                <?php endforeach; ?>
+                            </div>
+                        </div>
+                    <?php endif; ?>
+
+                    <!-- Quick Links -->
+                    <div class="sidebar-section">
+                        <h3>
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
+                                <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path>
+                                <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path>
+                            </svg>
+                            Quick Links
+                        </h3>
+                        <div class="quick-links">
+                            <a href="/calendar/" class="quick-link">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                                    <line x1="16" y1="2" x2="16" y2="6"></line>
+                                    <line x1="8" y1="2" x2="8" y2="6"></line>
+                                    <line x1="3" y1="10" x2="21" y2="10"></line>
+                                </svg>
+                                Full Calendar
+                            </a>
+                            <a href="/diary/prayers.php" class="quick-link">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path>
+                                </svg>
+                                Prayer Journal
+                            </a>
+                        </div>
+                    </div>
+                </aside>
+
+                <!-- Main Content -->
+                <div class="diary-main">
+                    <?php if ($search || $tag || $mood || $filterMonth): ?>
+                        <div class="filter-banner">
+                            <span>
+                                <?php if ($search): ?>
+                                    Searching: "<?= e($search) ?>"
+                                <?php elseif ($tag): ?>
+                                    Tag: <?= e($tag) ?>
+                                <?php elseif ($mood): ?>
+                                    Mood: <?= getMoodEmoji($mood) ?> <?= ucfirst($mood) ?>
+                                <?php elseif ($filterMonth): ?>
+                                    <?= date('F Y', mktime(0, 0, 0, $filterMonth, 1, $filterYear)) ?>
+                                <?php endif; ?>
+                            </span>
+                            <a href="/diary/" class="clear-filter">Clear Filter</a>
+                        </div>
+                    <?php endif; ?>
+
+                    <?php if (empty($entries)): ?>
+                        <div class="empty-state">
+                            <div class="empty-icon">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                                    <path d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path>
+                                </svg>
+                            </div>
+                            <h3>No entries yet</h3>
+                            <p>Start writing to capture your thoughts, prayers, and spiritual reflections</p>
+                            <a href="/diary/entry.php" class="btn btn-primary">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
+                                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                                </svg>
+                                Write Your First Entry
+                            </a>
+                        </div>
+                    <?php else: ?>
+                        <div class="entries-grid">
+                            <?php foreach ($entries as $entry): ?>
+                                <a href="/diary/entry.php?id=<?= $entry['id'] ?>" class="entry-card">
+                                    <div class="entry-date">
+                                        <span class="day"><?= date('d', strtotime($entry['entry_date'])) ?></span>
+                                        <span class="month"><?= date('M', strtotime($entry['entry_date'])) ?></span>
+                                        <span class="year"><?= date('Y', strtotime($entry['entry_date'])) ?></span>
+                                    </div>
+                                    <div class="entry-content">
+                                        <h3><?= e($entry['title'] ?: 'Untitled Entry') ?></h3>
+                                        <p><?= e(truncate(strip_tags($entry['content'] ?? ''), 120)) ?></p>
+                                        <div class="entry-footer">
+                                            <?php if (!empty($entry['mood'])): ?>
+                                                <span class="entry-mood" style="--mood-color: <?= getMoodColor($entry['mood']) ?>">
+                                                    <?= getMoodEmoji($entry['mood']) ?> <?= ucfirst($entry['mood']) ?>
+                                                </span>
+                                            <?php endif; ?>
+                                            <?php if (!empty($entry['scripture_ref'])): ?>
+                                                <span class="entry-scripture">
+                                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
+                                                        <path d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path>
+                                                    </svg>
+                                                    <?= e($entry['scripture_ref']) ?>
+                                                </span>
+                                            <?php endif; ?>
+                                        </div>
+                                    </div>
+                                    <?php if ($entry['is_private']): ?>
+                                        <span class="entry-private" title="Private">
+                                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                                                <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                                                <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                                            </svg>
+                                        </span>
+                                    <?php endif; ?>
+                                </a>
+                            <?php endforeach; ?>
+                        </div>
+                    <?php endif; ?>
+                </div>
             </div>
-            <input type="hidden" id="entryMood">
-          </div>
-
-          <div class="form-group">
-            <label class="form-label">Weather</label>
-            <div class="weather-selector">
-              <button type="button" class="weather-btn" data-weather="sunny">☀️</button>
-              <button type="button" class="weather-btn" data-weather="cloudy">☁️</button>
-              <button type="button" class="weather-btn" data-weather="rainy">🌧️</button>
-              <button type="button" class="weather-btn" data-weather="stormy">⛈️</button>
-              <button type="button" class="weather-btn" data-weather="snowy">❄️</button>
-              <button type="button" class="weather-btn" data-weather="windy">🌬️</button>
-            </div>
-            <input type="hidden" id="entryWeather">
-          </div>
-
-          <div class="form-group">
-            <label class="form-label">Reminder</label>
-            <select class="form-select" id="reminderMinutes">
-              <option value="0">No reminder</option>
-              <option value="15">15 minutes before</option>
-              <option value="30">30 minutes before</option>
-              <option value="60" selected>1 hour before</option>
-              <option value="120">2 hours before</option>
-              <option value="1440">1 day before</option>
-            </select>
-          </div>
-
-          <div class="form-group">
-            <label class="custom-checkbox">
-              <input type="checkbox" id="addToCalendar" checked>
-              <span class="checkmark"></span>
-              <span>Add to Calendar 📅</span>
-            </label>
-          </div>
-
-          <div class="form-actions">
-            <button type="button" class="btn btn-secondary" id="cancelBtn">
-              Cancel
-            </button>
-            <button type="button" class="btn btn-ai" id="aiAssistBtn">
-              <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" stroke="currentColor" stroke-width="2" fill="none"/>
-              </svg>
-              AI Assist
-            </button>
-            <button type="submit" class="btn btn-primary" id="saveBtn">
-              Save
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
-  </div>
-
-  <!-- Share Modal -->
-  <div class="modal" id="shareModal" style="display: none;">
-    <div class="modal-overlay"></div>
-    <div class="modal-container modal-sm">
-      <div class="modal-header">
-        <h2 class="modal-title">Share Entry</h2>
-        <button class="modal-close" onclick="closeShareModal()">
-          <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path d="M18 6L6 18M6 6l12 12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-          </svg>
-        </button>
-      </div>
-      <div class="modal-body">
-        <div class="share-options">
-          <button class="share-option" onclick="shareAs('friend')">
-            <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2M9 11a4 4 0 100-8 4 4 0 000 8zM23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-            </svg>
-            <span>Share with Friend</span>
-          </button>
-          <button class="share-option" onclick="shareAs('link')">
-            <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-            </svg>
-            <span>Copy Link</span>
-          </button>
-          <button class="share-option" onclick="shareAs('export')">
-            <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M17 8l-5-5m0 0L7 8m5-5v12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-            </svg>
-            <span>Export PDF</span>
-          </button>
         </div>
-      </div>
-    </div>
-  </div>
+    </main>
 
-  <script>
-    window.DIARY_LANG = 'en';
-    window.USER_ID = <?= $userId ?>;
-  </script>
-  <script src="/diary/js/diary.js?v=<?= time() ?>"></script>
-
-
+    <script src="/diary/js/diary.js"></script>
 </body>
 </html>
