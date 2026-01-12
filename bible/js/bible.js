@@ -302,11 +302,23 @@
     const book = getBook(data, bookName);
     if (!book) return [];
 
-    if (Array.isArray(book.chapters)) return book.chapters[chapterNum - 1] || [];
-    if (Array.isArray(book.chapter)) return book.chapter[chapterNum - 1] || [];
+    let chapter = null;
 
-    const chKey = String(chapterNum);
-    return book[chKey] || [];
+    // Try different chapter access patterns
+    if (Array.isArray(book.chapters)) {
+      chapter = book.chapters[chapterNum - 1];
+    } else if (Array.isArray(book.chapter)) {
+      chapter = book.chapter[chapterNum - 1];
+    } else if (book[String(chapterNum)]) {
+      chapter = book[String(chapterNum)];
+    } else if (book[chapterNum]) {
+      chapter = book[chapterNum];
+    }
+
+    // Ensure we return an array
+    if (Array.isArray(chapter)) return chapter;
+    if (chapter && typeof chapter === 'object') return Object.values(chapter);
+    return [];
   }
 
   function parseVerse(item) {
