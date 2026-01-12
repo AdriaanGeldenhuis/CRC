@@ -579,8 +579,8 @@ html {
 /* LIGHT THEME - Navigation Modal */
 [data-theme="light"] .bible-modal {
   background-color: #FFFFFF;
-  border-left: 1px solid rgba(139, 92, 246, 0.15);
-  box-shadow: -4px 0 30px rgba(139, 92, 246, 0.1);
+  border: none;
+  box-shadow: none;
 }
 
 [data-theme="light"] .bible-modal-content {
@@ -618,8 +618,8 @@ html {
 }
 
 [data-theme="light"] .bible-nav-card {
-  background-color: rgba(139, 92, 246, 0.05) !important;
-  border: 1px solid rgba(139, 92, 246, 0.15) !important;
+  background-color: #F8F5FF !important;
+  border: 2px solid rgba(139, 92, 246, 0.25) !important;
   color: #1E1B4B !important;
 }
 
