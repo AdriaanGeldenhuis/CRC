@@ -2,6 +2,7 @@
 *.local.php
 config.local.php
 bible/config.local.php
+ai_smartbible/config.php
 
 # Environment files
 .env
