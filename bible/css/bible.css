@@ -505,6 +505,17 @@ html {
   margin: 0 auto;
 }
 
+.bible-single-container {
+  display: flex;
+  justify-content: center;
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+.bible-single-container .bible-column {
+  width: 100%;
+}
+
 @media (max-width: 900px) {
   .bible-dual-container {
     grid-template-columns: 1fr;
@@ -556,6 +567,31 @@ html {
 }
 
 /* =====================================================================
+   CHAPTER BLOCKS
+   ===================================================================== */
+.bible-chapter-block {
+  margin-bottom: 2rem;
+}
+
+.bible-chapter-title {
+  font-family: var(--font-serif);
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--primary);
+  margin-bottom: 1rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid var(--glass-border);
+}
+
+.bible-heading {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  margin: 1.5rem 0 0.75rem;
+  font-style: italic;
+}
+
+/* =====================================================================
    VERSES
    ===================================================================== */
 .bible-verses {
@@ -566,11 +602,13 @@ html {
 }
 
 .bible-verse {
-  display: inline;
+  display: block;
   cursor: pointer;
-  padding: 2px 1px;
-  border-radius: 3px;
+  padding: 0.35rem 0.5rem;
+  margin: 0.25rem 0;
+  border-radius: 6px;
   transition: var(--transition-fast);
+  position: relative;
 }
 
 .bible-verse:hover {
@@ -583,6 +621,21 @@ html {
   outline-offset: 1px;
 }
 
+.bible-verse-number {
+  font-family: var(--font-family);
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--primary);
+  margin-right: 0.25rem;
+}
+
+.bible-verse-text {
+  font-family: var(--font-serif);
+  font-size: 1.05rem;
+  line-height: 1.7;
+  color: var(--text-primary);
+}
+
 .bible-verse-num {
   font-family: var(--font-family);
   font-size: 0.65rem;
@@ -590,6 +643,23 @@ html {
   color: var(--primary);
   vertical-align: super;
   margin-right: 2px;
+}
+
+/* Verse indicators */
+.bible-bookmark-indicator,
+.bible-note-indicator {
+  margin-left: 0.5rem;
+  cursor: pointer;
+  font-size: 0.9rem;
+}
+
+.bible-verse-flash {
+  animation: verseFlash 2s ease-out;
+}
+
+@keyframes verseFlash {
+  0% { background-color: var(--primary); }
+  100% { background-color: transparent; }
 }
 
 /* Verse Highlight Colors (numbered 1-6) */
@@ -863,6 +933,20 @@ html {
   border-radius: 3px;
 }
 
+.bible-search-result-item {
+  padding: 1rem;
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: var(--transition-fast);
+}
+
+.bible-search-result-item:hover {
+  background: var(--glass-bg-hover);
+  border-color: var(--primary);
+}
+
 /* =====================================================================
    NOTES PANEL STYLES
    ===================================================================== */
@@ -919,6 +1003,42 @@ html {
   line-height: 1.6;
 }
 
+.bible-note-item-ref {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--primary);
+  margin-bottom: 0.5rem;
+}
+
+.bible-note-item-text {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  line-height: 1.5;
+  margin-bottom: 0.75rem;
+}
+
+.bible-note-item-actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.bible-btn-small {
+  padding: 0.35rem 0.75rem;
+  font-size: 0.8rem;
+  font-weight: 500;
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-sm);
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: var(--transition-fast);
+}
+
+.bible-btn-small:hover {
+  background: var(--glass-bg-hover);
+  color: var(--text-primary);
+}
+
 /* Note Editor */
 .bible-note-editor {
   background: var(--glass-bg);
@@ -966,9 +1086,7 @@ html {
 }
 
 .bible-bookmark-item {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
+  display: block;
   padding: 1rem;
   background: var(--glass-bg);
   border: 1px solid var(--glass-border);
@@ -985,7 +1103,14 @@ html {
 .bible-bookmark-ref {
   font-size: 0.95rem;
   font-weight: 600;
-  color: var(--text-primary);
+  color: var(--primary);
+  margin-bottom: 0.25rem;
+}
+
+.bible-bookmark-text {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  line-height: 1.4;
 }
 
 .bible-bookmark-delete {
@@ -1026,6 +1151,36 @@ html {
 
 .bible-ai-output p {
   margin-bottom: 0.75rem;
+}
+
+.bible-ai-response {
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-md);
+  padding: 1.25rem;
+}
+
+.bible-ai-verse-ref {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--primary);
+  margin-bottom: 1rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid var(--glass-border);
+}
+
+.bible-ai-answer {
+  font-size: 0.9rem;
+  line-height: 1.8;
+  color: var(--text-secondary);
+}
+
+.bible-error {
+  color: var(--danger);
+  padding: 1rem;
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid var(--danger);
+  border-radius: var(--radius-md);
 }
 
 .bible-ai-loading {
@@ -1085,6 +1240,18 @@ html {
   line-height: 1.5;
 }
 
+.bible-cross-ref-title {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--primary);
+  margin-bottom: 0.25rem;
+}
+
+.bible-cross-ref-type {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+
 /* =====================================================================
    READING PLAN PANEL STYLES
    ===================================================================== */
@@ -1131,6 +1298,42 @@ html {
 .bible-reading-plan-today p {
   font-size: 0.9rem;
   color: var(--text-primary);
+}
+
+.bible-plan-options {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.bible-plan-option {
+  display: block;
+  width: 100%;
+  padding: 1.25rem;
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  text-align: left;
+  transition: var(--transition-fast);
+}
+
+.bible-plan-option:hover {
+  background: var(--glass-bg-hover);
+  border-color: var(--primary);
+  transform: translateY(-2px);
+}
+
+.bible-plan-name {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 0.25rem;
+}
+
+.bible-plan-desc {
+  font-size: 0.85rem;
+  color: var(--text-muted);
 }
 
 /* =====================================================================
@@ -1199,6 +1402,67 @@ html {
   font-size: 0.95rem;
 }
 
+/* Fullscreen loading overlay */
+#bibleLoadingOverlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.95);
+  backdrop-filter: var(--blur-lg);
+  -webkit-backdrop-filter: var(--blur-lg);
+  z-index: 10000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: opacity 0.3s ease;
+}
+
+.bible-loading-container {
+  text-align: center;
+  padding: 2rem;
+}
+
+.bible-loading-spinner {
+  width: 60px;
+  height: 60px;
+  border: 4px solid var(--glass-border);
+  border-top-color: var(--primary);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin: 0 auto 1.5rem;
+}
+
+.bible-loading-title {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 1rem;
+}
+
+.bible-loading-bar {
+  width: 250px;
+  height: 6px;
+  background: var(--glass-bg-strong);
+  border-radius: var(--radius-full);
+  overflow: hidden;
+  margin: 0 auto 0.75rem;
+}
+
+.bible-loading-progress {
+  height: 100%;
+  background: var(--gradient-primary);
+  border-radius: var(--radius-full);
+  width: 0%;
+  transition: width 0.3s ease;
+}
+
+.bible-loading-text {
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+}
+
 /* =====================================================================
    TOAST NOTIFICATIONS
    ===================================================================== */
@@ -1218,6 +1482,11 @@ html {
   transition: var(--transition-base);
   z-index: 800;
   box-shadow: var(--shadow-lg);
+}
+
+.bible-toast.show {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
 }
 
 .bible-toast.bible-toast-show {

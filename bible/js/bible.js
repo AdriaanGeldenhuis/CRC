@@ -160,10 +160,8 @@
     readingPlanClose: $('readingPlanClose'),
     readingPlanContent: $('readingPlanContent'),
     leftContent: $('leftContent'),
-    rightContent: $('rightContent'),
     leftColumn: $('leftColumn'),
-    rightColumn: $('rightColumn'),
-    dualContainer: document.querySelector('.bible-dual-container'),
+    singleContainer: document.querySelector('.bible-single-container'),
     verseContextMenu: $('verseContextMenu'),
     ctxBookmark: $('ctxBookmark'),
     ctxAddNote: $('ctxAddNote'),
@@ -1112,6 +1110,26 @@
     const verseText = verse?.querySelector('.bible-verse-text')?.textContent || '';
     const parsed = parseRef(state.selectedVerse);
     const verseRef = `${parsed.book} ${parsed.chapter}:${parsed.verse}`;
+    const bookIndex = state.books.indexOf(parsed.book) + 1;
+
+    // Get context verses
+    const prevVerses = [];
+    const nextVerses = [];
+    const currentChapter = getChapter(state.data, parsed.book, parsed.chapter);
+
+    // Get up to 3 verses before and after for context
+    for (let i = parsed.verse - 4; i < parsed.verse - 1; i++) {
+      if (i > 0 && currentChapter[i]) {
+        const p = parseVerse(currentChapter[i]);
+        if (p.type === 'verse') prevVerses.push(`v${i+1}: ${p.text}`);
+      }
+    }
+    for (let i = parsed.verse; i < parsed.verse + 3; i++) {
+      if (currentChapter[i]) {
+        const p = parseVerse(currentChapter[i]);
+        if (p.type === 'verse') nextVerses.push(`v${i+1}: ${p.text}`);
+      }
+    }
 
     hideContextMenu();
 
@@ -1122,11 +1140,13 @@
 
     try {
       const formData = new FormData();
-      formData.append('reference', verseRef);
-      formData.append('text', verseText);
-      formData.append('book', parsed.book);
+      formData.append('book_number', bookIndex);
       formData.append('chapter', parsed.chapter);
       formData.append('verse', parsed.verse);
+      formData.append('verse_text', verseText);
+      formData.append('book_name', parsed.book);
+      formData.append('context_before', prevVerses.join('\n'));
+      formData.append('context_after', nextVerses.join('\n'));
 
       const res = await fetch('/bible/api/ai_explain.php', {
         method: 'POST',

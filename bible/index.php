@@ -166,16 +166,11 @@ $pageTitle = 'Bible - CRC';
       </div>
     </section>
 
-    <!-- Main Reading View (Dual Columns) -->
+    <!-- Main Reading View (Single Column) -->
     <section class="bible-reading-section">
-      <div class="bible-dual-container">
-        <div class="bible-column bible-column-left" id="leftColumn">
+      <div class="bible-single-container">
+        <div class="bible-column" id="leftColumn">
           <div class="bible-column-content" id="leftContent">
-            <div class="bible-loading">Loading Bible...</div>
-          </div>
-        </div>
-        <div class="bible-column bible-column-right" id="rightColumn">
-          <div class="bible-column-content" id="rightContent">
             <div class="bible-loading">Loading Bible...</div>
           </div>
         </div>
