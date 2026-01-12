@@ -328,18 +328,33 @@
       return { type: 'verse', text: item };
     }
 
-    if (typeof item === 'object') {
-      if (item.h !== undefined) return { type: 'heading', text: String(item.h) };
-      if (item.v !== undefined) return { type: 'verse', text: String(item.v) };
-      if (item.text !== undefined) return { type: 'verse', text: String(item.text) };
-      if (item.verse !== undefined) return { type: 'verse', text: String(item.verse) };
-      if (item.t !== undefined) return { type: 'verse', text: String(item.t) };
-
-      const vals = Object.values(item);
-      if (vals.length > 0) return { type: 'verse', text: String(vals[0]) };
+    // Helper to extract string value
+    function extractText(val) {
+      if (typeof val === 'string') return val;
+      if (typeof val === 'number') return String(val);
+      if (typeof val === 'object' && val !== null) {
+        // Handle nested objects - try to find text content
+        if (val.text) return extractText(val.text);
+        if (val.content) return extractText(val.content);
+        if (val.value) return extractText(val.value);
+        const vals = Object.values(val);
+        if (vals.length > 0 && typeof vals[0] === 'string') return vals[0];
+      }
+      return '';
     }
 
-    return { type: 'verse', text: String(item) };
+    if (typeof item === 'object') {
+      if (item.h !== undefined) return { type: 'heading', text: extractText(item.h) };
+      if (item.v !== undefined) return { type: 'verse', text: extractText(item.v) };
+      if (item.text !== undefined) return { type: 'verse', text: extractText(item.text) };
+      if (item.verse !== undefined) return { type: 'verse', text: extractText(item.verse) };
+      if (item.t !== undefined) return { type: 'verse', text: extractText(item.t) };
+
+      const vals = Object.values(item);
+      if (vals.length > 0) return { type: 'verse', text: extractText(vals[0]) };
+    }
+
+    return { type: 'verse', text: '' };
   }
 
   function makeRef(book, chapter, verse) {
