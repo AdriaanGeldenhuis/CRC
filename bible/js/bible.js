@@ -5,6 +5,24 @@
 (() => {
   'use strict';
 
+  // ===== POLYFILLS FOR OLDER WEBVIEWS =====
+  // requestIdleCallback polyfill
+  window.requestIdleCallback = window.requestIdleCallback || function(cb) {
+    const start = Date.now();
+    return setTimeout(function() {
+      cb({
+        didTimeout: false,
+        timeRemaining: function() {
+          return Math.max(0, 50 - (Date.now() - start));
+        }
+      });
+    }, 1);
+  };
+
+  window.cancelIdleCallback = window.cancelIdleCallback || function(id) {
+    clearTimeout(id);
+  };
+
   // ===== UTILITIES =====
   const $ = (id) => document.getElementById(id);
   const esc = (s) => String(s || '').replace(/[&<>"']/g, m => ({
@@ -17,23 +35,45 @@
   const DB_VERSION = 2;
   const STORE_NAME = 'bibleData';
 
+  // Check if IndexedDB is available
+  const indexedDBAvailable = (function() {
+    try {
+      return typeof indexedDB !== 'undefined' && indexedDB !== null;
+    } catch (e) {
+      return false;
+    }
+  })();
+
   async function initDB() {
+    if (!indexedDBAvailable) {
+      console.warn('IndexedDB not available, using memory cache only');
+      return null;
+    }
+
     return new Promise((resolve, reject) => {
-      const request = indexedDB.open(DB_NAME, DB_VERSION);
+      try {
+        const request = indexedDB.open(DB_NAME, DB_VERSION);
 
-      request.onerror = () => reject(request.error);
+        request.onerror = () => {
+          console.warn('IndexedDB failed to open:', request.error);
+          resolve(null); // Resolve with null instead of rejecting
+        };
 
-      request.onsuccess = () => {
-        db = request.result;
-        resolve(db);
-      };
+        request.onsuccess = () => {
+          db = request.result;
+          resolve(db);
+        };
 
-      request.onupgradeneeded = (e) => {
-        const database = e.target.result;
-        if (!database.objectStoreNames.contains(STORE_NAME)) {
-          database.createObjectStore(STORE_NAME, { keyPath: 'key' });
-        }
-      };
+        request.onupgradeneeded = (e) => {
+          const database = e.target.result;
+          if (!database.objectStoreNames.contains(STORE_NAME)) {
+            database.createObjectStore(STORE_NAME, { keyPath: 'key' });
+          }
+        };
+      } catch (e) {
+        console.warn('IndexedDB initialization error:', e);
+        resolve(null);
+      }
     });
   }
 
@@ -225,33 +265,54 @@
 
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
 
-      const contentLength = +res.headers.get('Content-Length');
-      const reader = res.body.getReader();
+      let data;
 
-      let receivedLength = 0;
-      let chunks = [];
+      // Check if streaming is supported (some WebViews don't support it)
+      const supportsStreaming = res.body && typeof res.body.getReader === 'function';
 
-      while(true) {
-        const {done, value} = await reader.read();
-        if (done) break;
+      if (supportsStreaming) {
+        // Use streaming for progress reporting
+        try {
+          const contentLength = +res.headers.get('Content-Length');
+          const reader = res.body.getReader();
 
-        chunks.push(value);
-        receivedLength += value.length;
+          let receivedLength = 0;
+          let chunks = [];
 
-        if (onProgress && contentLength) {
-          onProgress((receivedLength / contentLength) * 100);
+          while(true) {
+            const {done, value} = await reader.read();
+            if (done) break;
+
+            chunks.push(value);
+            receivedLength += value.length;
+
+            if (onProgress && contentLength) {
+              onProgress((receivedLength / contentLength) * 100);
+            }
+          }
+
+          const chunksAll = new Uint8Array(receivedLength);
+          let position = 0;
+          for(let chunk of chunks) {
+            chunksAll.set(chunk, position);
+            position += chunk.length;
+          }
+
+          const text = new TextDecoder("utf-8").decode(chunksAll);
+          data = JSON.parse(text);
+        } catch (streamError) {
+          console.warn('Streaming failed, falling back to simple fetch:', streamError);
+          // Refetch without streaming
+          const res2 = await fetch(url, { credentials: 'same-origin' });
+          data = await res2.json();
+          if (onProgress) onProgress(100);
         }
+      } else {
+        // Fallback for WebViews without streaming support
+        console.log('Using simple fetch (no streaming support)');
+        data = await res.json();
+        if (onProgress) onProgress(100);
       }
-
-      const chunksAll = new Uint8Array(receivedLength);
-      let position = 0;
-      for(let chunk of chunks) {
-        chunksAll.set(chunk, position);
-        position += chunk.length;
-      }
-
-      const text = new TextDecoder("utf-8").decode(chunksAll);
-      const data = JSON.parse(text);
 
       await saveToDB(cacheKey, data);
 
