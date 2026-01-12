@@ -618,12 +618,10 @@
 
       const formData = new FormData();
       formData.append('action', color === 0 ? 'remove' : 'add');
-      formData.append('version', 'KJV');
       formData.append('book_number', bookIndex);
       formData.append('chapter', parsed.chapter);
-      formData.append('verse_start', parsed.verse);
-      formData.append('verse_end', parsed.verse);
-      formData.append('color', getColorName(color));
+      formData.append('verse', parsed.verse);
+      formData.append('color', color); // Send as integer 1-6
 
       const res = await fetch('/bible/api/highlights.php', {
         method: 'POST',
@@ -644,6 +642,8 @@
 
         refreshVerseDisplay();
         showToast('Highlight saved');
+      } else {
+        throw new Error(data.error || 'Failed to save');
       }
     } catch (e) {
       console.error('Highlight save failed:', e);
@@ -662,8 +662,8 @@
   async function toggleBookmark() {
     if (!state.selectedVerse) return;
 
-    const verse = document.querySelector(`[data-ref="${state.selectedVerse}"]`);
-    const verseText = verse?.querySelector('.bible-verse-text')?.textContent || '';
+    const verseEl = document.querySelector(`[data-ref="${state.selectedVerse}"]`);
+    const verseText = verseEl?.querySelector('.bible-verse-text')?.textContent || '';
     const parsed = parseRef(state.selectedVerse);
     const bookIndex = state.books.indexOf(parsed.book) + 1;
 
@@ -671,13 +671,10 @@
       const isBookmarked = !!state.bookmarks[state.selectedVerse];
 
       const formData = new FormData();
-      formData.append('action', isBookmarked ? 'remove' : 'add');
-      formData.append('version', 'KJV');
+      formData.append('action', 'toggle');
       formData.append('book_number', bookIndex);
       formData.append('chapter', parsed.chapter);
-      formData.append('verse_start', parsed.verse);
-      formData.append('title', `${parsed.book} ${parsed.chapter}:${parsed.verse}`);
-      formData.append('notes', verseText.substring(0, 200));
+      formData.append('verse', parsed.verse);
 
       const res = await fetch('/bible/api/bookmarks.php', {
         method: 'POST',
@@ -690,7 +687,7 @@
       const data = await res.json();
 
       if (data.ok) {
-        if (isBookmarked) {
+        if (data.bookmarked === false) {
           delete state.bookmarks[state.selectedVerse];
           showToast('Bookmark removed');
         } else {
@@ -702,6 +699,8 @@
         }
 
         refreshVerseDisplay();
+      } else {
+        throw new Error(data.error || 'Failed to save');
       }
     } catch (e) {
       console.error('Bookmark toggle failed:', e);
@@ -1180,6 +1179,7 @@
     if (!state.selectedVerse) return;
 
     const parsed = parseRef(state.selectedVerse);
+    const bookIndex = state.books.indexOf(parsed.book) + 1;
 
     hideContextMenu();
 
@@ -1189,22 +1189,26 @@
     showPanel(els.crossRefPanel);
 
     try {
-      const res = await fetch(
-        `/bible/api/cross_references.php?book=${encodeURIComponent(parsed.book)}&chapter=${parsed.chapter}&verse=${parsed.verse}`,
-        {
-          credentials: 'same-origin',
-          headers: {
-            'X-CSRF-Token': document.querySelector('meta[name="csrf-token"]').content
-          }
+      const formData = new FormData();
+      formData.append('book_number', bookIndex);
+      formData.append('chapter', parsed.chapter);
+      formData.append('verse', parsed.verse);
+
+      const res = await fetch('/bible/api/cross_references.php', {
+        method: 'POST',
+        body: formData,
+        credentials: 'same-origin',
+        headers: {
+          'X-CSRF-Token': document.querySelector('meta[name="csrf-token"]')?.content || ''
         }
-      );
+      });
 
       const data = await res.json();
 
-      if (data.ok && data.references && data.references.length > 0) {
-        displayCrossReferences(data.references);
+      if (data.ok && data.cross_references && data.cross_references.length > 0) {
+        displayCrossReferences(data.cross_references);
       } else {
-        els.crossRefList.innerHTML = `<p class="bible-empty-state">No cross-references found for this verse.</p>`;
+        els.crossRefList.innerHTML = `<p class="bible-empty-state">${data.message || 'No cross-references found for this verse.'}</p>`;
       }
     } catch (e) {
       console.error('Cross references error:', e);
@@ -1218,15 +1222,18 @@
     const frag = document.createDocumentFragment();
 
     refs.forEach(ref => {
+      // Get book name from book number
+      const bookName = state.books[ref.book_number - 1] || `Book ${ref.book_number}`;
+
       const item = document.createElement('div');
       item.className = 'bible-cross-ref-item';
       item.innerHTML = `
-        <div class="bible-cross-ref-title">${esc(ref.to_book)} ${ref.to_chapter}:${ref.to_verse}</div>
-        <div class="bible-cross-ref-type">${esc(ref.relationship_type || 'Related')}</div>
+        <div class="bible-cross-ref-title">${esc(bookName)} ${ref.chapter}:${ref.verse}</div>
+        <div class="bible-cross-ref-text">${esc(ref.text || '')}</div>
       `;
 
       item.addEventListener('click', () => {
-        const verseRef = makeRef(ref.to_book, ref.to_chapter, ref.to_verse);
+        const verseRef = makeRef(bookName, ref.chapter, ref.verse);
         goToReference(verseRef);
         hidePanel(els.crossRefPanel);
       });
@@ -1405,7 +1412,7 @@
         method: 'GET',
         credentials: 'same-origin',
         headers: {
-          'X-CSRF-Token': document.querySelector('meta[name="csrf-token"]').content
+          'X-CSRF-Token': document.querySelector('meta[name="csrf-token"]')?.content || ''
         }
       });
 
@@ -1419,10 +1426,10 @@
           data.highlights.forEach(h => {
             const book = state.books[h.book_number - 1];
             if (book) {
-              for (let v = h.verse_start; v <= (h.verse_end || h.verse_start); v++) {
-                const ref = makeRef(book, h.chapter, v);
-                state.highlights[ref] = colorNameToNumber(h.color);
-              }
+              const verse = h.verse || h.verse_start || 1;
+              const ref = makeRef(book, h.chapter, verse);
+              // Color comes as integer 1-6 from API
+              state.highlights[ref] = typeof h.color === 'number' ? h.color : colorNameToNumber(h.color);
             }
           });
         }
@@ -1431,8 +1438,12 @@
           data.notes.forEach(n => {
             const book = state.books[n.book_number - 1];
             if (book) {
-              const ref = makeRef(book, n.chapter, n.verse_start);
+              const verse = n.verse || n.verse_start || 1;
+              const ref = makeRef(book, n.chapter, verse);
               state.notes[ref] = n.content;
+              // Store note ID for delete operations
+              state.noteIds = state.noteIds || {};
+              state.noteIds[ref] = n.id;
             }
           });
         }
@@ -1441,10 +1452,11 @@
           data.bookmarks.forEach(b => {
             const book = state.books[b.book_number - 1];
             if (book) {
-              const ref = makeRef(book, b.chapter, b.verse_start || 1);
+              const verse = b.verse || b.verse_start || 1;
+              const ref = makeRef(book, b.chapter, verse);
               state.bookmarks[ref] = {
-                text: b.notes || '',
-                timestamp: new Date(b.created_at).getTime()
+                text: b.notes || b.text || '',
+                timestamp: b.created_at ? new Date(b.created_at).getTime() : Date.now()
               };
             }
           });
