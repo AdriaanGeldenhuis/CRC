@@ -361,7 +361,7 @@ function getMoodColor($mood) {
 
     <script>
         const allTags = <?= json_encode(array_map(fn($t) => ['id' => $t['id'], 'name' => $t['name']], $allTags ?? [])) ?>;
-        const CSRF_TOKEN = '<?= CSRF::generate() ?>';
+        const CSRF_TOKEN = '<?= CSRF::token() ?>';
 
         // AI Assist functionality
         document.getElementById('aiAssistBtn')?.addEventListener('click', async function() {
