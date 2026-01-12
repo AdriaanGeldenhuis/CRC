@@ -216,12 +216,24 @@
   border-color: var(--glass-border);
 }
 
+[data-theme="light"] .bible-verse {
+  color: #1E1B4B;
+}
+
 [data-theme="light"] .bible-verse:hover {
   background-color: rgba(139, 92, 246, 0.1);
 }
 
 [data-theme="light"] .bible-verse.selected {
   background-color: rgba(139, 92, 246, 0.15);
+}
+
+[data-theme="light"] .bible-verse-text {
+  color: #1E1B4B;
+}
+
+[data-theme="light"] .bible-verse-number {
+  color: #7C3AED;
 }
 
 /* ===== GLOBAL RESET ===== */
@@ -741,6 +753,7 @@ html {
   border-radius: 6px;
   transition: var(--transition-fast);
   position: relative;
+  color: #FFFFFF; /* Explicit fallback for WebView */
 }
 
 .bible-verse:hover {
@@ -754,18 +767,22 @@ html {
 }
 
 .bible-verse-number {
-  font-family: var(--font-family);
+  font-family: var(--font-family), -apple-system, sans-serif;
   font-size: 0.75rem;
   font-weight: 700;
-  color: var(--primary);
+  color: #8B5CF6; /* Explicit fallback */
+  color: var(--primary, #8B5CF6);
   margin-right: 0.25rem;
+  display: inline;
 }
 
 .bible-verse-text {
-  font-family: var(--font-serif);
+  font-family: var(--font-serif), Georgia, serif;
   font-size: 1.05rem;
   line-height: 1.7;
-  color: var(--text-primary);
+  color: #FFFFFF; /* Explicit fallback for WebView */
+  color: var(--text-primary, #FFFFFF);
+  display: inline;
 }
 
 .bible-verse-num {
