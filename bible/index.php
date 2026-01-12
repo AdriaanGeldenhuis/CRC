@@ -43,16 +43,16 @@ $pageTitle = 'Bible - CRC';
           <div class="bible-nav-step" id="navStepTestament">
             <h3 class="bible-nav-step-title">Choose Testament</h3>
             <div class="bible-nav-grid">
-              <button class="bible-nav-card" data-testament="old">
+              <div class="bible-nav-card" data-testament="old">
                 <div class="bible-nav-card-icon">📖</div>
                 <div class="bible-nav-card-title">Old Testament</div>
                 <div class="bible-nav-card-subtitle">Genesis - Malachi</div>
-              </button>
-              <button class="bible-nav-card" data-testament="new">
+              </div>
+              <div class="bible-nav-card" data-testament="new">
                 <div class="bible-nav-card-icon">✨</div>
                 <div class="bible-nav-card-title">New Testament</div>
                 <div class="bible-nav-card-subtitle">Matthew - Revelation</div>
-              </button>
+              </div>
             </div>
           </div>
 
