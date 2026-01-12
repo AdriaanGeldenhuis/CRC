@@ -1498,16 +1498,11 @@
   }
 
   function applyFontSize() {
-    const sizeMap = {
-      small: '0.9rem',
-      medium: '1.05rem',
-      large: '1.2rem',
-      xlarge: '1.35rem'
-    };
-
-    document.querySelectorAll('.bible-verse-text').forEach(el => {
-      el.style.fontSize = sizeMap[state.fontSize];
-    });
+    // Remove all font size classes first
+    const container = els.leftContent || document.body;
+    container.classList.remove('bible-font-small', 'bible-font-medium', 'bible-font-large', 'bible-font-xlarge');
+    // Add the current font size class
+    container.classList.add(`bible-font-${state.fontSize}`);
   }
 
   function refreshVerseDisplay() {
