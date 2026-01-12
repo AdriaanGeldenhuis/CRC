@@ -310,7 +310,7 @@ $pageTitle = 'Bible - CRC';
   <script>
     window.BIBLE = {
       userId: <?= (int)$user['id'] ?>,
-      path: '/bible/bibles/en_kjv.json'
+      path: '/bible/api/bible_data.php'
     };
   </script>
   <script src="/bible/js/bible.js?v=<?= time() ?>"></script>
