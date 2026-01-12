@@ -123,7 +123,7 @@ switch ($action) {
         }
 
         // Delete tag associations
-        Database::delete('diary_entry_tags', 'entry_id = ?', [$entryId]);
+        Database::delete('diary_tag_links', 'entry_id = ?', [$entryId]);
         // Delete entry
         Database::delete('diary_entries', 'id = ?', [$entryId]);
 
