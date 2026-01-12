@@ -148,6 +148,7 @@ function getMoodColor($mood) {
 
                 <!-- Entry Form -->
                 <form id="entry-form" class="entry-form" data-entry-id="<?= $entryId ?>">
+                    <?= CSRF::field() ?>
                     <div class="form-card">
                         <div class="form-card-header">
                             <h2 class="display-title"><?= $entry ? 'Edit Entry' : 'New Entry' ?></h2>
