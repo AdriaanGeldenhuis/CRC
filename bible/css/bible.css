@@ -494,6 +494,9 @@ html {
   display: grid !important;
   grid-template-columns: repeat(2, 1fr) !important;
   gap: 0.75rem !important;
+  width: 100% !important;
+  visibility: visible !important;
+  opacity: 1 !important;
 }
 
 .bible-nav-card {
@@ -501,14 +504,22 @@ html {
   flex-direction: column !important;
   align-items: center !important;
   justify-content: center !important;
+  width: 100% !important;
+  height: auto !important;
+  min-height: 80px !important;
   padding: 1rem 0.5rem !important;
+  margin: 0 !important;
   background-color: #1A1A2E !important;
   border: 2px solid #3D3D5C !important;
   border-radius: 12px !important;
   cursor: pointer !important;
   color: #FFFFFF !important;
-  min-height: 80px !important;
   font-family: 'Inter', -apple-system, sans-serif !important;
+  font-size: 14px !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+  -webkit-appearance: none !important;
+  appearance: none !important;
 }
 
 .bible-nav-card:active {
@@ -520,6 +531,7 @@ html {
   font-size: 1.5rem !important;
   margin-bottom: 0.5rem !important;
   display: block !important;
+  visibility: visible !important;
 }
 
 .bible-nav-card-title {
@@ -528,6 +540,7 @@ html {
   color: #FFFFFF !important;
   text-align: center !important;
   display: block !important;
+  visibility: visible !important;
 }
 
 .bible-nav-card-subtitle {
@@ -536,6 +549,7 @@ html {
   margin-top: 0.25rem !important;
   text-align: center !important;
   display: block !important;
+  visibility: visible !important;
 }
 
 /* Small grid for chapter numbers */
@@ -591,6 +605,8 @@ html {
   background-color: #F0EBFF !important;
   border: 2px solid #C4B5FD !important;
   color: #1E1B4B !important;
+  visibility: visible !important;
+  opacity: 1 !important;
 }
 
 [data-theme="light"] .bible-nav-card:active {
@@ -601,10 +617,12 @@ html {
 
 [data-theme="light"] .bible-nav-card-title {
   color: #1E1B4B !important;
+  visibility: visible !important;
 }
 
 [data-theme="light"] .bible-nav-card-subtitle {
   color: #6D5BA8 !important;
+  visibility: visible !important;
 }
 
 /* =====================================================================
