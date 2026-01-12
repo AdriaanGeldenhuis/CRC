@@ -46,13 +46,10 @@ try {
     }
 
     // Delete tag links first (foreign key constraint)
-    Database::execute("DELETE FROM diary_tag_links WHERE entry_id = ?", [$entryId]);
+    Database::delete('diary_tag_links', 'entry_id = ?', [$entryId]);
 
     // Delete diary entry
-    Database::execute(
-        "DELETE FROM diary_entries WHERE id = ? AND user_id = ?",
-        [$entryId, $userId]
-    );
+    Database::delete('diary_entries', 'id = ? AND user_id = ?', [$entryId, $userId]);
 
     echo json_encode([
         'success' => true,
