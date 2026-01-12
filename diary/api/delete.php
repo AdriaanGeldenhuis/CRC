@@ -18,7 +18,13 @@ if (!Auth::check()) {
 
 $user = Auth::user();
 $userId = (int)$user['id'];
-$entryId = (int)($_GET['id'] ?? 0);
+
+// Accept ID from GET, POST, or JSON body
+$entryId = (int)($_GET['id'] ?? $_POST['id'] ?? 0);
+if ($entryId <= 0) {
+    $input = json_decode(file_get_contents('php://input'), true);
+    $entryId = (int)($input['id'] ?? 0);
+}
 
 if ($entryId <= 0) {
     http_response_code(400);
