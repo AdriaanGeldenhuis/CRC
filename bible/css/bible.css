@@ -143,11 +143,7 @@
   background: var(--bg-base);
 }
 
-[data-theme="light"] .bible-toolbar {
-  background: rgba(255, 255, 255, 0.9);
-  border-top-color: var(--glass-border);
-  box-shadow: 0 -4px 30px rgba(124, 58, 237, 0.1);
-}
+/* Light toolbar styles moved to main toolbar section */
 
 [data-theme="light"] .bible-column {
   background: rgba(255, 255, 255, 0.85);
@@ -283,83 +279,115 @@ html {
 }
 
 /* =====================================================================
-   FIXED BOTTOM TOOLBAR - Mobile Optimized
+   FIXED BOTTOM TOOLBAR - With Light/Dark Theme Support
    ===================================================================== */
+
+/* DARK THEME (Default) */
 .bible-toolbar {
-  position: fixed !important;
-  bottom: 0 !important;
-  left: 0 !important;
-  right: 0 !important;
-  height: 70px !important;
-  background-color: #0A0A0A !important;
-  border-top: 1px solid rgba(255, 255, 255, 0.1) !important;
-  display: flex !important;
-  align-items: center !important;
-  justify-content: space-around !important;
-  gap: 0 !important;
-  padding: 0 0.25rem !important;
-  z-index: 100 !important;
-  box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.5) !important;
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 70px;
+  background-color: #0A0A0A;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  display: flex;
+  align-items: center;
+  justify-content: space-around;
+  gap: 0;
+  padding: 0 0.25rem;
+  z-index: 100;
+  box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.5);
 }
 
 .bible-tool-btn {
-  display: flex !important;
-  flex-direction: column !important;
-  align-items: center !important;
-  justify-content: center !important;
-  gap: 0.15rem !important;
-  padding: 0.4rem 0.3rem !important;
-  min-width: 0 !important;
-  flex: 1 !important;
-  max-width: 70px !important;
-  background-color: transparent !important;
-  border: none !important;
-  border-radius: 8px !important;
-  color: #6B6B8D !important;
-  cursor: pointer !important;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.15rem;
+  padding: 0.5rem 0.4rem;
+  min-width: 0;
+  flex: 1;
+  max-width: 70px;
+  background-color: transparent;
+  border: none;
+  border-radius: 10px;
+  color: #6B6B8D;
+  cursor: pointer;
+  transition: all 0.2s ease;
 }
 
 .bible-tool-btn:active {
-  color: #8B5CF6 !important;
-  background-color: rgba(139, 92, 246, 0.15) !important;
+  color: #8B5CF6;
+  background-color: rgba(139, 92, 246, 0.15);
 }
 
 .bible-tool-btn.active {
-  color: #8B5CF6 !important;
+  color: #8B5CF6;
 }
 
 .bible-tool-btn svg {
-  width: 20px !important;
-  height: 20px !important;
-  flex-shrink: 0 !important;
+  width: 22px;
+  height: 22px;
+  flex-shrink: 0;
 }
 
 .bible-tool-btn span {
-  font-size: 0.6rem !important;
-  font-weight: 600 !important;
-  text-transform: uppercase !important;
-  letter-spacing: 0 !important;
-  white-space: nowrap !important;
-  color: inherit !important;
+  font-size: 0.6rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0;
+  white-space: nowrap;
+  color: inherit;
 }
 
 .bible-tool-btn-primary {
-  background-color: #8B5CF6 !important;
-  color: #FFFFFF !important;
-  border-radius: 12px !important;
+  background-color: #8B5CF6;
+  color: #FFFFFF;
+  border-radius: 12px;
 }
 
-/* Small screens - hide text labels, show only icons */
+.bible-tool-btn-primary:active {
+  background-color: #7C3AED;
+}
+
+/* LIGHT THEME */
+[data-theme="light"] .bible-toolbar {
+  background-color: #FFFFFF;
+  border-top: 1px solid rgba(139, 92, 246, 0.15);
+  box-shadow: 0 -4px 20px rgba(139, 92, 246, 0.1);
+}
+
+[data-theme="light"] .bible-tool-btn {
+  color: #8B85B1;
+}
+
+[data-theme="light"] .bible-tool-btn:active {
+  color: #8B5CF6;
+  background-color: rgba(139, 92, 246, 0.1);
+}
+
+[data-theme="light"] .bible-tool-btn.active {
+  color: #8B5CF6;
+}
+
+[data-theme="light"] .bible-tool-btn-primary {
+  background-color: #8B5CF6;
+  color: #FFFFFF;
+}
+
+/* Mobile - smaller buttons */
 @media (max-width: 400px) {
   .bible-tool-btn {
-    padding: 0.5rem 0.25rem !important;
+    padding: 0.4rem 0.25rem;
   }
   .bible-tool-btn span {
-    font-size: 0.5rem !important;
+    font-size: 0.5rem;
   }
   .bible-tool-btn svg {
-    width: 18px !important;
-    height: 18px !important;
+    width: 20px;
+    height: 20px;
   }
 }
 
