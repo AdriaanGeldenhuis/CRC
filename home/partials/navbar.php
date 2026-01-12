@@ -122,12 +122,16 @@ $isActive = function($path) use ($currentPath) {
   position: sticky;
   top: 0;
   z-index: 1000;
-  background: var(--nav-glass-bg);
+  background: rgba(0, 0, 0, 0.9);
   backdrop-filter: var(--nav-blur) saturate(180%);
   -webkit-backdrop-filter: var(--nav-blur) saturate(180%);
   border-bottom: 1px solid var(--nav-glass-border);
   font-family: var(--nav-font);
   transition: var(--nav-transition);
+}
+
+[data-theme="light"] .navbar {
+  background: rgba(255, 255, 255, 0.9);
 }
 
 /* Top glossy shine line */

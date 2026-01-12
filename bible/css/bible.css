@@ -98,6 +98,132 @@
   --navbar-height: 80px;
 }
 
+/* ===== LIGHT THEME ===== */
+[data-theme="light"] {
+  --bg-base: #F0F4FF;
+  --bg-primary: #FFFFFF;
+  --bg-secondary: #F8FAFF;
+  --bg-tertiary: #EEF2FF;
+
+  --glass-bg: rgba(255, 255, 255, 0.7);
+  --glass-bg-hover: rgba(255, 255, 255, 0.9);
+  --glass-bg-strong: rgba(255, 255, 255, 0.95);
+  --glass-border: rgba(124, 58, 237, 0.15);
+  --glass-border-hover: rgba(124, 58, 237, 0.3);
+
+  --text-primary: #1E1B4B;
+  --text-secondary: #4C4687;
+  --text-muted: #8B85B1;
+
+  --shadow-sm: 0 2px 8px rgba(124, 58, 237, 0.08);
+  --shadow-md: 0 8px 24px rgba(124, 58, 237, 0.12);
+  --shadow-lg: 0 16px 48px rgba(124, 58, 237, 0.15);
+  --shadow-glow-primary: 0 0 40px rgba(124, 58, 237, 0.2);
+
+  --btn-shadow: 0 4px 0 rgba(124, 58, 237, 0.2), 0 8px 24px rgba(124, 58, 237, 0.15);
+  --btn-shadow-hover: 0 6px 0 rgba(124, 58, 237, 0.2), 0 12px 32px rgba(124, 58, 237, 0.2);
+
+  --gradient-mesh: radial-gradient(at 40% 20%, rgba(124, 58, 237, 0.15) 0px, transparent 50%),
+                   radial-gradient(at 80% 0%, rgba(6, 182, 212, 0.12) 0px, transparent 50%),
+                   radial-gradient(at 0% 50%, rgba(236, 72, 153, 0.1) 0px, transparent 50%),
+                   radial-gradient(at 80% 50%, rgba(124, 58, 237, 0.08) 0px, transparent 50%),
+                   radial-gradient(at 0% 100%, rgba(6, 182, 212, 0.1) 0px, transparent 50%);
+
+  /* Highlight Colors (lighter for light mode) */
+  --highlight-1: rgba(244, 114, 182, 0.35);  /* Pink */
+  --highlight-2: rgba(251, 146, 60, 0.35);   /* Orange */
+  --highlight-3: rgba(250, 204, 21, 0.35);   /* Yellow */
+  --highlight-4: rgba(34, 197, 94, 0.35);    /* Green */
+  --highlight-5: rgba(59, 130, 246, 0.35);   /* Blue */
+  --highlight-6: rgba(139, 92, 246, 0.35);   /* Purple */
+}
+
+/* Light theme specific overrides */
+[data-theme="light"] .bible-body {
+  background: var(--bg-base);
+}
+
+[data-theme="light"] .bible-toolbar {
+  background: rgba(255, 255, 255, 0.9);
+  border-top-color: var(--glass-border);
+  box-shadow: 0 -4px 30px rgba(124, 58, 237, 0.1);
+}
+
+[data-theme="light"] .bible-column {
+  background: rgba(255, 255, 255, 0.85);
+  border-color: var(--glass-border);
+  box-shadow: 0 8px 32px rgba(124, 58, 237, 0.1);
+}
+
+[data-theme="light"] .bible-modal-content {
+  background: var(--bg-primary);
+  border-color: var(--glass-border);
+}
+
+[data-theme="light"] .bible-modal-overlay {
+  background: rgba(30, 27, 75, 0.5);
+}
+
+[data-theme="light"] .bible-panel {
+  background: rgba(255, 255, 255, 0.95);
+  border-left-color: var(--glass-border);
+  box-shadow: -4px 0 30px rgba(124, 58, 237, 0.1);
+}
+
+[data-theme="light"] .bible-context-menu {
+  background: rgba(255, 255, 255, 0.98);
+  border-color: var(--glass-border);
+  box-shadow: var(--shadow-lg);
+}
+
+[data-theme="light"] .bible-loading-overlay,
+[data-theme="light"] #bibleLoadingOverlay {
+  background: rgba(240, 244, 255, 0.95);
+}
+
+[data-theme="light"] .bible-toast {
+  background: var(--bg-primary);
+  border-color: var(--glass-border);
+  color: var(--text-primary);
+}
+
+[data-theme="light"] .bible-nav-card,
+[data-theme="light"] .bible-search-result,
+[data-theme="light"] .bible-note-item,
+[data-theme="light"] .bible-bookmark-item,
+[data-theme="light"] .bible-cross-ref-item {
+  background: rgba(255, 255, 255, 0.8);
+  border-color: var(--glass-border);
+}
+
+[data-theme="light"] .bible-nav-card:hover,
+[data-theme="light"] .bible-search-result:hover,
+[data-theme="light"] .bible-note-item:hover,
+[data-theme="light"] .bible-bookmark-item:hover,
+[data-theme="light"] .bible-cross-ref-item:hover {
+  background: rgba(255, 255, 255, 0.95);
+}
+
+[data-theme="light"] .bible-input,
+[data-theme="light"] .bible-textarea {
+  background: var(--bg-secondary);
+  border-color: var(--glass-border);
+  color: var(--text-primary);
+}
+
+[data-theme="light"] .bible-ai-response {
+  background: rgba(255, 255, 255, 0.8);
+  border-color: var(--glass-border);
+}
+
+[data-theme="light"] .bible-verse:hover {
+  background-color: rgba(139, 92, 246, 0.1);
+}
+
+[data-theme="light"] .bible-verse.selected {
+  background-color: rgba(139, 92, 246, 0.15);
+}
+
 /* ===== GLOBAL RESET ===== */
 *, *::before, *::after {
   margin: 0;
