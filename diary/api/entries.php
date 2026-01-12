@@ -28,7 +28,6 @@ switch ($action) {
         $content = input('content');
         $entryDate = input('entry_date', date('Y-m-d'));
         $mood = input('mood');
-        $scriptureRef = input('scripture_ref');
         $isPrivate = (int)input('is_private', 1);
         $tags = $_POST['tags'] ?? [];
 
@@ -50,7 +49,6 @@ switch ($action) {
             'content' => $content,
             'entry_date' => $entryDate,
             'mood' => $mood ?: null,
-            'scripture_ref' => $scriptureRef ?: null,
             'is_private' => $isPrivate,
             'updated_at' => date('Y-m-d H:i:s')
         ];
