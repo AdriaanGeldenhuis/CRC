@@ -5,6 +5,51 @@
 (() => {
   'use strict';
 
+  // ===== DEBUG PANEL FOR MOBILE TROUBLESHOOTING =====
+  const DEBUG_MODE = true; // Set to false in production
+  let debugPanel = null;
+
+  function createDebugPanel() {
+    if (!DEBUG_MODE) return;
+    debugPanel = document.createElement('div');
+    debugPanel.id = 'bibleDebugPanel';
+    debugPanel.style.cssText = `
+      position: fixed;
+      bottom: 80px;
+      left: 10px;
+      right: 10px;
+      max-height: 150px;
+      overflow-y: auto;
+      background: rgba(0,0,0,0.9);
+      color: #0f0;
+      font-family: monospace;
+      font-size: 10px;
+      padding: 8px;
+      border-radius: 8px;
+      z-index: 99999;
+      border: 1px solid #0f0;
+    `;
+    document.body.appendChild(debugPanel);
+    debugLog('Debug panel ready');
+  }
+
+  function debugLog(msg) {
+    console.log('[Bible]', msg);
+    if (debugPanel) {
+      const line = document.createElement('div');
+      line.textContent = `${new Date().toLocaleTimeString()}: ${msg}`;
+      debugPanel.appendChild(line);
+      debugPanel.scrollTop = debugPanel.scrollHeight;
+    }
+  }
+
+  // Create debug panel immediately
+  if (document.body) {
+    createDebugPanel();
+  } else {
+    document.addEventListener('DOMContentLoaded', createDebugPanel);
+  }
+
   // ===== POLYFILLS FOR OLDER WEBVIEWS =====
   // requestIdleCallback polyfill
   window.requestIdleCallback = window.requestIdleCallback || function(cb) {
@@ -468,37 +513,45 @@
 
   // ===== PROGRESSIVE RENDERING =====
   function renderInitialChapters() {
-    console.log('renderInitialChapters called, books:', state.books);
+    debugLog('renderInitialChapters called');
 
     if (!els.leftContent) {
-      console.error('leftContent element not found!');
+      debugLog('ERROR: leftContent not found!');
       return;
     }
 
     if (!state.books || !state.books.length) {
-      console.error('No books available to render');
+      debugLog('ERROR: No books to render');
       els.leftContent.innerHTML = '<div style="padding:2rem;text-align:center;color:#f00;">No Bible books found</div>';
       return;
     }
 
     const startBook = state.books[0] || 'Genesis';
-    console.log('Starting with book:', startBook);
+    debugLog('First book: ' + startBook);
 
     state.currentBookIndex = 0;
     state.currentChapter = 1;
 
+    debugLog('Creating chapter element...');
     const leftChapter = createChapterElement(startBook, 1);
 
-    if (!leftChapter || !leftChapter.children.length) {
-      console.error('Failed to create chapter element');
-      els.leftContent.innerHTML = '<div style="padding:2rem;text-align:center;color:#f00;">Failed to render chapter</div>';
+    if (!leftChapter) {
+      debugLog('ERROR: createChapterElement returned null');
+      els.leftContent.innerHTML = '<div style="padding:2rem;text-align:center;color:#f00;">Failed to create chapter</div>';
       return;
+    }
+
+    const verseCount = leftChapter.querySelectorAll('.bible-verse').length;
+    debugLog('Chapter created, verses: ' + verseCount);
+
+    if (verseCount === 0) {
+      debugLog('WARNING: No verses in chapter!');
     }
 
     els.leftContent.innerHTML = '';
     els.leftContent.appendChild(leftChapter);
 
-    console.log('Chapter rendered, verses:', leftChapter.querySelectorAll('.bible-verse').length);
+    debugLog('Chapter appended to DOM');
 
     state.renderedChapters.add(`${startBook}-1`);
 
@@ -1673,10 +1726,13 @@
 
   // ===== INITIALIZATION =====
   async function init() {
+    debugLog('Init starting...');
     const overlay = createLoadingOverlay();
 
     try {
+      debugLog('Initializing DB...');
       await initDB();
+      debugLog('DB ready, IndexedDB: ' + indexedDBAvailable);
       updateLoadingProgress(10, 'Database ready');
 
       els.quickNavModal?.classList.add('bible-modal-hidden');
@@ -1686,26 +1742,28 @@
 
       // Try primary path first (API endpoint)
       try {
-        console.log('Loading Bible from:', state.path);
+        debugLog('Loading from: ' + state.path);
         data = await loadJSON(state.path, (p) => {
           updateLoadingProgress(10 + (p * 0.5), 'Loading Bible...');
         });
+        debugLog('API load success, has books: ' + !!(data && data.books));
       } catch (apiError) {
-        console.warn('API load failed, trying direct JSON:', apiError);
+        debugLog('API FAILED: ' + apiError.message);
         loadError = apiError;
       }
 
       // Fallback to direct JSON file if API fails
       if (!data || !data.books) {
         const fallbackPath = '/bible/bibles/en_kjv.json';
-        console.log('Trying fallback path:', fallbackPath);
+        debugLog('Trying fallback: ' + fallbackPath);
         updateLoadingProgress(60, 'Loading Bible (fallback)...');
         try {
           data = await loadJSON(fallbackPath, (p) => {
             updateLoadingProgress(60 + (p * 0.2), 'Loading Bible...');
           });
+          debugLog('Fallback success, has books: ' + !!(data && data.books));
         } catch (fallbackError) {
-          console.error('Fallback also failed:', fallbackError);
+          debugLog('FALLBACK FAILED: ' + fallbackError.message);
           throw loadError || fallbackError;
         }
       }
@@ -1717,7 +1775,7 @@
       state.data = data;
       state.books = extractBooks(state.data);
 
-      console.log('Bible loaded, books:', state.books.length);
+      debugLog('Books extracted: ' + state.books.length);
 
       if (!state.books.length) {
         throw new Error('No books found in Bible data');
@@ -1727,25 +1785,29 @@
 
       try {
         await loadUserData();
+        debugLog('User data loaded');
       } catch (userDataError) {
-        console.warn('User data load failed (non-fatal):', userDataError);
+        debugLog('User data failed (ok): ' + userDataError.message);
       }
 
       updateLoadingProgress(95, 'Building Bible...');
 
+      debugLog('Rendering chapters...');
       renderInitialChapters();
       setupInfiniteScroll();
+      debugLog('Render complete');
 
       updateLoadingProgress(100, 'Ready!');
 
       bindEvents();
+      debugLog('Init complete!');
 
       setTimeout(() => {
         removeLoadingOverlay();
       }, 500);
 
     } catch (e) {
-      console.error('Initialization failed:', e);
+      debugLog('INIT ERROR: ' + e.message);
       removeLoadingOverlay();
 
       if (els.leftContent) {
