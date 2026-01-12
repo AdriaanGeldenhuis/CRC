@@ -5,6 +5,69 @@
 (() => {
   'use strict';
 
+  // ===== DEBUG PANEL FOR MOBILE TROUBLESHOOTING =====
+  const DEBUG_MODE = false; // Set to false in production
+  let debugPanel = null;
+
+  function createDebugPanel() {
+    if (!DEBUG_MODE) return;
+    debugPanel = document.createElement('div');
+    debugPanel.id = 'bibleDebugPanel';
+    debugPanel.style.cssText = `
+      position: fixed;
+      bottom: 80px;
+      left: 10px;
+      right: 10px;
+      max-height: 150px;
+      overflow-y: auto;
+      background: rgba(0,0,0,0.9);
+      color: #0f0;
+      font-family: monospace;
+      font-size: 10px;
+      padding: 8px;
+      border-radius: 8px;
+      z-index: 99999;
+      border: 1px solid #0f0;
+    `;
+    document.body.appendChild(debugPanel);
+    debugLog('Debug panel ready');
+  }
+
+  function debugLog(msg) {
+    console.log('[Bible]', msg);
+    if (debugPanel) {
+      const line = document.createElement('div');
+      line.textContent = `${new Date().toLocaleTimeString()}: ${msg}`;
+      debugPanel.appendChild(line);
+      debugPanel.scrollTop = debugPanel.scrollHeight;
+    }
+  }
+
+  // Create debug panel immediately
+  if (document.body) {
+    createDebugPanel();
+  } else {
+    document.addEventListener('DOMContentLoaded', createDebugPanel);
+  }
+
+  // ===== POLYFILLS FOR OLDER WEBVIEWS =====
+  // requestIdleCallback polyfill
+  window.requestIdleCallback = window.requestIdleCallback || function(cb) {
+    const start = Date.now();
+    return setTimeout(function() {
+      cb({
+        didTimeout: false,
+        timeRemaining: function() {
+          return Math.max(0, 50 - (Date.now() - start));
+        }
+      });
+    }, 1);
+  };
+
+  window.cancelIdleCallback = window.cancelIdleCallback || function(id) {
+    clearTimeout(id);
+  };
+
   // ===== UTILITIES =====
   const $ = (id) => document.getElementById(id);
   const esc = (s) => String(s || '').replace(/[&<>"']/g, m => ({
@@ -14,26 +77,48 @@
   // ===== INDEXEDDB SETUP =====
   let db = null;
   const DB_NAME = 'CRCBibleDB';
-  const DB_VERSION = 1;
+  const DB_VERSION = 2;
   const STORE_NAME = 'bibleData';
 
+  // Check if IndexedDB is available
+  const indexedDBAvailable = (function() {
+    try {
+      return typeof indexedDB !== 'undefined' && indexedDB !== null;
+    } catch (e) {
+      return false;
+    }
+  })();
+
   async function initDB() {
+    if (!indexedDBAvailable) {
+      console.warn('IndexedDB not available, using memory cache only');
+      return null;
+    }
+
     return new Promise((resolve, reject) => {
-      const request = indexedDB.open(DB_NAME, DB_VERSION);
+      try {
+        const request = indexedDB.open(DB_NAME, DB_VERSION);
 
-      request.onerror = () => reject(request.error);
+        request.onerror = () => {
+          console.warn('IndexedDB failed to open:', request.error);
+          resolve(null); // Resolve with null instead of rejecting
+        };
 
-      request.onsuccess = () => {
-        db = request.result;
-        resolve(db);
-      };
+        request.onsuccess = () => {
+          db = request.result;
+          resolve(db);
+        };
 
-      request.onupgradeneeded = (e) => {
-        const database = e.target.result;
-        if (!database.objectStoreNames.contains(STORE_NAME)) {
-          database.createObjectStore(STORE_NAME, { keyPath: 'key' });
-        }
-      };
+        request.onupgradeneeded = (e) => {
+          const database = e.target.result;
+          if (!database.objectStoreNames.contains(STORE_NAME)) {
+            database.createObjectStore(STORE_NAME, { keyPath: 'key' });
+          }
+        };
+      } catch (e) {
+        console.warn('IndexedDB initialization error:', e);
+        resolve(null);
+      }
     });
   }
 
@@ -160,10 +245,8 @@
     readingPlanClose: $('readingPlanClose'),
     readingPlanContent: $('readingPlanContent'),
     leftContent: $('leftContent'),
-    rightContent: $('rightContent'),
     leftColumn: $('leftColumn'),
-    rightColumn: $('rightColumn'),
-    dualContainer: document.querySelector('.bible-dual-container'),
+    singleContainer: document.querySelector('.bible-single-container'),
     verseContextMenu: $('verseContextMenu'),
     ctxBookmark: $('ctxBookmark'),
     ctxAddNote: $('ctxAddNote'),
@@ -190,6 +273,16 @@
       </div>
     `;
     document.body.appendChild(overlay);
+
+    // Safety timeout - remove overlay after 30 seconds no matter what
+    setTimeout(() => {
+      const existingOverlay = $('bibleLoadingOverlay');
+      if (existingOverlay) {
+        console.warn('Loading timeout - forcing overlay removal');
+        existingOverlay.remove();
+      }
+    }, 30000);
+
     return overlay;
   }
 
@@ -211,7 +304,7 @@
 
   // ===== DATA LOADING =====
   async function loadJSON(url, onProgress) {
-    const cacheKey = `bible_v1_${url}`;
+    const cacheKey = `bible_v2_${url}`;
 
     const cached = await getFromDB(cacheKey);
     if (cached) {
@@ -227,33 +320,54 @@
 
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
 
-      const contentLength = +res.headers.get('Content-Length');
-      const reader = res.body.getReader();
+      let data;
 
-      let receivedLength = 0;
-      let chunks = [];
+      // Check if streaming is supported (some WebViews don't support it)
+      const supportsStreaming = res.body && typeof res.body.getReader === 'function';
 
-      while(true) {
-        const {done, value} = await reader.read();
-        if (done) break;
+      if (supportsStreaming) {
+        // Use streaming for progress reporting
+        try {
+          const contentLength = +res.headers.get('Content-Length');
+          const reader = res.body.getReader();
 
-        chunks.push(value);
-        receivedLength += value.length;
+          let receivedLength = 0;
+          let chunks = [];
 
-        if (onProgress && contentLength) {
-          onProgress((receivedLength / contentLength) * 100);
+          while(true) {
+            const {done, value} = await reader.read();
+            if (done) break;
+
+            chunks.push(value);
+            receivedLength += value.length;
+
+            if (onProgress && contentLength) {
+              onProgress((receivedLength / contentLength) * 100);
+            }
+          }
+
+          const chunksAll = new Uint8Array(receivedLength);
+          let position = 0;
+          for(let chunk of chunks) {
+            chunksAll.set(chunk, position);
+            position += chunk.length;
+          }
+
+          const text = new TextDecoder("utf-8").decode(chunksAll);
+          data = JSON.parse(text);
+        } catch (streamError) {
+          console.warn('Streaming failed, falling back to simple fetch:', streamError);
+          // Refetch without streaming
+          const res2 = await fetch(url, { credentials: 'same-origin' });
+          data = await res2.json();
+          if (onProgress) onProgress(100);
         }
+      } else {
+        // Fallback for WebViews without streaming support
+        console.log('Using simple fetch (no streaming support)');
+        data = await res.json();
+        if (onProgress) onProgress(100);
       }
-
-      const chunksAll = new Uint8Array(receivedLength);
-      let position = 0;
-      for(let chunk of chunks) {
-        chunksAll.set(chunk, position);
-        position += chunk.length;
-      }
-
-      const text = new TextDecoder("utf-8").decode(chunksAll);
-      const data = JSON.parse(text);
 
       await saveToDB(cacheKey, data);
 
@@ -399,15 +513,45 @@
 
   // ===== PROGRESSIVE RENDERING =====
   function renderInitialChapters() {
-    const startBook = 'Genesis';
+    debugLog('renderInitialChapters called');
+
+    if (!els.leftContent) {
+      debugLog('ERROR: leftContent not found!');
+      return;
+    }
+
+    if (!state.books || !state.books.length) {
+      debugLog('ERROR: No books to render');
+      els.leftContent.innerHTML = '<div style="padding:2rem;text-align:center;color:#f00;">No Bible books found</div>';
+      return;
+    }
+
+    const startBook = state.books[0] || 'Genesis';
+    debugLog('First book: ' + startBook);
 
     state.currentBookIndex = 0;
     state.currentChapter = 1;
 
+    debugLog('Creating chapter element...');
     const leftChapter = createChapterElement(startBook, 1);
+
+    if (!leftChapter) {
+      debugLog('ERROR: createChapterElement returned null');
+      els.leftContent.innerHTML = '<div style="padding:2rem;text-align:center;color:#f00;">Failed to create chapter</div>';
+      return;
+    }
+
+    const verseCount = leftChapter.querySelectorAll('.bible-verse').length;
+    debugLog('Chapter created, verses: ' + verseCount);
+
+    if (verseCount === 0) {
+      debugLog('WARNING: No verses in chapter!');
+    }
 
     els.leftContent.innerHTML = '';
     els.leftContent.appendChild(leftChapter);
+
+    debugLog('Chapter appended to DOM');
 
     state.renderedChapters.add(`${startBook}-1`);
 
@@ -467,10 +611,14 @@
     chapterDiv.className = 'bible-chapter-block';
     chapterDiv.dataset.book = book;
     chapterDiv.dataset.chapter = chapter;
+    // Inline styles for WebView compatibility
+    chapterDiv.style.cssText = 'display: block; margin-bottom: 2rem;';
 
     const chTitle = document.createElement('h3');
     chTitle.className = 'bible-chapter-title';
     chTitle.textContent = `${book} ${chapter}`;
+    // Inline styles for WebView compatibility
+    chTitle.style.cssText = 'display: block; color: #8B5CF6; font-size: 1.5rem; font-weight: 700; margin-bottom: 1rem; padding-bottom: 0.5rem; border-bottom: 1px solid rgba(255,255,255,0.1);';
     chapterDiv.appendChild(chTitle);
 
     const verses = getChapter(state.data, book, chapter);
@@ -482,6 +630,8 @@
         const h = document.createElement('div');
         h.className = 'bible-heading';
         h.textContent = parsed.text;
+        // Inline styles for WebView compatibility
+        h.style.cssText = 'display: block; color: #A1A1C7; font-size: 1rem; font-weight: 600; font-style: italic; margin: 1.5rem 0 0.75rem;';
         chapterDiv.appendChild(h);
       } else {
         verseNum++;
@@ -502,6 +652,9 @@
     vDiv.dataset.chapter = chapter;
     vDiv.dataset.verse = verseNum;
 
+    // Inline styles for WebView compatibility
+    vDiv.style.cssText = 'display: block; color: #FFFFFF; padding: 0.35rem 0.5rem; margin: 0.25rem 0;';
+
     if (state.highlights[ref]) {
       vDiv.classList.add(`bible-highlight-${state.highlights[ref]}`);
     }
@@ -509,10 +662,14 @@
     const numSpan = document.createElement('span');
     numSpan.className = 'bible-verse-number';
     numSpan.textContent = verseNum;
+    // Inline styles for WebView compatibility
+    numSpan.style.cssText = 'display: inline; color: #8B5CF6; font-size: 0.75rem; font-weight: 700; margin-right: 0.25rem;';
 
     const textSpan = document.createElement('span');
     textSpan.className = 'bible-verse-text';
     textSpan.textContent = text;
+    // Inline styles for WebView compatibility
+    textSpan.style.cssText = 'display: inline; color: #FFFFFF; font-size: 1.05rem; line-height: 1.7;';
 
     vDiv.appendChild(numSpan);
     vDiv.appendChild(textSpan);
@@ -620,12 +777,10 @@
 
       const formData = new FormData();
       formData.append('action', color === 0 ? 'remove' : 'add');
-      formData.append('version', 'KJV');
       formData.append('book_number', bookIndex);
       formData.append('chapter', parsed.chapter);
-      formData.append('verse_start', parsed.verse);
-      formData.append('verse_end', parsed.verse);
-      formData.append('color', getColorName(color));
+      formData.append('verse', parsed.verse);
+      formData.append('color', color); // Send as integer 1-6
 
       const res = await fetch('/bible/api/highlights.php', {
         method: 'POST',
@@ -646,6 +801,8 @@
 
         refreshVerseDisplay();
         showToast('Highlight saved');
+      } else {
+        throw new Error(data.error || 'Failed to save');
       }
     } catch (e) {
       console.error('Highlight save failed:', e);
@@ -664,8 +821,8 @@
   async function toggleBookmark() {
     if (!state.selectedVerse) return;
 
-    const verse = document.querySelector(`[data-ref="${state.selectedVerse}"]`);
-    const verseText = verse?.querySelector('.bible-verse-text')?.textContent || '';
+    const verseEl = document.querySelector(`[data-ref="${state.selectedVerse}"]`);
+    const verseText = verseEl?.querySelector('.bible-verse-text')?.textContent || '';
     const parsed = parseRef(state.selectedVerse);
     const bookIndex = state.books.indexOf(parsed.book) + 1;
 
@@ -673,13 +830,10 @@
       const isBookmarked = !!state.bookmarks[state.selectedVerse];
 
       const formData = new FormData();
-      formData.append('action', isBookmarked ? 'remove' : 'add');
-      formData.append('version', 'KJV');
+      formData.append('action', 'toggle');
       formData.append('book_number', bookIndex);
       formData.append('chapter', parsed.chapter);
-      formData.append('verse_start', parsed.verse);
-      formData.append('title', `${parsed.book} ${parsed.chapter}:${parsed.verse}`);
-      formData.append('notes', verseText.substring(0, 200));
+      formData.append('verse', parsed.verse);
 
       const res = await fetch('/bible/api/bookmarks.php', {
         method: 'POST',
@@ -692,7 +846,7 @@
       const data = await res.json();
 
       if (data.ok) {
-        if (isBookmarked) {
+        if (data.bookmarked === false) {
           delete state.bookmarks[state.selectedVerse];
           showToast('Bookmark removed');
         } else {
@@ -704,6 +858,8 @@
         }
 
         refreshVerseDisplay();
+      } else {
+        throw new Error(data.error || 'Failed to save');
       }
     } catch (e) {
       console.error('Bookmark toggle failed:', e);
@@ -1112,6 +1268,26 @@
     const verseText = verse?.querySelector('.bible-verse-text')?.textContent || '';
     const parsed = parseRef(state.selectedVerse);
     const verseRef = `${parsed.book} ${parsed.chapter}:${parsed.verse}`;
+    const bookIndex = state.books.indexOf(parsed.book) + 1;
+
+    // Get context verses
+    const prevVerses = [];
+    const nextVerses = [];
+    const currentChapter = getChapter(state.data, parsed.book, parsed.chapter);
+
+    // Get up to 3 verses before and after for context
+    for (let i = parsed.verse - 4; i < parsed.verse - 1; i++) {
+      if (i > 0 && currentChapter[i]) {
+        const p = parseVerse(currentChapter[i]);
+        if (p.type === 'verse') prevVerses.push(`v${i+1}: ${p.text}`);
+      }
+    }
+    for (let i = parsed.verse; i < parsed.verse + 3; i++) {
+      if (currentChapter[i]) {
+        const p = parseVerse(currentChapter[i]);
+        if (p.type === 'verse') nextVerses.push(`v${i+1}: ${p.text}`);
+      }
+    }
 
     hideContextMenu();
 
@@ -1122,11 +1298,13 @@
 
     try {
       const formData = new FormData();
-      formData.append('reference', verseRef);
-      formData.append('text', verseText);
-      formData.append('book', parsed.book);
+      formData.append('book_number', bookIndex);
       formData.append('chapter', parsed.chapter);
       formData.append('verse', parsed.verse);
+      formData.append('verse_text', verseText);
+      formData.append('book_name', parsed.book);
+      formData.append('context_before', prevVerses.join('\n'));
+      formData.append('context_after', nextVerses.join('\n'));
 
       const res = await fetch('/bible/api/ai_explain.php', {
         method: 'POST',
@@ -1160,6 +1338,7 @@
     if (!state.selectedVerse) return;
 
     const parsed = parseRef(state.selectedVerse);
+    const bookIndex = state.books.indexOf(parsed.book) + 1;
 
     hideContextMenu();
 
@@ -1169,22 +1348,26 @@
     showPanel(els.crossRefPanel);
 
     try {
-      const res = await fetch(
-        `/bible/api/cross_references.php?book=${encodeURIComponent(parsed.book)}&chapter=${parsed.chapter}&verse=${parsed.verse}`,
-        {
-          credentials: 'same-origin',
-          headers: {
-            'X-CSRF-Token': document.querySelector('meta[name="csrf-token"]').content
-          }
+      const formData = new FormData();
+      formData.append('book_number', bookIndex);
+      formData.append('chapter', parsed.chapter);
+      formData.append('verse', parsed.verse);
+
+      const res = await fetch('/bible/api/cross_references.php', {
+        method: 'POST',
+        body: formData,
+        credentials: 'same-origin',
+        headers: {
+          'X-CSRF-Token': document.querySelector('meta[name="csrf-token"]')?.content || ''
         }
-      );
+      });
 
       const data = await res.json();
 
-      if (data.ok && data.references && data.references.length > 0) {
-        displayCrossReferences(data.references);
+      if (data.ok && data.cross_references && data.cross_references.length > 0) {
+        displayCrossReferences(data.cross_references);
       } else {
-        els.crossRefList.innerHTML = `<p class="bible-empty-state">No cross-references found for this verse.</p>`;
+        els.crossRefList.innerHTML = `<p class="bible-empty-state">${data.message || 'No cross-references found for this verse.'}</p>`;
       }
     } catch (e) {
       console.error('Cross references error:', e);
@@ -1198,15 +1381,18 @@
     const frag = document.createDocumentFragment();
 
     refs.forEach(ref => {
+      // Get book name from book number
+      const bookName = state.books[ref.book_number - 1] || `Book ${ref.book_number}`;
+
       const item = document.createElement('div');
       item.className = 'bible-cross-ref-item';
       item.innerHTML = `
-        <div class="bible-cross-ref-title">${esc(ref.to_book)} ${ref.to_chapter}:${ref.to_verse}</div>
-        <div class="bible-cross-ref-type">${esc(ref.relationship_type || 'Related')}</div>
+        <div class="bible-cross-ref-title">${esc(bookName)} ${ref.chapter}:${ref.verse}</div>
+        <div class="bible-cross-ref-text">${esc(ref.text || '')}</div>
       `;
 
       item.addEventListener('click', () => {
-        const verseRef = makeRef(ref.to_book, ref.to_chapter, ref.to_verse);
+        const verseRef = makeRef(bookName, ref.chapter, ref.verse);
         goToReference(verseRef);
         hidePanel(els.crossRefPanel);
       });
@@ -1385,7 +1571,7 @@
         method: 'GET',
         credentials: 'same-origin',
         headers: {
-          'X-CSRF-Token': document.querySelector('meta[name="csrf-token"]').content
+          'X-CSRF-Token': document.querySelector('meta[name="csrf-token"]')?.content || ''
         }
       });
 
@@ -1399,10 +1585,10 @@
           data.highlights.forEach(h => {
             const book = state.books[h.book_number - 1];
             if (book) {
-              for (let v = h.verse_start; v <= (h.verse_end || h.verse_start); v++) {
-                const ref = makeRef(book, h.chapter, v);
-                state.highlights[ref] = colorNameToNumber(h.color);
-              }
+              const verse = h.verse || h.verse_start || 1;
+              const ref = makeRef(book, h.chapter, verse);
+              // Color comes as integer 1-6 from API
+              state.highlights[ref] = typeof h.color === 'number' ? h.color : colorNameToNumber(h.color);
             }
           });
         }
@@ -1411,8 +1597,12 @@
           data.notes.forEach(n => {
             const book = state.books[n.book_number - 1];
             if (book) {
-              const ref = makeRef(book, n.chapter, n.verse_start);
+              const verse = n.verse || n.verse_start || 1;
+              const ref = makeRef(book, n.chapter, verse);
               state.notes[ref] = n.content;
+              // Store note ID for delete operations
+              state.noteIds = state.noteIds || {};
+              state.noteIds[ref] = n.id;
             }
           });
         }
@@ -1421,10 +1611,11 @@
           data.bookmarks.forEach(b => {
             const book = state.books[b.book_number - 1];
             if (book) {
-              const ref = makeRef(book, b.chapter, b.verse_start || 1);
+              const verse = b.verse || b.verse_start || 1;
+              const ref = makeRef(book, b.chapter, verse);
               state.bookmarks[ref] = {
-                text: b.notes || '',
-                timestamp: new Date(b.created_at).getTime()
+                text: b.notes || b.text || '',
+                timestamp: b.created_at ? new Date(b.created_at).getTime() : Date.now()
               };
             }
           });
@@ -1548,48 +1739,99 @@
 
   // ===== INITIALIZATION =====
   async function init() {
+    debugLog('Init starting...');
     const overlay = createLoadingOverlay();
 
     try {
+      debugLog('Initializing DB...');
       await initDB();
+      debugLog('DB ready, IndexedDB: ' + indexedDBAvailable);
       updateLoadingProgress(10, 'Database ready');
 
       els.quickNavModal?.classList.add('bible-modal-hidden');
 
-      const data = await loadJSON(state.path, (p) => {
-        updateLoadingProgress(10 + (p * 0.7), 'Loading Bible...');
-      });
+      let data = null;
+      let loadError = null;
+
+      // Try primary path first (API endpoint)
+      try {
+        debugLog('Loading from: ' + state.path);
+        data = await loadJSON(state.path, (p) => {
+          updateLoadingProgress(10 + (p * 0.5), 'Loading Bible...');
+        });
+        debugLog('API load success, has books: ' + !!(data && data.books));
+      } catch (apiError) {
+        debugLog('API FAILED: ' + apiError.message);
+        loadError = apiError;
+      }
+
+      // Fallback to direct JSON file if API fails
+      if (!data || !data.books) {
+        const fallbackPath = '/bible/bibles/en_kjv.json';
+        debugLog('Trying fallback: ' + fallbackPath);
+        updateLoadingProgress(60, 'Loading Bible (fallback)...');
+        try {
+          data = await loadJSON(fallbackPath, (p) => {
+            updateLoadingProgress(60 + (p * 0.2), 'Loading Bible...');
+          });
+          debugLog('Fallback success, has books: ' + !!(data && data.books));
+        } catch (fallbackError) {
+          debugLog('FALLBACK FAILED: ' + fallbackError.message);
+          throw loadError || fallbackError;
+        }
+      }
+
+      if (!data) {
+        throw new Error('Bible data is empty');
+      }
 
       state.data = data;
       state.books = extractBooks(state.data);
 
+      debugLog('Books extracted: ' + state.books.length);
+
+      if (!state.books.length) {
+        throw new Error('No books found in Bible data');
+      }
+
       updateLoadingProgress(85, 'Loading user data...');
 
-      await loadUserData();
+      try {
+        await loadUserData();
+        debugLog('User data loaded');
+      } catch (userDataError) {
+        debugLog('User data failed (ok): ' + userDataError.message);
+      }
 
       updateLoadingProgress(95, 'Building Bible...');
 
+      debugLog('Rendering chapters...');
       renderInitialChapters();
       setupInfiniteScroll();
+      debugLog('Render complete');
 
       updateLoadingProgress(100, 'Ready!');
 
       bindEvents();
+      debugLog('Init complete!');
 
       setTimeout(() => {
         removeLoadingOverlay();
       }, 500);
 
     } catch (e) {
-      console.error('Initialization failed:', e);
+      debugLog('INIT ERROR: ' + e.message);
       removeLoadingOverlay();
 
       if (els.leftContent) {
         els.leftContent.innerHTML = `
-          <div class="bible-error-container">
-            <h2>Could not load Bible</h2>
-            <p>${e.message}</p>
-            <p>Please refresh the page to try again.</p>
+          <div class="bible-error-container" style="text-align:center;padding:2rem;color:#ef4444;">
+            <h2 style="margin-bottom:1rem;">Could not load Bible</h2>
+            <p style="margin-bottom:0.5rem;">${esc(e.message)}</p>
+            <p style="color:#888;font-size:0.9rem;">Please check your connection and try refreshing.</p>
+            <button onclick="location.reload()" style="margin-top:1rem;padding:0.75rem 1.5rem;background:#8B5CF6;color:white;border:none;border-radius:8px;cursor:pointer;">
+              Refresh Page
+            </button>
           </div>
         `;
       }

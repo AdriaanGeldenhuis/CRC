@@ -15,6 +15,7 @@ $action = input('action', 'add');
 
 switch ($action) {
     case 'add':
+    case 'save':
         $version = input('version', 'KJV');
         $bookNumber = (int)input('book_number');
         $chapter = (int)input('chapter');
@@ -26,27 +27,51 @@ switch ($action) {
             Response::error('Book, chapter, and verse are required');
         }
 
-        if (!$content) {
-            Response::error('Note content is required');
+        // If content is empty, delete the note
+        if (!$content || trim($content) === '') {
+            Database::delete(
+                'bible_notes',
+                'user_id = ? AND book_number = ? AND chapter = ? AND verse_start = ?',
+                [$user['id'], $bookNumber, $chapter, $verseStart]
+            );
+            Response::success([], 'Note deleted');
         }
 
         if (strlen($content) > 10000) {
             Response::error('Note is too long (max 10000 characters)');
         }
 
-        $id = Database::insert('bible_notes', [
-            'user_id' => $user['id'],
-            'version_code' => $version,
-            'book_number' => $bookNumber,
-            'chapter' => $chapter,
-            'verse_start' => $verseStart,
-            'verse_end' => $verseEnd,
-            'content' => $content,
-            'created_at' => date('Y-m-d H:i:s'),
-            'updated_at' => date('Y-m-d H:i:s')
-        ]);
+        // Check if note already exists for this verse
+        $existing = Database::fetchOne(
+            "SELECT id FROM bible_notes
+             WHERE user_id = ? AND book_number = ? AND chapter = ? AND verse_start = ?",
+            [$user['id'], $bookNumber, $chapter, $verseStart]
+        );
 
-        Response::success(['id' => $id], 'Note added');
+        if ($existing) {
+            // Update existing note
+            Database::update('bible_notes', [
+                'content' => $content,
+                'updated_at' => date('Y-m-d H:i:s')
+            ], 'id = ?', [$existing['id']]);
+
+            Response::success(['id' => $existing['id']], 'Note updated');
+        } else {
+            // Insert new note
+            $id = Database::insert('bible_notes', [
+                'user_id' => $user['id'],
+                'version_code' => $version,
+                'book_number' => $bookNumber,
+                'chapter' => $chapter,
+                'verse_start' => $verseStart,
+                'verse_end' => $verseEnd,
+                'content' => $content,
+                'created_at' => date('Y-m-d H:i:s'),
+                'updated_at' => date('Y-m-d H:i:s')
+            ]);
+
+            Response::success(['id' => $id], 'Note added');
+        }
         break;
 
     case 'update':
@@ -76,16 +101,27 @@ switch ($action) {
 
     case 'delete':
         $noteId = (int)input('note_id');
+        $bookNumber = (int)input('book_number');
+        $chapter = (int)input('chapter');
+        $verseStart = (int)input('verse_start');
 
-        if (!$noteId) {
-            Response::error('Note ID required');
+        if ($noteId) {
+            // Delete by note ID
+            Database::delete(
+                'bible_notes',
+                'id = ? AND user_id = ?',
+                [$noteId, $user['id']]
+            );
+        } elseif ($bookNumber && $chapter && $verseStart) {
+            // Delete by verse location
+            Database::delete(
+                'bible_notes',
+                'user_id = ? AND book_number = ? AND chapter = ? AND verse_start = ?',
+                [$user['id'], $bookNumber, $chapter, $verseStart]
+            );
+        } else {
+            Response::error('Note ID or verse location required');
         }
-
-        Database::delete(
-            'bible_notes',
-            'id = ? AND user_id = ?',
-            [$noteId, $user['id']]
-        );
 
         Response::success([], 'Note deleted');
         break;

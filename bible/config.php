@@ -10,8 +10,9 @@ declare(strict_types=1);
 // OPENAI API CONFIGURATION
 // =============================================================================
 
-// OpenAI API key - get from environment or local config
-// Set OPENAI_API_KEY environment variable or create bible/config.local.php
+// OpenAI API key - get from environment or config.local.php
+// To configure: create bible/config.local.php with:
+// define('OPENAI_API_KEY', 'your-api-key-here');
 $localConfig = __DIR__ . '/config.local.php';
 if (file_exists($localConfig)) {
     require_once $localConfig;
