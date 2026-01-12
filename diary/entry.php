@@ -368,8 +368,8 @@ function getMoodColor($mood) {
             const contentEl = document.getElementById('content');
             const text = contentEl?.value?.trim();
 
-            if (!text || text.length < 10) {
-                alert('Please write some content first (at least 10 characters)');
+            if (!text) {
+                alert('Please write something first');
                 return;
             }
 
