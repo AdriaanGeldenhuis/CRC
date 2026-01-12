@@ -22,13 +22,32 @@ $userId = $user['id'];
 $today = date('Y-m-d');
 
 // Check daily rate limit using bible_ai_usage table
-$usage = Database::fetchOne(
-    "SELECT request_count FROM bible_ai_usage
-     WHERE user_id = ? AND date = ?",
-    [$userId, $today]
-);
-
-$currentCount = $usage ? (int)$usage['request_count'] : 0;
+$currentCount = 0;
+try {
+    $usage = Database::fetchOne(
+        "SELECT request_count FROM bible_ai_usage
+         WHERE user_id = ? AND date = ?",
+        [$userId, $today]
+    );
+    $currentCount = $usage ? (int)$usage['request_count'] : 0;
+} catch (Exception $e) {
+    // Table might not exist yet - create it
+    try {
+        Database::query("CREATE TABLE IF NOT EXISTS bible_ai_usage (
+            id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+            user_id INT UNSIGNED NOT NULL,
+            date DATE NOT NULL,
+            request_count INT UNSIGNED DEFAULT 0,
+            tokens_used INT UNSIGNED DEFAULT 0,
+            UNIQUE KEY unique_user_date (user_id, date),
+            INDEX idx_user_id (user_id),
+            INDEX idx_date (date)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
+    } catch (Exception $e2) {
+        // Ignore table creation error - just proceed without rate limiting
+        error_log('Failed to create bible_ai_usage table: ' . $e2->getMessage());
+    }
+}
 
 if ($currentCount >= AI_RATE_LIMIT_DAY) {
     Response::error('Daily limit exceeded. Please try again tomorrow.');
@@ -52,11 +71,34 @@ $reference = $bookName ? "$bookName $chapter:$verse" : "Book $bookNumber, Chapte
 
 // Check cache first
 $cacheKey = md5("$bookNumber:$chapter:$verse:en:explain");
-$cached = Database::fetchOne(
-    "SELECT response FROM bible_ai_cache
-     WHERE cache_key = ? AND created_at > DATE_SUB(NOW(), INTERVAL 7 DAY)",
-    [$cacheKey]
-);
+$cached = null;
+try {
+    $cached = Database::fetchOne(
+        "SELECT response FROM bible_ai_cache
+         WHERE cache_key = ? AND created_at > DATE_SUB(NOW(), INTERVAL 7 DAY)",
+        [$cacheKey]
+    );
+} catch (Exception $e) {
+    // Table might not exist yet - create it
+    try {
+        Database::query("CREATE TABLE IF NOT EXISTS bible_ai_cache (
+            id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+            cache_key VARCHAR(64) NOT NULL UNIQUE,
+            version_code VARCHAR(20) NOT NULL,
+            reference VARCHAR(100) NOT NULL,
+            mode VARCHAR(50) NOT NULL,
+            context_hash VARCHAR(64) DEFAULT NULL,
+            response TEXT NOT NULL,
+            tokens_used INT UNSIGNED DEFAULT 0,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            expires_at TIMESTAMP NULL DEFAULT NULL,
+            INDEX idx_cache_key (cache_key),
+            INDEX idx_reference (version_code, reference)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
+    } catch (Exception $e2) {
+        error_log('Failed to create bible_ai_cache table: ' . $e2->getMessage());
+    }
+}
 
 if ($cached) {
     Response::success([
@@ -102,6 +144,11 @@ $prompt .= "Follow this exact format:
 
 REMEMBER: Only describe EVENTS. No meanings, lessons, interpretations, or applications.";
 
+// Check if API key is configured
+if (!defined('OPENAI_API_KEY') || !OPENAI_API_KEY) {
+    Response::error('AI service not configured. Please contact administrator.');
+}
+
 // Call OpenAI API
 $explanation = callOpenAI($prompt);
 
@@ -110,18 +157,23 @@ if (!$explanation) {
 }
 
 // Update usage tracking
-if ($usage) {
-    Database::query(
-        "UPDATE bible_ai_usage SET request_count = request_count + 1 WHERE user_id = ? AND date = ?",
-        [$userId, $today]
-    );
-} else {
-    Database::insert('bible_ai_usage', [
-        'user_id' => $userId,
-        'date' => $today,
-        'request_count' => 1,
-        'tokens_used' => 0
-    ]);
+try {
+    if ($currentCount > 0) {
+        Database::query(
+            "UPDATE bible_ai_usage SET request_count = request_count + 1 WHERE user_id = ? AND date = ?",
+            [$userId, $today]
+        );
+    } else {
+        Database::insert('bible_ai_usage', [
+            'user_id' => $userId,
+            'date' => $today,
+            'request_count' => 1,
+            'tokens_used' => 0
+        ]);
+    }
+} catch (Exception $e) {
+    // Usage tracking failed - log but continue
+    error_log('Failed to update AI usage: ' . $e->getMessage());
 }
 
 // Cache the result
