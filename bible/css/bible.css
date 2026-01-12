@@ -620,7 +620,11 @@ html {
    ===================================================================== */
 .bible-reading-section {
   padding: 1rem;
-  padding-top: calc(var(--navbar-height) + 1rem);
+  padding-top: calc(var(--navbar-height, 80px) + 1rem); /* Fallback value */
+  padding-bottom: calc(var(--toolbar-height, 70px) + 1rem); /* Space for toolbar */
+  min-height: 100vh;
+  position: relative;
+  z-index: 1; /* Ensure content is above background */
 }
 
 .bible-dual-container {
@@ -655,17 +659,19 @@ html {
   background: var(--glass-bg);
   border: 1px solid var(--glass-border);
   border-radius: var(--radius-lg);
-  overflow: hidden;
-  max-height: calc(100vh - var(--navbar-height) - var(--toolbar-height) - 4rem);
-  display: flex;
-  flex-direction: column;
+  overflow: visible; /* Changed from hidden to prevent content clipping */
+  min-height: 200px; /* Ensure minimum visibility */
+  /* Removed max-height to prevent WebView calculation issues */
 }
 
 .bible-column-content {
-  flex: 1;
   overflow-y: auto;
   padding: 1.5rem;
   scroll-behavior: smooth;
+  /* Use fixed height calculation as fallback */
+  min-height: calc(100vh - 180px); /* navbar ~80px + toolbar ~70px + padding */
+  max-height: calc(100vh - 160px);
+  padding-bottom: 100px; /* Extra padding for bottom toolbar */
 }
 
 /* Chapter Headers */
