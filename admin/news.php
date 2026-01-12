@@ -12,108 +12,148 @@ Auth::requireRole('super_admin');
 $user = Auth::user();
 $pageTitle = "News Management - CRC Admin";
 
+// Check if table exists and create if not
+$tableExists = false;
+try {
+    Database::fetchOne("SELECT 1 FROM news_items LIMIT 1");
+    $tableExists = true;
+} catch (Exception $e) {
+    // Table doesn't exist, create it
+    try {
+        Database::query("
+            CREATE TABLE IF NOT EXISTS news_items (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                title VARCHAR(255) NOT NULL,
+                image_path VARCHAR(500) NOT NULL,
+                description TEXT DEFAULT NULL,
+                link_url VARCHAR(500) DEFAULT NULL,
+                display_order INT DEFAULT 0,
+                is_active BOOLEAN DEFAULT TRUE,
+                created_by INT NOT NULL,
+                created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+        ");
+        $tableExists = true;
+    } catch (Exception $e2) {
+        // Can't create table
+    }
+}
+
 // Handle form submissions
 $message = '';
 $messageType = '';
 
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    CSRF::verify($_POST['csrf_token'] ?? '');
+if ($tableExists && $_SERVER['REQUEST_METHOD'] === 'POST') {
+    try {
+        CSRF::verify($_POST['csrf_token'] ?? '');
 
-    $action = $_POST['action'] ?? '';
+        $action = $_POST['action'] ?? '';
 
-    if ($action === 'upload') {
-        // Handle image upload
-        $title = trim($_POST['title'] ?? '');
-        $description = trim($_POST['description'] ?? '');
-        $linkUrl = trim($_POST['link_url'] ?? '');
+        if ($action === 'upload') {
+            // Handle image upload
+            $title = trim($_POST['title'] ?? '');
+            $description = trim($_POST['description'] ?? '');
+            $linkUrl = trim($_POST['link_url'] ?? '');
 
-        if (empty($title)) {
-            $message = 'Title is required';
-            $messageType = 'error';
-        } elseif (!isset($_FILES['image']) || $_FILES['image']['error'] !== UPLOAD_ERR_OK) {
-            $message = 'Please select an image to upload';
-            $messageType = 'error';
-        } else {
-            $file = $_FILES['image'];
-            $allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
-
-            if (!in_array($file['type'], $allowedTypes)) {
-                $message = 'Only JPG, PNG, GIF, and WebP images are allowed';
+            if (empty($title)) {
+                $message = 'Title is required';
                 $messageType = 'error';
-            } elseif ($file['size'] > 5 * 1024 * 1024) {
-                $message = 'Image must be less than 5MB';
+            } elseif (!isset($_FILES['image']) || $_FILES['image']['error'] !== UPLOAD_ERR_OK) {
+                $message = 'Please select an image to upload';
                 $messageType = 'error';
             } else {
-                // Create uploads directory if needed
-                $uploadDir = __DIR__ . '/../uploads/news/';
-                if (!is_dir($uploadDir)) {
-                    mkdir($uploadDir, 0755, true);
-                }
+                $file = $_FILES['image'];
+                $allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
 
-                // Generate unique filename
-                $ext = pathinfo($file['name'], PATHINFO_EXTENSION);
-                $filename = uniqid('news_') . '.' . $ext;
-                $filepath = $uploadDir . $filename;
-
-                if (move_uploaded_file($file['tmp_name'], $filepath)) {
-                    // Get max display order
-                    $maxOrder = Database::fetchColumn("SELECT MAX(display_order) FROM news_items") ?? 0;
-
-                    Database::query(
-                        "INSERT INTO news_items (title, image_path, description, link_url, display_order, created_by)
-                         VALUES (?, ?, ?, ?, ?, ?)",
-                        [$title, '/uploads/news/' . $filename, $description ?: null, $linkUrl ?: null, $maxOrder + 1, $user['id']]
-                    );
-
-                    $message = 'News item added successfully';
-                    $messageType = 'success';
-                } else {
-                    $message = 'Failed to upload image';
+                if (!in_array($file['type'], $allowedTypes)) {
+                    $message = 'Only JPG, PNG, GIF, and WebP images are allowed';
                     $messageType = 'error';
+                } elseif ($file['size'] > 5 * 1024 * 1024) {
+                    $message = 'Image must be less than 5MB';
+                    $messageType = 'error';
+                } else {
+                    // Create uploads directory if needed
+                    $uploadDir = __DIR__ . '/../uploads/news/';
+                    if (!is_dir($uploadDir)) {
+                        mkdir($uploadDir, 0755, true);
+                    }
+
+                    // Generate unique filename
+                    $ext = pathinfo($file['name'], PATHINFO_EXTENSION);
+                    $filename = uniqid('news_') . '.' . $ext;
+                    $filepath = $uploadDir . $filename;
+
+                    if (move_uploaded_file($file['tmp_name'], $filepath)) {
+                        // Get max display order
+                        $maxOrder = Database::fetchColumn("SELECT MAX(display_order) FROM news_items") ?? 0;
+
+                        Database::query(
+                            "INSERT INTO news_items (title, image_path, description, link_url, display_order, created_by)
+                             VALUES (?, ?, ?, ?, ?, ?)",
+                            [$title, '/uploads/news/' . $filename, $description ?: null, $linkUrl ?: null, $maxOrder + 1, $user['id']]
+                        );
+
+                        $message = 'News item added successfully';
+                        $messageType = 'success';
+                    } else {
+                        $message = 'Failed to upload image';
+                        $messageType = 'error';
+                    }
                 }
             }
-        }
-    } elseif ($action === 'delete') {
-        $id = (int)($_POST['id'] ?? 0);
+        } elseif ($action === 'delete') {
+            $id = (int)($_POST['id'] ?? 0);
 
-        // Get image path before deleting
-        $item = Database::fetchOne("SELECT image_path FROM news_items WHERE id = ?", [$id]);
+            // Get image path before deleting
+            $item = Database::fetchOne("SELECT image_path FROM news_items WHERE id = ?", [$id]);
 
-        if ($item) {
-            // Delete the file
-            $filepath = __DIR__ . '/..' . $item['image_path'];
-            if (file_exists($filepath)) {
-                unlink($filepath);
+            if ($item) {
+                // Delete the file
+                $filepath = __DIR__ . '/..' . $item['image_path'];
+                if (file_exists($filepath)) {
+                    unlink($filepath);
+                }
+
+                Database::query("DELETE FROM news_items WHERE id = ?", [$id]);
+                $message = 'News item deleted';
+                $messageType = 'success';
             }
-
-            Database::query("DELETE FROM news_items WHERE id = ?", [$id]);
-            $message = 'News item deleted';
+        } elseif ($action === 'toggle') {
+            $id = (int)($_POST['id'] ?? 0);
+            Database::query("UPDATE news_items SET is_active = NOT is_active WHERE id = ?", [$id]);
+            $message = 'Status updated';
             $messageType = 'success';
-        }
-    } elseif ($action === 'toggle') {
-        $id = (int)($_POST['id'] ?? 0);
-        Database::query("UPDATE news_items SET is_active = NOT is_active WHERE id = ?", [$id]);
-        $message = 'Status updated';
-        $messageType = 'success';
-    } elseif ($action === 'reorder') {
-        $order = json_decode($_POST['order'] ?? '[]', true);
-        if (is_array($order)) {
-            foreach ($order as $index => $id) {
-                Database::query("UPDATE news_items SET display_order = ? WHERE id = ?", [$index, (int)$id]);
+        } elseif ($action === 'reorder') {
+            $order = json_decode($_POST['order'] ?? '[]', true);
+            if (is_array($order)) {
+                foreach ($order as $index => $id) {
+                    Database::query("UPDATE news_items SET display_order = ? WHERE id = ?", [$index, (int)$id]);
+                }
+                $message = 'Order updated';
+                $messageType = 'success';
             }
-            $message = 'Order updated';
-            $messageType = 'success';
         }
+    } catch (Exception $e) {
+        $message = 'An error occurred: ' . $e->getMessage();
+        $messageType = 'error';
     }
 }
 
 // Get all news items
-$newsItems = Database::fetchAll(
-    "SELECT n.*, u.name as creator_name
-     FROM news_items n
-     LEFT JOIN users u ON n.created_by = u.id
-     ORDER BY n.display_order ASC"
-) ?: [];
+$newsItems = [];
+if ($tableExists) {
+    try {
+        $newsItems = Database::fetchAll(
+            "SELECT n.*, u.name as creator_name
+             FROM news_items n
+             LEFT JOIN users u ON n.created_by = u.id
+             ORDER BY n.display_order ASC"
+        ) ?: [];
+    } catch (Exception $e) {
+        $newsItems = [];
+    }
+}
 ?>
 <!DOCTYPE html>
 <html lang="en">

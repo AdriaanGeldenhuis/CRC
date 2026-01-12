@@ -117,13 +117,13 @@ try {
 
 // Default inspirational messages if no AI message
 $defaultMessages = [
-    ['message' => "Mag die Here jou dag seën met vrede en genade. Onthou, in Hom het ons alles wat ons nodig het.", 'scripture' => "Filippense 4:19"],
-    ['message' => "Vandag is 'n nuwe geleentheid om God se liefde te ervaar en dit met ander te deel.", 'scripture' => "Klaagliedere 3:22-23"],
-    ['message' => "Laat jou lig skyn voor die mense, sodat hulle jou goeie werke kan sien en jou Vader wat in die hemel is, kan verheerlik.", 'scripture' => "Matteus 5:16"],
-    ['message' => "Die Here is jou herder, jy sal nie gebrek ly nie. Vertrou op Sy voorsiening vandag.", 'scripture' => "Psalm 23:1"],
-    ['message' => "Wees sterk en vol moed! Moenie bang wees nie, want die Here jou God is by jou waar jy ook gaan.", 'scripture' => "Josua 1:9"],
-    ['message' => "In alles is ons meer as oorwinnaars deur Hom wat ons liefhet.", 'scripture' => "Romeine 8:37"],
-    ['message' => "Gooi al jou bekommernis op Hom, want Hy sorg vir jou.", 'scripture' => "1 Petrus 5:7"],
+    ['message' => "May the Lord bless your day with peace and grace. Remember, in Him we have everything we need.", 'scripture' => "Philippians 4:19"],
+    ['message' => "Today is a new opportunity to experience God's love and share it with others.", 'scripture' => "Lamentations 3:22-23"],
+    ['message' => "Let your light shine before others, that they may see your good deeds and glorify your Father in heaven.", 'scripture' => "Matthew 5:16"],
+    ['message' => "The Lord is your shepherd, you shall not want. Trust in His provision today.", 'scripture' => "Psalm 23:1"],
+    ['message' => "Be strong and courageous! Do not be afraid, for the Lord your God is with you wherever you go.", 'scripture' => "Joshua 1:9"],
+    ['message' => "In all things we are more than conquerors through Him who loved us.", 'scripture' => "Romans 8:37"],
+    ['message' => "Cast all your anxiety on Him, because He cares for you.", 'scripture' => "1 Peter 5:7"],
 ];
 
 if (!$aiMessage) {
@@ -215,6 +215,13 @@ if (!$aiMessage) {
                                 <path d="M8 9h8"></path>
                             </svg>
                             Bible
+                        </a>
+                        <a href="/ai_smartbible/" class="more-dropdown-item">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path>
+                                <circle cx="19" cy="5" r="3" fill="currentColor"></circle>
+                            </svg>
+                            AI SmartBible
                         </a>
                         <a href="/morning_watch/" class="more-dropdown-item">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -322,7 +329,7 @@ if (!$aiMessage) {
                             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display:inline;vertical-align:middle;margin-right:8px;color:var(--accent);">
                                 <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"></path>
                             </svg>
-                            AI Boodskap van die Dag
+                            AI Message of the Day
                         </h2>
                         <span class="ai-badge">
                             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -356,7 +363,7 @@ if (!$aiMessage) {
                         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
                         </svg>
-                        Gesels met AI SmartBible
+                        Chat with AI SmartBible
                     </a>
                 </div>
 
@@ -367,7 +374,7 @@ if (!$aiMessage) {
                             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display:inline;vertical-align:middle;margin-right:8px;color:var(--secondary);">
                                 <rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18"/><path d="M9 21V9"/>
                             </svg>
-                            NUUS
+                            NEWS
                         </h2>
                     </div>
                     <?php if ($newsItems): ?>
@@ -410,7 +417,7 @@ if (!$aiMessage) {
                             <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="opacity:0.5;margin-bottom:1rem;">
                                 <rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m21 15-5-5L5 21"/>
                             </svg>
-                            <p>Geen nuus op die oomblik nie.</p>
+                            <p>No news at the moment.</p>
                         </div>
                     <?php endif; ?>
                 </div>
