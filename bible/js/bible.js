@@ -749,18 +749,11 @@
     if (!menu) return;
 
     menu.classList.remove('bible-context-hidden');
-    menu.style.left = `${x}px`;
-    menu.style.top = `${y}px`;
 
-    setTimeout(() => {
-      const rect = menu.getBoundingClientRect();
-      if (rect.right > window.innerWidth) {
-        menu.style.left = `${window.innerWidth - rect.width - 20}px`;
-      }
-      if (rect.bottom > window.innerHeight) {
-        menu.style.top = `${window.innerHeight - rect.height - 20}px`;
-      }
-    }, 0);
+    // Center the menu on screen (ignore x, y coordinates)
+    menu.style.left = '50%';
+    menu.style.top = '50%';
+    menu.style.transform = 'translate(-50%, -50%)';
   }
 
   function hideContextMenu() {
