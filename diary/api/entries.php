@@ -4,6 +4,13 @@
  * POST /diary/api/entries.php
  */
 
+error_reporting(E_ALL);
+ini_set('display_errors', 0);
+ini_set('log_errors', 1);
+
+// Wrap everything in try-catch to catch all errors
+try {
+
 require_once __DIR__ . '/../../core/bootstrap.php';
 
 Auth::requireAuth();
@@ -21,7 +28,6 @@ switch ($action) {
         $content = input('content');
         $entryDate = input('entry_date', date('Y-m-d'));
         $mood = input('mood');
-        $scriptureRef = input('scripture_ref');
         $isPrivate = (int)input('is_private', 1);
         $tags = $_POST['tags'] ?? [];
 
@@ -43,7 +49,6 @@ switch ($action) {
             'content' => $content,
             'entry_date' => $entryDate,
             'mood' => $mood ?: null,
-            'scripture_ref' => $scriptureRef ?: null,
             'is_private' => $isPrivate,
             'updated_at' => date('Y-m-d H:i:s')
         ];
@@ -70,7 +75,7 @@ switch ($action) {
         // Handle tags
         if ($entryId) {
             // Remove existing tag associations
-            Database::delete('diary_entry_tags', 'entry_id = ?', [$entryId]);
+            Database::delete('diary_tag_links', 'entry_id = ?', [$entryId]);
 
             // Add new tags
             if (!empty($tags)) {
@@ -95,7 +100,7 @@ switch ($action) {
                     }
 
                     // Associate tag with entry
-                    Database::insert('diary_entry_tags', [
+                    Database::insert('diary_tag_links', [
                         'entry_id' => $entryId,
                         'tag_id' => $tagId
                     ]);
@@ -123,7 +128,7 @@ switch ($action) {
         }
 
         // Delete tag associations
-        Database::delete('diary_entry_tags', 'entry_id = ?', [$entryId]);
+        Database::delete('diary_tag_links', 'entry_id = ?', [$entryId]);
         // Delete entry
         Database::delete('diary_entries', 'id = ?', [$entryId]);
 
@@ -149,7 +154,7 @@ switch ($action) {
         // Get tags
         $tags = Database::fetchAll(
             "SELECT t.* FROM diary_tags t
-             JOIN diary_entry_tags det ON t.id = det.tag_id
+             JOIN diary_tag_links det ON t.id = det.tag_id
              WHERE det.entry_id = ?",
             [$entryId]
         );
@@ -183,4 +188,16 @@ switch ($action) {
 
     default:
         Response::error('Invalid action');
+}
+
+} catch (Throwable $e) {
+    error_log('Entries API error: ' . $e->getMessage() . ' in ' . $e->getFile() . ':' . $e->getLine());
+    http_response_code(500);
+    header('Content-Type: application/json');
+    echo json_encode([
+        'ok' => false,
+        'error' => $e->getMessage(),
+        'file' => basename($e->getFile()),
+        'line' => $e->getLine()
+    ]);
 }

@@ -18,7 +18,13 @@ if (!Auth::check()) {
 
 $user = Auth::user();
 $userId = (int)$user['id'];
-$entryId = (int)($_GET['id'] ?? 0);
+
+// Accept ID from GET, POST, or JSON body
+$entryId = (int)($_GET['id'] ?? $_POST['id'] ?? 0);
+if ($entryId <= 0) {
+    $input = json_decode(file_get_contents('php://input'), true);
+    $entryId = (int)($input['id'] ?? 0);
+}
 
 if ($entryId <= 0) {
     http_response_code(400);
@@ -40,13 +46,10 @@ try {
     }
 
     // Delete tag links first (foreign key constraint)
-    Database::execute("DELETE FROM diary_tag_links WHERE entry_id = ?", [$entryId]);
+    Database::delete('diary_tag_links', 'entry_id = ?', [$entryId]);
 
     // Delete diary entry
-    Database::execute(
-        "DELETE FROM diary_entries WHERE id = ? AND user_id = ?",
-        [$entryId, $userId]
-    );
+    Database::delete('diary_entries', 'id = ? AND user_id = ?', [$entryId, $userId]);
 
     echo json_encode([
         'success' => true,

@@ -26,7 +26,7 @@ if ($entryId) {
     // Get tags for this entry
     $entryTags = Database::fetchAll(
         "SELECT t.* FROM diary_tags t
-         JOIN diary_entry_tags det ON t.id = det.tag_id
+         JOIN diary_tag_links det ON t.id = det.tag_id
          WHERE det.entry_id = ?",
         [$entryId]
     );
@@ -82,7 +82,41 @@ function getMoodColor($mood) {
     <link rel="stylesheet" href="/diary/css/diary.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Parisienne&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Parisienne&family=Noto+Color+Emoji&display=swap" rel="stylesheet">
+    <style>
+        /* Emoji font support */
+        .mood-icon, .mood-emoji {
+            font-family: 'Noto Color Emoji', 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', sans-serif;
+        }
+        /* AI Button styling */
+        .btn-ai {
+            background: linear-gradient(135deg, #8B5CF6 0%, #6366F1 100%);
+            color: #fff;
+            border: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 12px 20px;
+            border-radius: 8px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        .btn-ai:hover {
+            background: linear-gradient(135deg, #7C3AED 0%, #4F46E5 100%);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(139, 92, 246, 0.4);
+        }
+        .btn-ai:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+        .btn-ai svg {
+            width: 18px;
+            height: 18px;
+        }
+    </style>
 </head>
 <body>
     <?php include __DIR__ . '/../home/partials/navbar.php'; ?>
@@ -114,6 +148,7 @@ function getMoodColor($mood) {
 
                 <!-- Entry Form -->
                 <form id="entry-form" class="entry-form" data-entry-id="<?= $entryId ?>">
+                    <?= CSRF::field() ?>
                     <div class="form-card">
                         <div class="form-card-header">
                             <h2 class="display-title"><?= $entry ? 'Edit Entry' : 'New Entry' ?></h2>
@@ -283,6 +318,12 @@ function getMoodColor($mood) {
                                 </svg>
                                 Cancel
                             </a>
+                            <button type="button" class="btn btn-ai" id="aiAssistBtn">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
+                                    <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"></path>
+                                </svg>
+                                AI Assist
+                            </button>
                             <button type="submit" class="btn btn-primary">
                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
                                     <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
@@ -321,7 +362,52 @@ function getMoodColor($mood) {
 
     <script>
         const allTags = <?= json_encode(array_map(fn($t) => ['id' => $t['id'], 'name' => $t['name']], $allTags ?? [])) ?>;
+        const CSRF_TOKEN = '<?= CSRF::token() ?>';
+
+        // AI Assist functionality
+        document.getElementById('aiAssistBtn')?.addEventListener('click', async function() {
+            const contentEl = document.getElementById('content');
+            const text = contentEl?.value?.trim();
+
+            if (!text) {
+                alert('Please write something first');
+                return;
+            }
+
+            const btn = this;
+            const originalHtml = btn.innerHTML;
+            btn.disabled = true;
+            btn.innerHTML = '<svg class="spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><circle cx="12" cy="12" r="10" stroke-dasharray="32" stroke-dashoffset="32"></circle></svg> Enhancing...';
+
+            try {
+                const response = await fetch('/diary/api/ai_enhance.php', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-Token': CSRF_TOKEN
+                    },
+                    body: JSON.stringify({ text: text })
+                });
+
+                const data = await response.json();
+
+                if (data.success && data.enhanced_text) {
+                    contentEl.value = data.enhanced_text;
+                    contentEl.style.borderColor = '#10B981';
+                    setTimeout(() => contentEl.style.borderColor = '', 2000);
+                } else {
+                    alert(data.error || 'AI enhancement failed. Please try again.');
+                }
+            } catch (error) {
+                console.error('AI enhance error:', error);
+                alert('Failed to connect to AI service. Please try again.');
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = originalHtml;
+            }
+        });
     </script>
+    <style>.spin { animation: spin 1s linear infinite; } @keyframes spin { to { transform: rotate(360deg); } }</style>
     <script src="/diary/js/diary.js"></script>
 </body>
 </html>
