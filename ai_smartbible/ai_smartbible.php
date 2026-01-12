@@ -4,8 +4,9 @@
  * Christian Revival Church
  */
 
-require_once __DIR__ . '/../core/bootstrap.php';
+// Load local config FIRST (before bootstrap which has empty defaults)
 require_once __DIR__ . '/config.php';
+require_once __DIR__ . '/../core/bootstrap.php';
 
 // Require authentication
 Auth::requireAuth();
