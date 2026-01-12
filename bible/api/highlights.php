@@ -2,6 +2,9 @@
 /**
  * CRC Bible Highlights API
  * POST /bible/api/highlights.php
+ *
+ * Uses numbered colors (1-6) like OAC:
+ * 1=Pink, 2=Orange, 3=Yellow, 4=Green, 5=Blue, 6=Purple
  */
 
 require_once __DIR__ . '/../../core/bootstrap.php';
@@ -15,35 +18,31 @@ $action = input('action', 'add');
 
 switch ($action) {
     case 'add':
-        $version = input('version', 'KJV');
         $bookNumber = (int)input('book_number');
         $chapter = (int)input('chapter');
-        $verseStart = (int)input('verse_start');
-        $verseEnd = (int)input('verse_end', $verseStart);
-        $color = input('color', 'yellow');
+        $verse = (int)input('verse');
+        $color = (int)input('color', 3); // Default to yellow (3)
 
-        if (!$bookNumber || !$chapter || !$verseStart) {
+        if (!$bookNumber || !$chapter || !$verse) {
             Response::error('Book, chapter, and verse are required');
         }
 
-        $validColors = ['yellow', 'green', 'blue', 'pink', 'purple'];
-        if (!in_array($color, $validColors)) {
-            $color = 'yellow';
+        // Validate color (1-6)
+        if ($color < 1 || $color > 6) {
+            $color = 3; // Default to yellow
         }
 
         // Check if highlight exists
         $existing = Database::fetchOne(
             "SELECT id FROM bible_highlights
-             WHERE user_id = ? AND version_code = ? AND book_number = ?
-             AND chapter = ? AND verse_start = ?",
-            [$user['id'], $version, $bookNumber, $chapter, $verseStart]
+             WHERE user_id = ? AND book_number = ? AND chapter = ? AND verse_start = ?",
+            [$user['id'], $bookNumber, $chapter, $verse]
         );
 
         if ($existing) {
             // Update color
             Database::update('bible_highlights', [
                 'color' => $color,
-                'verse_end' => $verseEnd,
                 'updated_at' => date('Y-m-d H:i:s')
             ], 'id = ?', [$existing['id']]);
 
@@ -52,11 +51,11 @@ switch ($action) {
             // Insert new
             $id = Database::insert('bible_highlights', [
                 'user_id' => $user['id'],
-                'version_code' => $version,
+                'version_code' => 'KJV',
                 'book_number' => $bookNumber,
                 'chapter' => $chapter,
-                'verse_start' => $verseStart,
-                'verse_end' => $verseEnd,
+                'verse_start' => $verse,
+                'verse_end' => $verse,
                 'color' => $color,
                 'created_at' => date('Y-m-d H:i:s'),
                 'updated_at' => date('Y-m-d H:i:s')
@@ -67,43 +66,29 @@ switch ($action) {
         break;
 
     case 'remove':
-        $highlightId = (int)input('highlight_id');
+        $bookNumber = (int)input('book_number');
+        $chapter = (int)input('chapter');
+        $verse = (int)input('verse');
 
-        if ($highlightId) {
-            Database::delete(
-                'bible_highlights',
-                'id = ? AND user_id = ?',
-                [$highlightId, $user['id']]
-            );
-        } else {
-            // Remove by reference
-            $version = input('version', 'KJV');
-            $bookNumber = (int)input('book_number');
-            $chapter = (int)input('chapter');
-            $verseStart = (int)input('verse_start');
-
-            Database::delete(
-                'bible_highlights',
-                'user_id = ? AND version_code = ? AND book_number = ? AND chapter = ? AND verse_start = ?',
-                [$user['id'], $version, $bookNumber, $chapter, $verseStart]
-            );
+        if (!$bookNumber || !$chapter || !$verse) {
+            Response::error('Book, chapter, and verse are required');
         }
+
+        Database::delete(
+            'bible_highlights',
+            'user_id = ? AND book_number = ? AND chapter = ? AND verse_start = ?',
+            [$user['id'], $bookNumber, $chapter, $verse]
+        );
 
         Response::success([], 'Highlight removed');
         break;
 
     case 'list':
-        $version = input('version');
         $bookNumber = (int)input('book_number');
         $chapter = (int)input('chapter');
 
         $where = ['user_id = ?'];
         $params = [$user['id']];
-
-        if ($version) {
-            $where[] = 'version_code = ?';
-            $params[] = $version;
-        }
 
         if ($bookNumber) {
             $where[] = 'book_number = ?';
@@ -116,7 +101,10 @@ switch ($action) {
         }
 
         $highlights = Database::fetchAll(
-            "SELECT * FROM bible_highlights WHERE " . implode(' AND ', $where) . " ORDER BY book_number, chapter, verse_start",
+            "SELECT id, book_number, chapter, verse_start as verse, color
+             FROM bible_highlights
+             WHERE " . implode(' AND ', $where) . "
+             ORDER BY book_number, chapter, verse_start",
             $params
         );
 
@@ -124,9 +112,12 @@ switch ($action) {
         break;
 
     case 'get_all':
-        // Get all highlights for export/sync
+        // Get all highlights for initial load
         $highlights = Database::fetchAll(
-            "SELECT * FROM bible_highlights WHERE user_id = ? ORDER BY created_at DESC",
+            "SELECT id, book_number, chapter, verse_start as verse, color
+             FROM bible_highlights
+             WHERE user_id = ?
+             ORDER BY book_number, chapter, verse_start",
             [$user['id']]
         );
 

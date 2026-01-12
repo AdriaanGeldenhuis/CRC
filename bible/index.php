@@ -1,6 +1,7 @@
 <?php
 /**
  * CRC Bible Reader
+ * Matches OAC Bible functionality - English only
  */
 
 require_once __DIR__ . '/../core/bootstrap.php';
@@ -9,307 +10,310 @@ Auth::requireAuth();
 
 $user = Auth::user();
 $pageTitle = 'Bible - CRC';
-
-// Get selected version and reference
-$version = $_GET['v'] ?? 'KJV';
-$book = $_GET['b'] ?? 'Genesis';
-$chapter = max(1, (int)($_GET['c'] ?? 1));
-
-// Bible books data
-$bibleBooks = [
-    // Old Testament
-    ['name' => 'Genesis', 'abbr' => 'Gen', 'chapters' => 50, 'testament' => 'old'],
-    ['name' => 'Exodus', 'abbr' => 'Exod', 'chapters' => 40, 'testament' => 'old'],
-    ['name' => 'Leviticus', 'abbr' => 'Lev', 'chapters' => 27, 'testament' => 'old'],
-    ['name' => 'Numbers', 'abbr' => 'Num', 'chapters' => 36, 'testament' => 'old'],
-    ['name' => 'Deuteronomy', 'abbr' => 'Deut', 'chapters' => 34, 'testament' => 'old'],
-    ['name' => 'Joshua', 'abbr' => 'Josh', 'chapters' => 24, 'testament' => 'old'],
-    ['name' => 'Judges', 'abbr' => 'Judg', 'chapters' => 21, 'testament' => 'old'],
-    ['name' => 'Ruth', 'abbr' => 'Ruth', 'chapters' => 4, 'testament' => 'old'],
-    ['name' => '1 Samuel', 'abbr' => '1Sam', 'chapters' => 31, 'testament' => 'old'],
-    ['name' => '2 Samuel', 'abbr' => '2Sam', 'chapters' => 24, 'testament' => 'old'],
-    ['name' => '1 Kings', 'abbr' => '1Kgs', 'chapters' => 22, 'testament' => 'old'],
-    ['name' => '2 Kings', 'abbr' => '2Kgs', 'chapters' => 25, 'testament' => 'old'],
-    ['name' => '1 Chronicles', 'abbr' => '1Chr', 'chapters' => 29, 'testament' => 'old'],
-    ['name' => '2 Chronicles', 'abbr' => '2Chr', 'chapters' => 36, 'testament' => 'old'],
-    ['name' => 'Ezra', 'abbr' => 'Ezra', 'chapters' => 10, 'testament' => 'old'],
-    ['name' => 'Nehemiah', 'abbr' => 'Neh', 'chapters' => 13, 'testament' => 'old'],
-    ['name' => 'Esther', 'abbr' => 'Esth', 'chapters' => 10, 'testament' => 'old'],
-    ['name' => 'Job', 'abbr' => 'Job', 'chapters' => 42, 'testament' => 'old'],
-    ['name' => 'Psalms', 'abbr' => 'Ps', 'chapters' => 150, 'testament' => 'old'],
-    ['name' => 'Proverbs', 'abbr' => 'Prov', 'chapters' => 31, 'testament' => 'old'],
-    ['name' => 'Ecclesiastes', 'abbr' => 'Eccl', 'chapters' => 12, 'testament' => 'old'],
-    ['name' => 'Song of Solomon', 'abbr' => 'Song', 'chapters' => 8, 'testament' => 'old'],
-    ['name' => 'Isaiah', 'abbr' => 'Isa', 'chapters' => 66, 'testament' => 'old'],
-    ['name' => 'Jeremiah', 'abbr' => 'Jer', 'chapters' => 52, 'testament' => 'old'],
-    ['name' => 'Lamentations', 'abbr' => 'Lam', 'chapters' => 5, 'testament' => 'old'],
-    ['name' => 'Ezekiel', 'abbr' => 'Ezek', 'chapters' => 48, 'testament' => 'old'],
-    ['name' => 'Daniel', 'abbr' => 'Dan', 'chapters' => 12, 'testament' => 'old'],
-    ['name' => 'Hosea', 'abbr' => 'Hos', 'chapters' => 14, 'testament' => 'old'],
-    ['name' => 'Joel', 'abbr' => 'Joel', 'chapters' => 3, 'testament' => 'old'],
-    ['name' => 'Amos', 'abbr' => 'Amos', 'chapters' => 9, 'testament' => 'old'],
-    ['name' => 'Obadiah', 'abbr' => 'Obad', 'chapters' => 1, 'testament' => 'old'],
-    ['name' => 'Jonah', 'abbr' => 'Jonah', 'chapters' => 4, 'testament' => 'old'],
-    ['name' => 'Micah', 'abbr' => 'Mic', 'chapters' => 7, 'testament' => 'old'],
-    ['name' => 'Nahum', 'abbr' => 'Nah', 'chapters' => 3, 'testament' => 'old'],
-    ['name' => 'Habakkuk', 'abbr' => 'Hab', 'chapters' => 3, 'testament' => 'old'],
-    ['name' => 'Zephaniah', 'abbr' => 'Zeph', 'chapters' => 3, 'testament' => 'old'],
-    ['name' => 'Haggai', 'abbr' => 'Hag', 'chapters' => 2, 'testament' => 'old'],
-    ['name' => 'Zechariah', 'abbr' => 'Zech', 'chapters' => 14, 'testament' => 'old'],
-    ['name' => 'Malachi', 'abbr' => 'Mal', 'chapters' => 4, 'testament' => 'old'],
-    // New Testament
-    ['name' => 'Matthew', 'abbr' => 'Matt', 'chapters' => 28, 'testament' => 'new'],
-    ['name' => 'Mark', 'abbr' => 'Mark', 'chapters' => 16, 'testament' => 'new'],
-    ['name' => 'Luke', 'abbr' => 'Luke', 'chapters' => 24, 'testament' => 'new'],
-    ['name' => 'John', 'abbr' => 'John', 'chapters' => 21, 'testament' => 'new'],
-    ['name' => 'Acts', 'abbr' => 'Acts', 'chapters' => 28, 'testament' => 'new'],
-    ['name' => 'Romans', 'abbr' => 'Rom', 'chapters' => 16, 'testament' => 'new'],
-    ['name' => '1 Corinthians', 'abbr' => '1Cor', 'chapters' => 16, 'testament' => 'new'],
-    ['name' => '2 Corinthians', 'abbr' => '2Cor', 'chapters' => 13, 'testament' => 'new'],
-    ['name' => 'Galatians', 'abbr' => 'Gal', 'chapters' => 6, 'testament' => 'new'],
-    ['name' => 'Ephesians', 'abbr' => 'Eph', 'chapters' => 6, 'testament' => 'new'],
-    ['name' => 'Philippians', 'abbr' => 'Phil', 'chapters' => 4, 'testament' => 'new'],
-    ['name' => 'Colossians', 'abbr' => 'Col', 'chapters' => 4, 'testament' => 'new'],
-    ['name' => '1 Thessalonians', 'abbr' => '1Thess', 'chapters' => 5, 'testament' => 'new'],
-    ['name' => '2 Thessalonians', 'abbr' => '2Thess', 'chapters' => 3, 'testament' => 'new'],
-    ['name' => '1 Timothy', 'abbr' => '1Tim', 'chapters' => 6, 'testament' => 'new'],
-    ['name' => '2 Timothy', 'abbr' => '2Tim', 'chapters' => 4, 'testament' => 'new'],
-    ['name' => 'Titus', 'abbr' => 'Titus', 'chapters' => 3, 'testament' => 'new'],
-    ['name' => 'Philemon', 'abbr' => 'Phlm', 'chapters' => 1, 'testament' => 'new'],
-    ['name' => 'Hebrews', 'abbr' => 'Heb', 'chapters' => 13, 'testament' => 'new'],
-    ['name' => 'James', 'abbr' => 'Jas', 'chapters' => 5, 'testament' => 'new'],
-    ['name' => '1 Peter', 'abbr' => '1Pet', 'chapters' => 5, 'testament' => 'new'],
-    ['name' => '2 Peter', 'abbr' => '2Pet', 'chapters' => 3, 'testament' => 'new'],
-    ['name' => '1 John', 'abbr' => '1John', 'chapters' => 5, 'testament' => 'new'],
-    ['name' => '2 John', 'abbr' => '2John', 'chapters' => 1, 'testament' => 'new'],
-    ['name' => '3 John', 'abbr' => '3John', 'chapters' => 1, 'testament' => 'new'],
-    ['name' => 'Jude', 'abbr' => 'Jude', 'chapters' => 1, 'testament' => 'new'],
-    ['name' => 'Revelation', 'abbr' => 'Rev', 'chapters' => 22, 'testament' => 'new'],
-];
-
-// Find current book info
-$currentBook = null;
-$bookIndex = 0;
-foreach ($bibleBooks as $i => $b) {
-    if (strtolower($b['name']) === strtolower($book)) {
-        $currentBook = $b;
-        $bookIndex = $i;
-        break;
-    }
-}
-
-if (!$currentBook) {
-    $currentBook = $bibleBooks[0];
-    $book = $currentBook['name'];
-}
-
-// Ensure chapter is valid
-if ($chapter > $currentBook['chapters']) {
-    $chapter = 1;
-}
-
-// Calculate prev/next chapter
-$prevChapter = null;
-$nextChapter = null;
-
-if ($chapter > 1) {
-    $prevChapter = ['book' => $book, 'chapter' => $chapter - 1];
-} elseif ($bookIndex > 0) {
-    $prevBook = $bibleBooks[$bookIndex - 1];
-    $prevChapter = ['book' => $prevBook['name'], 'chapter' => $prevBook['chapters']];
-}
-
-if ($chapter < $currentBook['chapters']) {
-    $nextChapter = ['book' => $book, 'chapter' => $chapter + 1];
-} elseif ($bookIndex < count($bibleBooks) - 1) {
-    $nextBook = $bibleBooks[$bookIndex + 1];
-    $nextChapter = ['book' => $nextBook['name'], 'chapter' => 1];
-}
-
-// Get user highlights for this chapter
-$highlights = [];
-$highlightMap = [];
-$notes = [];
-
-try {
-    $highlights = Database::fetchAll(
-        "SELECT * FROM bible_highlights
-         WHERE user_id = ? AND version_code = ? AND book_number = ? AND chapter = ?",
-        [$user['id'], $version, $bookIndex + 1, $chapter]
-    ) ?: [];
-} catch (Exception $e) {}
-
-foreach ($highlights as $h) {
-    for ($v = $h['verse_start']; $v <= ($h['verse_end'] ?: $h['verse_start']); $v++) {
-        $highlightMap[$v] = $h['color'];
-    }
-}
-
-// Get user notes for this chapter
-try {
-    $notes = Database::fetchAll(
-        "SELECT * FROM bible_notes
-         WHERE user_id = ? AND version_code = ? AND book_number = ? AND chapter = ?
-         ORDER BY verse_start ASC",
-        [$user['id'], $version, $bookIndex + 1, $chapter]
-    ) ?: [];
-} catch (Exception $e) {}
-?>
-<!DOCTYPE html>
+?><!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><?= e($book) ?> <?= $chapter ?> - <?= e($pageTitle) ?></title>
-    <?= CSRF::meta() ?>
-    <link rel="stylesheet" href="/bible/css/bible.css">
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Merriweather:wght@400;700&display=swap" rel="stylesheet">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><?= e($pageTitle) ?></title>
+  <?= CSRF::meta() ?>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Merriweather:wght@400;700&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="/bible/css/bible.css?v=<?= time() ?>">
 </head>
-<body>
-    <?php include __DIR__ . '/../home/partials/navbar.php'; ?>
+<body class="bible-body">
+  <?php include __DIR__ . '/../home/partials/navbar.php'; ?>
 
-    <main class="bible-layout">
-        <!-- Sidebar - Book List -->
-        <aside class="bible-sidebar" id="sidebar">
-            <div class="sidebar-header">
-                <h2>Books</h2>
-                <button class="close-sidebar" onclick="toggleSidebar()">×</button>
-            </div>
+  <main class="bible-main">
 
-            <div class="testament-section">
-                <h3>Old Testament</h3>
-                <div class="book-list">
-                    <?php foreach ($bibleBooks as $b):
-                        if ($b['testament'] !== 'old') continue;
-                    ?>
-                        <a href="?v=<?= $version ?>&b=<?= urlencode($b['name']) ?>&c=1"
-                           class="book-link <?= $b['name'] === $book ? 'active' : '' ?>">
-                            <?= e($b['name']) ?>
-                        </a>
-                    <?php endforeach; ?>
-                </div>
-            </div>
-
-            <div class="testament-section">
-                <h3>New Testament</h3>
-                <div class="book-list">
-                    <?php foreach ($bibleBooks as $b):
-                        if ($b['testament'] !== 'new') continue;
-                    ?>
-                        <a href="?v=<?= $version ?>&b=<?= urlencode($b['name']) ?>&c=1"
-                           class="book-link <?= $b['name'] === $book ? 'active' : '' ?>">
-                            <?= e($b['name']) ?>
-                        </a>
-                    <?php endforeach; ?>
-                </div>
-            </div>
-        </aside>
-
-        <!-- Main Content -->
-        <div class="bible-main">
-            <!-- Top Bar -->
-            <div class="bible-topbar">
-                <button class="menu-btn" onclick="toggleSidebar()">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <line x1="3" y1="12" x2="21" y2="12"></line>
-                        <line x1="3" y1="6" x2="21" y2="6"></line>
-                        <line x1="3" y1="18" x2="21" y2="18"></line>
-                    </svg>
-                </button>
-
-                <div class="reference-selector">
-                    <select id="bookSelect" onchange="changeBook(this.value)">
-                        <?php foreach ($bibleBooks as $b): ?>
-                            <option value="<?= e($b['name']) ?>" <?= $b['name'] === $book ? 'selected' : '' ?>>
-                                <?= e($b['name']) ?>
-                            </option>
-                        <?php endforeach; ?>
-                    </select>
-                    <select id="chapterSelect" onchange="changeChapter(this.value)">
-                        <?php for ($c = 1; $c <= $currentBook['chapters']; $c++): ?>
-                            <option value="<?= $c ?>" <?= $c === $chapter ? 'selected' : '' ?>>
-                                Chapter <?= $c ?>
-                            </option>
-                        <?php endfor; ?>
-                    </select>
-                </div>
-
-                <select id="versionSelect" onchange="changeVersion(this.value)">
-                    <option value="KJV" <?= $version === 'KJV' ? 'selected' : '' ?>>KJV</option>
-                    <option value="NIV" <?= $version === 'NIV' ? 'selected' : '' ?>>NIV</option>
-                    <option value="ESV" <?= $version === 'ESV' ? 'selected' : '' ?>>ESV</option>
-                    <option value="NLT" <?= $version === 'NLT' ? 'selected' : '' ?>>NLT</option>
-                </select>
-
-                <button class="tool-btn" onclick="openSearch()">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <circle cx="11" cy="11" r="8"></circle>
-                        <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
-                    </svg>
-                </button>
-            </div>
-
-            <!-- Chapter Content -->
-            <div class="chapter-content">
-                <h1 class="chapter-title"><?= e($book) ?> <?= $chapter ?></h1>
-
-                <div class="verses" id="versesContainer">
-                    <div class="loading">Loading verses...</div>
-                </div>
-
-                <!-- Chapter Navigation -->
-                <div class="chapter-nav">
-                    <?php if ($prevChapter): ?>
-                        <a href="?v=<?= $version ?>&b=<?= urlencode($prevChapter['book']) ?>&c=<?= $prevChapter['chapter'] ?>" class="nav-link prev">
-                            ← <?= e($prevChapter['book']) ?> <?= $prevChapter['chapter'] ?>
-                        </a>
-                    <?php else: ?>
-                        <span></span>
-                    <?php endif; ?>
-
-                    <?php if ($nextChapter): ?>
-                        <a href="?v=<?= $version ?>&b=<?= urlencode($nextChapter['book']) ?>&c=<?= $nextChapter['chapter'] ?>" class="nav-link next">
-                            <?= e($nextChapter['book']) ?> <?= $nextChapter['chapter'] ?> →
-                        </a>
-                    <?php endif; ?>
-                </div>
-            </div>
+    <!-- Quick Navigation Modal (Fullscreen) -->
+    <div class="bible-modal bible-modal-hidden" id="quickNavModal">
+      <div class="bible-modal-overlay" id="quickNavOverlay"></div>
+      <div class="bible-modal-content">
+        <div class="bible-modal-header">
+          <h2 class="bible-modal-title">Quick Navigation</h2>
+          <button class="bible-modal-close" id="quickNavClose">&times;</button>
         </div>
+        <div class="bible-modal-body">
 
-        <!-- Tools Panel -->
-        <aside class="bible-tools" id="toolsPanel">
-            <div class="tools-header">
-                <h3>Tools</h3>
-                <button class="close-tools" onclick="closeTools()">×</button>
+          <!-- Step 1: Testament Selection -->
+          <div class="bible-nav-step" id="navStepTestament">
+            <h3 class="bible-nav-step-title">Choose Testament</h3>
+            <div class="bible-nav-grid">
+              <button class="bible-nav-card" data-testament="old">
+                <div class="bible-nav-card-icon">📖</div>
+                <div class="bible-nav-card-title">Old Testament</div>
+                <div class="bible-nav-card-subtitle">Genesis - Malachi</div>
+              </button>
+              <button class="bible-nav-card" data-testament="new">
+                <div class="bible-nav-card-icon">✨</div>
+                <div class="bible-nav-card-title">New Testament</div>
+                <div class="bible-nav-card-subtitle">Matthew - Revelation</div>
+              </button>
             </div>
-            <div class="tools-content">
-                <div id="toolsContentArea">
-                    <p class="tools-hint">Select a verse to see options</p>
-                </div>
-            </div>
-        </aside>
-    </main>
+          </div>
 
-    <!-- Verse Action Menu -->
-    <div class="verse-menu" id="verseMenu" style="display:none;">
-        <button onclick="highlightVerse('yellow')">🟡 Highlight</button>
-        <button onclick="addNote()">📝 Add Note</button>
-        <button onclick="addTag()">🏷️ Add Tag</button>
-        <button onclick="copyVerse()">📋 Copy</button>
-        <button onclick="shareVerse()">📤 Share</button>
-        <button onclick="aiExplain()">✨ AI Explain</button>
+          <!-- Step 2: Book Selection -->
+          <div class="bible-nav-step bible-nav-hidden" id="navStepBook">
+            <button class="bible-nav-back" id="navBackToTestament">&larr; Back</button>
+            <h3 class="bible-nav-step-title" id="navBookTitle">Choose Book</h3>
+            <div class="bible-nav-grid" id="navBookGrid"></div>
+          </div>
+
+          <!-- Step 3: Chapter Selection -->
+          <div class="bible-nav-step bible-nav-hidden" id="navStepChapter">
+            <button class="bible-nav-back" id="navBackToBook">&larr; Back</button>
+            <h3 class="bible-nav-step-title" id="navChapterTitle">Choose Chapter</h3>
+            <div class="bible-nav-grid bible-nav-grid-small" id="navChapterGrid"></div>
+          </div>
+
+        </div>
+      </div>
     </div>
 
-    <div id="toast" class="toast"></div>
+    <!-- Search Panel -->
+    <section class="bible-panel bible-panel-hidden" id="searchPanel">
+      <div class="bible-panel-header">
+        <h3 class="bible-panel-title">Search Bible</h3>
+        <button class="bible-panel-close" id="searchClose">&times;</button>
+      </div>
+      <div class="bible-panel-body">
+        <div class="bible-search-container">
+          <input type="text" id="searchInput" class="bible-input" placeholder="Type to search...">
+          <button class="bible-btn bible-btn-primary" id="searchBtn">
+            <svg class="bible-btn-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <circle cx="11" cy="11" r="8" stroke="currentColor" stroke-width="2"/>
+              <path d="M21 21l-4.35-4.35" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+            </svg>
+            <span>Search</span>
+          </button>
+        </div>
+        <div id="searchResults" class="bible-search-results"></div>
+      </div>
+    </section>
 
-    <script>
-        const currentVersion = '<?= e($version) ?>';
-        const currentBook = '<?= e($book) ?>';
-        const currentChapter = <?= $chapter ?>;
-        const bookIndex = <?= $bookIndex ?>;
-        const highlights = <?= json_encode($highlightMap) ?>;
-    </script>
-    <script src="/bible/js/bible.js"></script>
+    <!-- Notes Panel -->
+    <section class="bible-panel bible-panel-hidden" id="notesPanel">
+      <div class="bible-panel-header">
+        <h3 class="bible-panel-title">Notes</h3>
+        <button class="bible-panel-close" id="notesClose">&times;</button>
+      </div>
+      <div class="bible-panel-body">
+        <div id="notesList" class="bible-notes-list">
+          <p class="bible-empty-state">No notes yet. Click on a verse to add a note!</p>
+        </div>
+        <div id="noteEditor" class="bible-note-editor bible-note-hidden">
+          <div class="bible-note-ref" id="noteReference"></div>
+          <textarea id="noteText" class="bible-textarea" placeholder="Write your note here..."></textarea>
+          <div class="bible-note-actions">
+            <button class="bible-btn bible-btn-primary" id="saveNoteBtn">Save</button>
+            <button class="bible-btn" id="cancelNoteBtn">Cancel</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Bookmarks Panel -->
+    <section class="bible-panel bible-panel-hidden" id="bookmarksPanel">
+      <div class="bible-panel-header">
+        <h3 class="bible-panel-title">Bookmarks</h3>
+        <button class="bible-panel-close" id="bookmarksClose">&times;</button>
+      </div>
+      <div class="bible-panel-body">
+        <div id="bookmarksList" class="bible-bookmarks-list">
+          <p class="bible-empty-state">No bookmarks yet.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- AI Commentary Panel -->
+    <section class="bible-panel bible-panel-hidden" id="aiPanel">
+      <div class="bible-panel-header">
+        <h3 class="bible-panel-title">AI Commentary</h3>
+        <button class="bible-panel-close" id="aiClose">&times;</button>
+      </div>
+      <div class="bible-panel-body">
+        <div id="aiOutput" class="bible-ai-output">
+          <p class="bible-empty-state">Select a verse to get AI explanation</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Cross References Panel -->
+    <section class="bible-panel bible-panel-hidden" id="crossRefPanel">
+      <div class="bible-panel-header">
+        <h3 class="bible-panel-title">Cross References</h3>
+        <button class="bible-panel-close" id="crossRefClose">&times;</button>
+      </div>
+      <div class="bible-panel-body">
+        <div id="crossRefList" class="bible-cross-ref-list">
+          <p class="bible-empty-state">Select a verse to see cross references</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Reading Plan Panel -->
+    <section class="bible-panel bible-panel-hidden" id="readingPlanPanel">
+      <div class="bible-panel-header">
+        <h3 class="bible-panel-title">Reading Plan</h3>
+        <button class="bible-panel-close" id="readingPlanClose">&times;</button>
+      </div>
+      <div class="bible-panel-body">
+        <div id="readingPlanContent"></div>
+      </div>
+    </section>
+
+    <!-- Main Reading View (Dual Columns) -->
+    <section class="bible-reading-section">
+      <div class="bible-dual-container">
+        <div class="bible-column bible-column-left" id="leftColumn">
+          <div class="bible-column-content" id="leftContent">
+            <div class="bible-loading">Loading Bible...</div>
+          </div>
+        </div>
+        <div class="bible-column bible-column-right" id="rightColumn">
+          <div class="bible-column-content" id="rightContent">
+            <div class="bible-loading">Loading Bible...</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Context Menu -->
+    <div id="verseContextMenu" class="bible-context-menu bible-context-hidden">
+      <div class="bible-context-section-title">Choose Color</div>
+      <div class="bible-highlight-colors">
+        <button class="bible-color-btn bible-color-1" data-color="1" title="Pink"></button>
+        <button class="bible-color-btn bible-color-2" data-color="2" title="Orange"></button>
+        <button class="bible-color-btn bible-color-3" data-color="3" title="Yellow"></button>
+        <button class="bible-color-btn bible-color-4" data-color="4" title="Green"></button>
+        <button class="bible-color-btn bible-color-5" data-color="5" title="Blue"></button>
+        <button class="bible-color-btn bible-color-6" data-color="6" title="Purple"></button>
+        <button class="bible-color-btn bible-color-btn-clear" data-color="0" title="Remove">&times;</button>
+      </div>
+
+      <div class="bible-context-divider"></div>
+
+      <button class="bible-context-item" id="ctxBookmark">
+        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z" stroke="currentColor" stroke-width="2"/>
+        </svg>
+        Bookmark
+      </button>
+
+      <button class="bible-context-item" id="ctxAddNote">
+        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M12 20h9M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" stroke="currentColor" stroke-width="2"/>
+        </svg>
+        Add Note
+      </button>
+
+      <button class="bible-context-item" id="ctxAI">
+        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="2"/>
+          <path d="M12 1v6m0 6v6M1 12h6m6 0h6" stroke="currentColor" stroke-width="2"/>
+        </svg>
+        Ask AI
+      </button>
+
+      <button class="bible-context-item" id="ctxCrossRef">
+        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" stroke="currentColor" stroke-width="2"/>
+          <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" stroke="currentColor" stroke-width="2"/>
+        </svg>
+        Cross Refs
+      </button>
+
+      <button class="bible-context-item" id="ctxCopy">
+        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <rect x="9" y="9" width="13" height="13" rx="2" stroke="currentColor" stroke-width="2"/>
+          <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" stroke="currentColor" stroke-width="2"/>
+        </svg>
+        Copy
+      </button>
+
+      <button class="bible-context-item" id="ctxShare">
+        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <circle cx="18" cy="5" r="3" stroke="currentColor" stroke-width="2"/>
+          <circle cx="6" cy="12" r="3" stroke="currentColor" stroke-width="2"/>
+          <circle cx="18" cy="19" r="3" stroke="currentColor" stroke-width="2"/>
+          <path d="M8.59 13.51l6.83 3.98m-.01-10.98l-6.82 3.98" stroke="currentColor" stroke-width="2"/>
+        </svg>
+        Share
+      </button>
+    </div>
+
+  </main>
+
+  <!-- Fixed Footer Toolbar -->
+  <section class="bible-toolbar">
+    <button class="bible-tool-btn bible-tool-btn-primary" id="quickNavToggle">
+      <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" stroke="currentColor" stroke-width="2"/>
+        <path d="M9 22V12h6v10" stroke="currentColor" stroke-width="2"/>
+      </svg>
+      <span>Navigate</span>
+    </button>
+
+    <button class="bible-tool-btn" id="searchToggle">
+      <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <circle cx="11" cy="11" r="8" stroke="currentColor" stroke-width="2"/>
+        <path d="M21 21l-4.35-4.35" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+      </svg>
+      <span>Search</span>
+    </button>
+
+    <button class="bible-tool-btn" id="notesToggle">
+      <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M12 20h9M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" stroke="currentColor" stroke-width="2"/>
+      </svg>
+      <span>Notes</span>
+    </button>
+
+    <button class="bible-tool-btn" id="bookmarksToggle">
+      <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z" stroke="currentColor" stroke-width="2"/>
+      </svg>
+      <span>Bookmarks</span>
+    </button>
+
+    <button class="bible-tool-btn" id="readingPlanToggle">
+      <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <rect x="3" y="4" width="18" height="18" rx="2" stroke="currentColor" stroke-width="2"/>
+        <path d="M16 2v4M8 2v4M3 10h18" stroke="currentColor" stroke-width="2"/>
+      </svg>
+      <span>Plan</span>
+    </button>
+
+    <button class="bible-tool-btn" id="fontSizeDecrease" title="Decrease font size">
+      <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M4 7V4h16v3M9 20h6M12 4v16" stroke="currentColor" stroke-width="2"/>
+        <circle cx="18" cy="18" r="4" fill="currentColor"/>
+        <path d="M16 18h4" stroke="white" stroke-width="1.5"/>
+      </svg>
+      <span>A-</span>
+    </button>
+
+    <button class="bible-tool-btn" id="fontSizeIncrease" title="Increase font size">
+      <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M4 7V4h16v3M9 20h6M12 4v16" stroke="currentColor" stroke-width="2"/>
+        <circle cx="18" cy="18" r="4" fill="currentColor"/>
+        <path d="M16 18h4M18 16v4" stroke="white" stroke-width="1.5"/>
+      </svg>
+      <span>A+</span>
+    </button>
+  </section>
+
+  <script>
+    window.BIBLE = {
+      userId: <?= (int)$user['id'] ?>,
+      path: '/bible/bibles/en_kjv.json'
+    };
+  </script>
+  <script src="/bible/js/bible.js?v=<?= time() ?>"></script>
+
 </body>
 </html>
