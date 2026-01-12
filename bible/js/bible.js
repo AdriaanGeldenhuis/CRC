@@ -6,7 +6,7 @@
   'use strict';
 
   // ===== DEBUG PANEL FOR MOBILE TROUBLESHOOTING =====
-  const DEBUG_MODE = true; // Set to false in production
+  const DEBUG_MODE = false; // Set to false in production
   let debugPanel = null;
 
   function createDebugPanel() {
@@ -611,10 +611,14 @@
     chapterDiv.className = 'bible-chapter-block';
     chapterDiv.dataset.book = book;
     chapterDiv.dataset.chapter = chapter;
+    // Inline styles for WebView compatibility
+    chapterDiv.style.cssText = 'display: block; margin-bottom: 2rem;';
 
     const chTitle = document.createElement('h3');
     chTitle.className = 'bible-chapter-title';
     chTitle.textContent = `${book} ${chapter}`;
+    // Inline styles for WebView compatibility
+    chTitle.style.cssText = 'display: block; color: #8B5CF6; font-size: 1.5rem; font-weight: 700; margin-bottom: 1rem; padding-bottom: 0.5rem; border-bottom: 1px solid rgba(255,255,255,0.1);';
     chapterDiv.appendChild(chTitle);
 
     const verses = getChapter(state.data, book, chapter);
@@ -626,6 +630,8 @@
         const h = document.createElement('div');
         h.className = 'bible-heading';
         h.textContent = parsed.text;
+        // Inline styles for WebView compatibility
+        h.style.cssText = 'display: block; color: #A1A1C7; font-size: 1rem; font-weight: 600; font-style: italic; margin: 1.5rem 0 0.75rem;';
         chapterDiv.appendChild(h);
       } else {
         verseNum++;
@@ -646,6 +652,9 @@
     vDiv.dataset.chapter = chapter;
     vDiv.dataset.verse = verseNum;
 
+    // Inline styles for WebView compatibility
+    vDiv.style.cssText = 'display: block; color: #FFFFFF; padding: 0.35rem 0.5rem; margin: 0.25rem 0;';
+
     if (state.highlights[ref]) {
       vDiv.classList.add(`bible-highlight-${state.highlights[ref]}`);
     }
@@ -653,10 +662,14 @@
     const numSpan = document.createElement('span');
     numSpan.className = 'bible-verse-number';
     numSpan.textContent = verseNum;
+    // Inline styles for WebView compatibility
+    numSpan.style.cssText = 'display: inline; color: #8B5CF6; font-size: 0.75rem; font-weight: 700; margin-right: 0.25rem;';
 
     const textSpan = document.createElement('span');
     textSpan.className = 'bible-verse-text';
     textSpan.textContent = text;
+    // Inline styles for WebView compatibility
+    textSpan.style.cssText = 'display: inline; color: #FFFFFF; font-size: 1.05rem; line-height: 1.7;';
 
     vDiv.appendChild(numSpan);
     vDiv.appendChild(textSpan);

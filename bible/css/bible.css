@@ -217,7 +217,7 @@
 }
 
 [data-theme="light"] .bible-verse {
-  color: #1E1B4B;
+  color: #1E1B4B !important;
 }
 
 [data-theme="light"] .bible-verse:hover {
@@ -229,11 +229,15 @@
 }
 
 [data-theme="light"] .bible-verse-text {
-  color: #1E1B4B;
+  color: #1E1B4B !important;
 }
 
 [data-theme="light"] .bible-verse-number {
-  color: #7C3AED;
+  color: #7C3AED !important;
+}
+
+[data-theme="light"] .bible-chapter-title {
+  color: #7C3AED !important;
 }
 
 /* ===== GLOBAL RESET ===== */
@@ -684,6 +688,10 @@ html {
   min-height: calc(100vh - 180px); /* navbar ~80px + toolbar ~70px + padding */
   max-height: calc(100vh - 160px);
   padding-bottom: 100px; /* Extra padding for bottom toolbar */
+  display: block !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+  color: #FFFFFF; /* Explicit text color for WebView */
 }
 
 /* Chapter Headers */
@@ -714,25 +722,34 @@ html {
    CHAPTER BLOCKS
    ===================================================================== */
 .bible-chapter-block {
+  display: block !important;
   margin-bottom: 2rem;
+  visibility: visible !important;
+  opacity: 1 !important;
 }
 
 .bible-chapter-title {
   font-family: var(--font-serif);
   font-size: 1.5rem;
   font-weight: 700;
-  color: var(--primary);
+  color: #8B5CF6 !important; /* Explicit color for WebView */
   margin-bottom: 1rem;
   padding-bottom: 0.5rem;
   border-bottom: 1px solid var(--glass-border);
+  display: block !important;
+  visibility: visible !important;
+  opacity: 1 !important;
 }
 
 .bible-heading {
   font-size: 1rem;
   font-weight: 600;
-  color: var(--text-secondary);
+  color: #A1A1C7 !important; /* Explicit color for WebView */
   margin: 1.5rem 0 0.75rem;
   font-style: italic;
+  display: block !important;
+  visibility: visible !important;
+  opacity: 1 !important;
 }
 
 /* =====================================================================
@@ -746,14 +763,16 @@ html {
 }
 
 .bible-verse {
-  display: block;
+  display: block !important;
   cursor: pointer;
   padding: 0.35rem 0.5rem;
   margin: 0.25rem 0;
   border-radius: 6px;
   transition: var(--transition-fast);
   position: relative;
-  color: #FFFFFF; /* Explicit fallback for WebView */
+  color: #FFFFFF !important; /* Explicit fallback for WebView */
+  visibility: visible !important;
+  opacity: 1 !important;
 }
 
 .bible-verse:hover {
@@ -770,19 +789,21 @@ html {
   font-family: var(--font-family), -apple-system, sans-serif;
   font-size: 0.75rem;
   font-weight: 700;
-  color: #8B5CF6; /* Explicit fallback */
-  color: var(--primary, #8B5CF6);
+  color: #8B5CF6 !important; /* Explicit fallback */
   margin-right: 0.25rem;
-  display: inline;
+  display: inline !important;
+  visibility: visible !important;
+  opacity: 1 !important;
 }
 
 .bible-verse-text {
   font-family: var(--font-serif), Georgia, serif;
   font-size: 1.05rem;
   line-height: 1.7;
-  color: #FFFFFF; /* Explicit fallback for WebView */
-  color: var(--text-primary, #FFFFFF);
-  display: inline;
+  color: #FFFFFF !important; /* Explicit fallback for WebView */
+  display: inline !important;
+  visibility: visible !important;
+  opacity: 1 !important;
 }
 
 .bible-verse-num {
