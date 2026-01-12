@@ -228,6 +228,16 @@
       </div>
     `;
     document.body.appendChild(overlay);
+
+    // Safety timeout - remove overlay after 30 seconds no matter what
+    setTimeout(() => {
+      const existingOverlay = $('bibleLoadingOverlay');
+      if (existingOverlay) {
+        console.warn('Loading timeout - forcing overlay removal');
+        existingOverlay.remove();
+      }
+    }, 30000);
+
     return overlay;
   }
 
@@ -458,15 +468,37 @@
 
   // ===== PROGRESSIVE RENDERING =====
   function renderInitialChapters() {
-    const startBook = 'Genesis';
+    console.log('renderInitialChapters called, books:', state.books);
+
+    if (!els.leftContent) {
+      console.error('leftContent element not found!');
+      return;
+    }
+
+    if (!state.books || !state.books.length) {
+      console.error('No books available to render');
+      els.leftContent.innerHTML = '<div style="padding:2rem;text-align:center;color:#f00;">No Bible books found</div>';
+      return;
+    }
+
+    const startBook = state.books[0] || 'Genesis';
+    console.log('Starting with book:', startBook);
 
     state.currentBookIndex = 0;
     state.currentChapter = 1;
 
     const leftChapter = createChapterElement(startBook, 1);
 
+    if (!leftChapter || !leftChapter.children.length) {
+      console.error('Failed to create chapter element');
+      els.leftContent.innerHTML = '<div style="padding:2rem;text-align:center;color:#f00;">Failed to render chapter</div>';
+      return;
+    }
+
     els.leftContent.innerHTML = '';
     els.leftContent.appendChild(leftChapter);
+
+    console.log('Chapter rendered, verses:', leftChapter.querySelectorAll('.bible-verse').length);
 
     state.renderedChapters.add(`${startBook}-1`);
 
@@ -1649,16 +1681,55 @@
 
       els.quickNavModal?.classList.add('bible-modal-hidden');
 
-      const data = await loadJSON(state.path, (p) => {
-        updateLoadingProgress(10 + (p * 0.7), 'Loading Bible...');
-      });
+      let data = null;
+      let loadError = null;
+
+      // Try primary path first (API endpoint)
+      try {
+        console.log('Loading Bible from:', state.path);
+        data = await loadJSON(state.path, (p) => {
+          updateLoadingProgress(10 + (p * 0.5), 'Loading Bible...');
+        });
+      } catch (apiError) {
+        console.warn('API load failed, trying direct JSON:', apiError);
+        loadError = apiError;
+      }
+
+      // Fallback to direct JSON file if API fails
+      if (!data || !data.books) {
+        const fallbackPath = '/bible/bibles/en_kjv.json';
+        console.log('Trying fallback path:', fallbackPath);
+        updateLoadingProgress(60, 'Loading Bible (fallback)...');
+        try {
+          data = await loadJSON(fallbackPath, (p) => {
+            updateLoadingProgress(60 + (p * 0.2), 'Loading Bible...');
+          });
+        } catch (fallbackError) {
+          console.error('Fallback also failed:', fallbackError);
+          throw loadError || fallbackError;
+        }
+      }
+
+      if (!data) {
+        throw new Error('Bible data is empty');
+      }
 
       state.data = data;
       state.books = extractBooks(state.data);
 
+      console.log('Bible loaded, books:', state.books.length);
+
+      if (!state.books.length) {
+        throw new Error('No books found in Bible data');
+      }
+
       updateLoadingProgress(85, 'Loading user data...');
 
-      await loadUserData();
+      try {
+        await loadUserData();
+      } catch (userDataError) {
+        console.warn('User data load failed (non-fatal):', userDataError);
+      }
 
       updateLoadingProgress(95, 'Building Bible...');
 
@@ -1679,10 +1750,13 @@
 
       if (els.leftContent) {
         els.leftContent.innerHTML = `
-          <div class="bible-error-container">
-            <h2>Could not load Bible</h2>
-            <p>${e.message}</p>
-            <p>Please refresh the page to try again.</p>
+          <div class="bible-error-container" style="text-align:center;padding:2rem;color:#ef4444;">
+            <h2 style="margin-bottom:1rem;">Could not load Bible</h2>
+            <p style="margin-bottom:0.5rem;">${esc(e.message)}</p>
+            <p style="color:#888;font-size:0.9rem;">Please check your connection and try refreshing.</p>
+            <button onclick="location.reload()" style="margin-top:1rem;padding:0.75rem 1.5rem;background:#8B5CF6;color:white;border:none;border-radius:8px;cursor:pointer;">
+              Refresh Page
+            </button>
           </div>
         `;
       }
