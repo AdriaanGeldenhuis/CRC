@@ -14,7 +14,7 @@
   // ===== INDEXEDDB SETUP =====
   let db = null;
   const DB_NAME = 'CRCBibleDB';
-  const DB_VERSION = 1;
+  const DB_VERSION = 2;
   const STORE_NAME = 'bibleData';
 
   async function initDB() {
@@ -209,7 +209,7 @@
 
   // ===== DATA LOADING =====
   async function loadJSON(url, onProgress) {
-    const cacheKey = `bible_v1_${url}`;
+    const cacheKey = `bible_v2_${url}`;
 
     const cached = await getFromDB(cacheKey);
     if (cached) {
