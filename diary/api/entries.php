@@ -70,7 +70,7 @@ switch ($action) {
         // Handle tags
         if ($entryId) {
             // Remove existing tag associations
-            Database::delete('diary_entry_tags', 'entry_id = ?', [$entryId]);
+            Database::delete('diary_tag_links', 'entry_id = ?', [$entryId]);
 
             // Add new tags
             if (!empty($tags)) {
@@ -95,7 +95,7 @@ switch ($action) {
                     }
 
                     // Associate tag with entry
-                    Database::insert('diary_entry_tags', [
+                    Database::insert('diary_tag_links', [
                         'entry_id' => $entryId,
                         'tag_id' => $tagId
                     ]);
@@ -149,7 +149,7 @@ switch ($action) {
         // Get tags
         $tags = Database::fetchAll(
             "SELECT t.* FROM diary_tags t
-             JOIN diary_entry_tags det ON t.id = det.tag_id
+             JOIN diary_tag_links det ON t.id = det.tag_id
              WHERE det.entry_id = ?",
             [$entryId]
         );
