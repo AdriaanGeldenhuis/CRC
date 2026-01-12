@@ -26,7 +26,7 @@ if ($entryId) {
     // Get tags for this entry
     $entryTags = Database::fetchAll(
         "SELECT t.* FROM diary_tags t
-         JOIN diary_entry_tags det ON t.id = det.tag_id
+         JOIN diary_tag_links det ON t.id = det.tag_id
          WHERE det.entry_id = ?",
         [$entryId]
     );
