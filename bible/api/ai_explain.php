@@ -1,100 +1,213 @@
 <?php
 /**
- * CRC Bible AI Explain API
+ * CRC Bible AI Commentary API
  * POST /bible/api/ai_explain.php
+ *
+ * Uses OpenAI to explain Bible verses following strict rules:
+ * - Only describe WHAT HAPPENS (events, actions, dialogue)
+ * - NO interpretation, meaning, or application
+ * - Like a news reporter - just the facts
  */
 
 require_once __DIR__ . '/../../core/bootstrap.php';
+require_once __DIR__ . '/../config.php';
 
 Auth::requireAuth();
 Response::requirePost();
 CSRF::require();
 
-Security::requireRateLimit('ai_explain', 10, 60); // 10 requests per minute
-
+// Rate limiting
 $user = Auth::user();
-$reference = input('reference');
-$text = input('text');
-$version = input('version', 'KJV');
+$userId = $user['id'];
+$today = date('Y-m-d');
 
-if (!$reference || !$text) {
-    Response::error('Reference and text are required');
+// Check daily rate limit using bible_ai_usage table
+$usage = Database::fetchOne(
+    "SELECT request_count FROM bible_ai_usage
+     WHERE user_id = ? AND date = ?",
+    [$userId, $today]
+);
+
+$currentCount = $usage ? (int)$usage['request_count'] : 0;
+
+if ($currentCount >= AI_RATE_LIMIT_DAY) {
+    Response::error('Daily limit exceeded. Please try again tomorrow.');
 }
 
+// Get request data
+$bookNumber = (int)input('book_number');
+$chapter = (int)input('chapter');
+$verse = (int)input('verse');
+$verseText = input('verse_text', '');
+$contextBefore = input('context_before', '');
+$contextAfter = input('context_after', '');
+$bookName = input('book_name', '');
+
+if (!$bookNumber || !$chapter || !$verse) {
+    Response::error('Book, chapter, and verse are required');
+}
+
+// Build reference string
+$reference = $bookName ? "$bookName $chapter:$verse" : "Book $bookNumber, Chapter $chapter, Verse $verse";
+
 // Check cache first
-$cacheKey = md5($reference . '|' . $text . '|' . $version);
+$cacheKey = md5("$bookNumber:$chapter:$verse:en:explain");
 $cached = Database::fetchOne(
-    "SELECT explanation FROM bible_ai_cache
-     WHERE cache_key = ? AND created_at > DATE_SUB(NOW(), INTERVAL 30 DAY)",
+    "SELECT response FROM bible_ai_cache
+     WHERE cache_key = ? AND created_at > DATE_SUB(NOW(), INTERVAL 7 DAY)",
     [$cacheKey]
 );
 
 if ($cached) {
-    Response::success(['explanation' => $cached['explanation'], 'cached' => true]);
+    Response::success([
+        'explanation' => $cached['response'],
+        'cached' => true
+    ]);
 }
 
-// Generate explanation
-// In production, this would call an AI service like OpenAI/Claude API
-// For now, provide contextual explanations for common verses
-$explanation = generateExplanation($reference, $text);
+// Build the prompt
+$prompt = "You are a Bible context assistant. Your task is to describe ONLY WHAT HAPPENS in the passage - like a news reporter describing events. NO interpretation, meaning, or application.
+
+VERSE TO EXPLAIN:
+$reference
+\"$verseText\"
+
+";
+
+if ($contextBefore) {
+    $prompt .= "CONTEXT BEFORE (previous verses):
+$contextBefore
+
+";
+}
+
+if ($contextAfter) {
+    $prompt .= "CONTEXT AFTER (following verses):
+$contextAfter
+
+";
+}
+
+$prompt .= "Follow this exact format:
+
+**PLACE:** Where is this happening? (city, region, building)
+
+**WHO:** Who is there? Who is speaking? Who is listening?
+
+**WHAT HAPPENS BEFORE:** What events happened just before this? (previous verses/chapter)
+
+**WHAT HAPPENS NOW:** What is happening in this verse? What is said? What is done?
+
+**WHAT HAPPENS AFTER:** What happens next? (following verses)
+
+REMEMBER: Only describe EVENTS. No meanings, lessons, interpretations, or applications.";
+
+// Call OpenAI API
+$explanation = callOpenAI($prompt);
+
+if (!$explanation) {
+    Response::error('Failed to generate explanation. Please try again.');
+}
+
+// Update usage tracking
+if ($usage) {
+    Database::query(
+        "UPDATE bible_ai_usage SET request_count = request_count + 1 WHERE user_id = ? AND date = ?",
+        [$userId, $today]
+    );
+} else {
+    Database::insert('bible_ai_usage', [
+        'user_id' => $userId,
+        'date' => $today,
+        'request_count' => 1,
+        'tokens_used' => 0
+    ]);
+}
 
 // Cache the result
-Database::insert('bible_ai_cache', [
-    'cache_key' => $cacheKey,
-    'reference' => $reference,
-    'version_code' => $version,
+try {
+    Database::insert('bible_ai_cache', [
+        'cache_key' => $cacheKey,
+        'reference' => $reference,
+        'version_code' => 'KJV',
+        'mode' => 'explain_verse',
+        'response' => $explanation,
+        'created_at' => date('Y-m-d H:i:s')
+    ]);
+} catch (Exception $e) {
+    // Cache insert failed - log but continue
+    error_log('Failed to cache AI response: ' . $e->getMessage());
+}
+
+Response::success([
     'explanation' => $explanation,
-    'created_at' => date('Y-m-d H:i:s')
+    'cached' => false
 ]);
 
-Response::success(['explanation' => $explanation, 'cached' => false]);
+/**
+ * Call OpenAI API
+ */
+function callOpenAI($prompt) {
+    $apiKey = defined('OPENAI_API_KEY') ? OPENAI_API_KEY : '';
+    $apiUrl = defined('OPENAI_API_URL') ? OPENAI_API_URL : 'https://api.openai.com/v1/chat/completions';
+    $model = defined('OPENAI_MODEL') ? OPENAI_MODEL : 'gpt-4o-mini';
+    $maxTokens = defined('OPENAI_MAX_TOKENS') ? OPENAI_MAX_TOKENS : 600;
+    $temperature = defined('OPENAI_TEMPERATURE') ? OPENAI_TEMPERATURE : 0.2;
 
-function generateExplanation($reference, $text) {
-    // Pre-defined explanations for common verses
-    $explanations = [
-        'Genesis 1:1' => "This foundational verse establishes God as the Creator of all things. The Hebrew word 'bara' (create) is used exclusively for divine creation, emphasizing that God created from nothing (ex nihilo). This verse sets the theological foundation for understanding God's sovereignty over all creation.",
+    if (!$apiKey) {
+        error_log('OpenAI API key not configured');
+        return null;
+    }
 
-        'John 3:16' => "Often called 'the Gospel in miniature,' this verse encapsulates the core message of Christianity. It reveals: (1) God's motivation - love, (2) God's gift - His Son, (3) The recipients - the whole world, (4) The condition - belief, (5) The promise - eternal life. The Greek word 'agapao' indicates unconditional, sacrificial love.",
-
-        'Psalm 23:1' => "David, drawing from his experience as a shepherd, presents God as the ultimate Shepherd who provides, protects, and guides. The declaration 'I shall not want' expresses complete trust and contentment in God's provision. This metaphor runs throughout Scripture, culminating in Jesus declaring Himself the Good Shepherd (John 10).",
-
-        'Philippians 4:13' => "In context, Paul is speaking about contentment in all circumstances - whether in plenty or want. The strength Christ provides enables believers to endure hardships and remain faithful regardless of external circumstances. It's not a promise of unlimited human capability, but of spiritual endurance through Christ.",
-
-        'Jeremiah 29:11' => "Originally spoken to Israelite exiles in Babylon, this verse promised restoration after 70 years of captivity. While directly addressing Israel's national situation, the principle reveals God's character - He works purposefully in believers' lives, even through difficult seasons, with ultimate good in mind.",
-
-        'Romans 8:28' => "This verse assures believers that God orchestrates all circumstances (good and challenging) for the ultimate good of those who love Him. The 'good' refers primarily to spiritual transformation into Christ's likeness (v. 29), not necessarily material prosperity. It's a call to trust God's sovereignty.",
-
-        'Isaiah 41:10' => "Spoken to Israel during a time of fear and uncertainty, God offers three commands (fear not, be not dismayed) and three promises (I am with you, I will strengthen you, I will help you). The repetition emphasizes God's commitment to His people through any trial.",
-
-        'Proverbs 3:5-6' => "These verses present wisdom for decision-making: wholehearted trust in God (not partial), rejection of self-reliance, and acknowledgment of God in all areas of life. The promise is divine direction - God will make our paths straight (or 'smooth out our paths')."
+    $data = [
+        'model' => $model,
+        'messages' => [
+            [
+                'role' => 'system',
+                'content' => 'You are a Bible context assistant. You ONLY describe what HAPPENS in Bible passages - events, actions, dialogue. You NEVER provide meanings, interpretations, lessons, or applications. You respond in English only.'
+            ],
+            [
+                'role' => 'user',
+                'content' => $prompt
+            ]
+        ],
+        'max_tokens' => $maxTokens,
+        'temperature' => $temperature
     ];
 
-    // Check if we have a specific explanation
-    foreach ($explanations as $ref => $exp) {
-        if (stripos($reference, $ref) !== false) {
-            return $exp;
-        }
+    $ch = curl_init($apiUrl);
+    curl_setopt_array($ch, [
+        CURLOPT_RETURNTRANSFER => true,
+        CURLOPT_POST => true,
+        CURLOPT_HTTPHEADER => [
+            'Content-Type: application/json',
+            'Authorization: Bearer ' . $apiKey
+        ],
+        CURLOPT_POSTFIELDS => json_encode($data),
+        CURLOPT_TIMEOUT => 30
+    ]);
+
+    $response = curl_exec($ch);
+    $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    $error = curl_error($ch);
+    curl_close($ch);
+
+    if ($error) {
+        error_log('OpenAI API curl error: ' . $error);
+        return null;
     }
 
-    // Generate a generic explanation based on the text content
-    $textLower = strtolower($text);
-
-    if (strpos($textLower, 'love') !== false) {
-        return "This verse speaks about love - a central theme in Scripture. In the biblical context, love is not merely an emotion but an action and commitment. God's love (agape) is unconditional and sacrificial, serving as the model for how believers should love others. This love finds its fullest expression in Jesus Christ's sacrifice on the cross.";
+    if ($httpCode !== 200) {
+        error_log('OpenAI API HTTP error: ' . $httpCode . ' - ' . $response);
+        return null;
     }
 
-    if (strpos($textLower, 'faith') !== false || strpos($textLower, 'believe') !== false) {
-        return "Faith is a recurring theme in Scripture, defined in Hebrews 11:1 as 'the substance of things hoped for, the evidence of things not seen.' Biblical faith is not blind belief, but trust based on God's revealed character and promises. It involves both intellectual assent and personal commitment to God.";
+    $result = json_decode($response, true);
+
+    if (!isset($result['choices'][0]['message']['content'])) {
+        error_log('OpenAI API unexpected response: ' . $response);
+        return null;
     }
 
-    if (strpos($textLower, 'pray') !== false) {
-        return "Prayer in Scripture is communication with God - both speaking to Him and listening for His guidance. Jesus modeled prayer throughout His ministry and taught His disciples how to pray. Prayer should include praise, confession, thanksgiving, and supplication (requests for ourselves and others).";
-    }
-
-    if (strpos($textLower, 'lord') !== false || strpos($textLower, 'god') !== false) {
-        return "This verse references the Lord God, the sovereign Creator and Sustainer of all things. In the Old Testament, 'LORD' (all capitals) represents God's covenant name YHWH, revealing His self-existent, eternal nature. God is described throughout Scripture as holy, just, merciful, and loving.";
-    }
-
-    // Default explanation
-    return "This passage from $reference invites us to reflect on God's truth as revealed in Scripture. Every verse of the Bible contributes to the overarching narrative of God's redemptive plan for humanity. Consider how this text relates to its immediate context, the broader biblical narrative, and how it applies to your life today. Praying for understanding and discussing Scripture with fellow believers can deepen your comprehension.";
+    return trim($result['choices'][0]['message']['content']);
 }
