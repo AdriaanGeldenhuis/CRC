@@ -487,8 +487,9 @@ function updateWordCount() {
 
 // ===== AI ENHANCE =====
 async function aiEnhanceEntry() {
-    const body = document.getElementById('entryBody')?.value;
-    if (!body) { Toast.warning('Write something first...'); return; }
+    const bodyEl = document.getElementById('entryBody') || document.getElementById('content');
+    const body = bodyEl?.value;
+    if (!body || body.trim().length < 3) { Toast.warning('Write something first...'); return; }
 
     const btn = document.getElementById('aiAssistBtn');
     btn.disabled = true;
@@ -496,7 +497,7 @@ async function aiEnhanceEntry() {
 
     try {
         const data = await API.post('ai_enhance.php', { text: body });
-        document.getElementById('entryBody').value = data.enhanced_text;
+        bodyEl.value = data.enhanced_text;
         updateWordCount();
         Toast.success('Text enhanced!');
     } catch (error) {
