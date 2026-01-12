@@ -46,9 +46,12 @@ $messageType = '';
 
 if ($tableExists && $_SERVER['REQUEST_METHOD'] === 'POST') {
     try {
-        CSRF::verify($_POST['csrf_token'] ?? '');
-
-        $action = $_POST['action'] ?? '';
+        // Validate CSRF token
+        if (!CSRF::validate($_POST['csrf_token'] ?? '')) {
+            $message = 'Invalid security token. Please refresh and try again.';
+            $messageType = 'error';
+        } else {
+            $action = $_POST['action'] ?? '';
 
         if ($action === 'upload') {
             // Handle image upload
@@ -134,6 +137,7 @@ if ($tableExists && $_SERVER['REQUEST_METHOD'] === 'POST') {
                 $messageType = 'success';
             }
         }
+        } // end else (CSRF valid)
     } catch (Exception $e) {
         $message = 'An error occurred: ' . $e->getMessage();
         $messageType = 'error';
