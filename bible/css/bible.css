@@ -367,98 +367,99 @@ html {
 }
 
 /* =====================================================================
-   FULLSCREEN NAVIGATION MODAL
+   FULLSCREEN NAVIGATION MODAL - WebView Compatible
    ===================================================================== */
 .bible-modal {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  z-index: 500;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: var(--transition-base);
+  position: fixed !important;
+  top: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  bottom: 0 !important;
+  z-index: 500 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  transition: opacity 0.3s ease, visibility 0.3s ease !important;
 }
 
 .bible-modal-hidden {
-  opacity: 0;
-  visibility: hidden;
-  pointer-events: none;
+  opacity: 0 !important;
+  visibility: hidden !important;
+  pointer-events: none !important;
 }
 
 .bible-modal-overlay {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.85);
-  backdrop-filter: var(--blur-md);
-  -webkit-backdrop-filter: var(--blur-md);
+  position: absolute !important;
+  top: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  bottom: 0 !important;
+  background: rgba(0, 0, 0, 0.95) !important; /* Solid dark background - no blur for WebView */
+  /* backdrop-filter removed for WebView compatibility */
 }
 
 .bible-modal-content {
-  position: relative;
-  width: 100%;
-  max-width: 800px;
-  max-height: 90vh;
-  background: var(--bg-tertiary);
-  border: 1px solid var(--glass-border);
-  border-radius: var(--radius-xl);
-  overflow: hidden;
-  box-shadow: var(--shadow-lg), var(--shadow-glow-primary);
-  display: flex;
-  flex-direction: column;
-  margin: 1rem;
+  position: relative !important;
+  width: 95% !important;
+  max-width: 800px !important;
+  max-height: 85vh !important;
+  background: #111111 !important; /* Explicit dark background */
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  border-radius: 24px !important;
+  overflow: hidden !important;
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.6) !important;
+  display: flex !important;
+  flex-direction: column !important;
+  margin: 1rem !important;
+  z-index: 501 !important;
 }
 
 .bible-modal-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 1.25rem 1.5rem;
-  border-bottom: 1px solid var(--glass-border);
-  background: var(--glass-bg);
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  padding: 1.25rem 1.5rem !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
+  background: rgba(255, 255, 255, 0.02) !important;
 }
 
 .bible-modal-title {
-  font-size: 1.25rem;
-  font-weight: 700;
-  color: var(--text-primary);
+  font-size: 1.25rem !important;
+  font-weight: 700 !important;
+  color: #FFFFFF !important;
 }
 
 .bible-modal-close {
-  width: 40px;
-  height: 40px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: var(--glass-bg);
-  border: 1px solid var(--glass-border);
-  border-radius: var(--radius-sm);
-  font-size: 1.5rem;
-  color: var(--text-muted);
-  cursor: pointer;
-  transition: var(--transition-fast);
+  width: 40px !important;
+  height: 40px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  background: rgba(255, 255, 255, 0.05) !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  border-radius: 12px !important;
+  font-size: 1.5rem !important;
+  color: #A1A1C7 !important;
+  cursor: pointer !important;
 }
 
 .bible-modal-close:hover {
-  background: rgba(239, 68, 68, 0.2);
-  border-color: var(--danger);
-  color: var(--danger);
+  background: rgba(239, 68, 68, 0.2) !important;
+  border-color: #EF4444 !important;
+  color: #EF4444 !important;
 }
 
 .bible-modal-body {
-  flex: 1;
-  overflow-y: auto;
-  padding: 1.5rem;
+  flex: 1 !important;
+  overflow-y: auto !important;
+  padding: 1.5rem !important;
+  background: #111111 !important;
+  color: #FFFFFF !important;
 }
 
-/* Navigation Steps */
+/* Navigation Steps - WebView Compatible */
 .bible-nav-step {
-  animation: fadeIn 0.3s var(--ease-out-expo);
+  animation: fadeIn 0.3s ease-out !important;
 }
 
 .bible-nav-hidden {
@@ -466,92 +467,92 @@ html {
 }
 
 .bible-nav-step-title {
-  font-size: 1rem;
-  font-weight: 600;
-  color: var(--text-secondary);
-  margin-bottom: 1rem;
-  text-align: center;
+  font-size: 1rem !important;
+  font-weight: 600 !important;
+  color: #A1A1C7 !important;
+  margin-bottom: 1rem !important;
+  text-align: center !important;
 }
 
 .bible-nav-back {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.5rem 1rem;
-  margin-bottom: 1rem;
-  background: var(--glass-bg);
-  border: 1px solid var(--glass-border);
-  border-radius: var(--radius-sm);
-  color: var(--text-secondary);
-  font-size: 0.9rem;
-  font-weight: 500;
-  cursor: pointer;
-  transition: var(--transition-fast);
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 0.5rem !important;
+  padding: 0.5rem 1rem !important;
+  margin-bottom: 1rem !important;
+  background: rgba(255, 255, 255, 0.05) !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  border-radius: 12px !important;
+  color: #A1A1C7 !important;
+  font-size: 0.9rem !important;
+  font-weight: 500 !important;
+  cursor: pointer !important;
 }
 
 .bible-nav-back:hover {
-  background: var(--glass-bg-hover);
-  color: var(--primary);
-  border-color: var(--primary);
+  background: rgba(255, 255, 255, 0.1) !important;
+  color: #8B5CF6 !important;
+  border-color: #8B5CF6 !important;
 }
 
-/* Navigation Grid */
+/* Navigation Grid - WebView Compatible */
 .bible-nav-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
-  gap: 0.75rem;
+  display: grid !important;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)) !important;
+  gap: 0.75rem !important;
 }
 
 .bible-nav-grid-small {
-  grid-template-columns: repeat(auto-fill, minmax(60px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(60px, 1fr)) !important;
 }
 
 .bible-nav-card {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 1.25rem 0.75rem;
-  background: var(--glass-bg);
-  border: 1px solid var(--glass-border);
-  border-radius: var(--radius-md);
-  cursor: pointer;
-  transition: var(--transition-bounce);
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  justify-content: center !important;
+  padding: 1.25rem 0.75rem !important;
+  background: rgba(255, 255, 255, 0.05) !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  border-radius: 16px !important;
+  cursor: pointer !important;
+  transition: all 0.3s ease !important;
+  color: #FFFFFF !important;
 }
 
-.bible-nav-card:hover {
-  background: var(--glass-bg-hover);
-  border-color: var(--primary);
-  transform: translateY(-3px);
-  box-shadow: var(--shadow-md), 0 0 20px var(--primary-glow);
+.bible-nav-card:hover,
+.bible-nav-card:active {
+  background: rgba(255, 255, 255, 0.1) !important;
+  border-color: #8B5CF6 !important;
+  transform: translateY(-3px) !important;
 }
 
 .bible-nav-card-icon {
-  font-size: 2rem;
-  margin-bottom: 0.5rem;
+  font-size: 2rem !important;
+  margin-bottom: 0.5rem !important;
 }
 
 .bible-nav-card-title {
-  font-size: 0.9rem;
-  font-weight: 600;
-  color: var(--text-primary);
-  text-align: center;
+  font-size: 0.9rem !important;
+  font-weight: 600 !important;
+  color: #FFFFFF !important;
+  text-align: center !important;
 }
 
 .bible-nav-card-subtitle {
-  font-size: 0.75rem;
-  color: var(--text-muted);
-  margin-top: 0.25rem;
+  font-size: 0.75rem !important;
+  color: #6B6B8D !important;
+  margin-top: 0.25rem !important;
 }
 
 /* Chapter numbers (small grid) */
 .bible-nav-grid-small .bible-nav-card {
-  padding: 1rem;
-  min-height: 50px;
+  padding: 1rem !important;
+  min-height: 50px !important;
 }
 
 .bible-nav-grid-small .bible-nav-card-title {
-  font-size: 1.1rem;
+  font-size: 1.1rem !important;
 }
 
 @keyframes fadeIn {
@@ -560,87 +561,90 @@ html {
 }
 
 /* =====================================================================
-   SLIDE-IN PANELS (Search, Notes, Bookmarks, AI, CrossRef, Reading Plan)
+   SLIDE-IN PANELS - WebView Compatible
    ===================================================================== */
 .bible-panel {
-  position: fixed;
-  top: var(--navbar-height);
-  right: 0;
-  bottom: var(--toolbar-height);
-  width: 400px;
-  max-width: 100%;
-  background: rgba(10, 10, 10, 0.95);
-  backdrop-filter: var(--blur-lg) saturate(180%);
-  -webkit-backdrop-filter: var(--blur-lg) saturate(180%);
-  border-left: 1px solid var(--glass-border);
-  transform: translateX(100%);
-  transition: var(--transition-base);
-  z-index: 200;
-  display: flex;
-  flex-direction: column;
-  box-shadow: -4px 0 30px rgba(0, 0, 0, 0.5);
+  position: fixed !important;
+  top: 80px !important; /* Fixed navbar height */
+  right: 0 !important;
+  bottom: 70px !important; /* Fixed toolbar height */
+  width: 400px !important;
+  max-width: 100% !important;
+  background: #0A0A0A !important; /* Solid dark background - no blur for WebView */
+  border-left: 1px solid rgba(255, 255, 255, 0.1) !important;
+  transform: translateX(100%) !important;
+  transition: transform 0.3s ease !important;
+  z-index: 200 !important;
+  display: flex !important;
+  flex-direction: column !important;
+  box-shadow: -4px 0 30px rgba(0, 0, 0, 0.5) !important;
 }
 
 .bible-panel:not(.bible-panel-hidden) {
-  transform: translateX(0);
+  transform: translateX(0) !important;
 }
 
 .bible-panel-hidden {
-  pointer-events: none;
+  pointer-events: none !important;
+  transform: translateX(100%) !important;
 }
 
 .bible-panel-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 1rem 1.25rem;
-  border-bottom: 1px solid var(--glass-border);
-  background: var(--glass-bg);
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  padding: 1rem 1.25rem !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
+  background: rgba(255, 255, 255, 0.02) !important;
 }
 
 .bible-panel-title {
-  font-size: 1rem;
-  font-weight: 700;
-  color: var(--text-primary);
+  font-size: 1rem !important;
+  font-weight: 700 !important;
+  color: #FFFFFF !important;
 }
 
 .bible-panel-close {
-  width: 36px;
-  height: 36px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: var(--glass-bg);
-  border: 1px solid var(--glass-border);
-  border-radius: var(--radius-sm);
-  font-size: 1.25rem;
-  color: var(--text-muted);
-  cursor: pointer;
-  transition: var(--transition-fast);
+  width: 36px !important;
+  height: 36px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  background: rgba(255, 255, 255, 0.05) !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  border-radius: 12px !important;
+  font-size: 1.25rem !important;
+  color: #A1A1C7 !important;
+  cursor: pointer !important;
 }
 
 .bible-panel-close:hover {
-  background: rgba(239, 68, 68, 0.2);
-  border-color: var(--danger);
-  color: var(--danger);
+  background: rgba(239, 68, 68, 0.2) !important;
+  border-color: #EF4444 !important;
+  color: #EF4444 !important;
 }
 
 .bible-panel-body {
-  flex: 1;
-  overflow-y: auto;
-  padding: 1.25rem;
+  flex: 1 !important;
+  overflow-y: auto !important;
+  padding: 1.25rem !important;
+  color: #FFFFFF !important;
+  background: #0A0A0A !important;
 }
 
 /* =====================================================================
-   READING SECTION - DUAL COLUMNS
+   READING SECTION - FULLSCREEN LAYOUT FOR WEBVIEW
    ===================================================================== */
 .bible-reading-section {
-  padding: 1rem;
-  padding-top: calc(var(--navbar-height, 80px) + 1rem); /* Fallback value */
-  padding-bottom: calc(var(--toolbar-height, 70px) + 1rem); /* Space for toolbar */
+  /* Fullscreen between header and footer - no extra padding */
+  padding: 0 !important;
+  padding-top: 80px !important; /* Fixed navbar height */
+  padding-bottom: 70px !important; /* Fixed toolbar height */
+  margin: 0 !important;
   min-height: 100vh;
   position: relative;
-  z-index: 1; /* Ensure content is above background */
+  z-index: 1;
+  background: transparent !important;
 }
 
 .bible-dual-container {
@@ -652,14 +656,18 @@ html {
 }
 
 .bible-single-container {
-  display: flex;
-  justify-content: center;
-  max-width: 900px;
-  margin: 0 auto;
+  /* Fullscreen - no max-width, no centering margins */
+  display: block !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  height: calc(100vh - 150px) !important; /* viewport minus header and footer */
 }
 
 .bible-single-container .bible-column {
-  width: 100%;
+  width: 100% !important;
+  height: 100% !important;
 }
 
 @media (max-width: 900px) {
@@ -672,26 +680,31 @@ html {
 }
 
 .bible-column {
-  background: var(--glass-bg);
-  border: 1px solid var(--glass-border);
-  border-radius: var(--radius-lg);
-  overflow: visible; /* Changed from hidden to prevent content clipping */
-  min-height: 200px; /* Ensure minimum visibility */
-  /* Removed max-height to prevent WebView calculation issues */
+  /* Remove glass effect - plain background for WebView */
+  background: transparent !important;
+  border: none !important;
+  border-radius: 0 !important;
+  overflow: visible !important;
+  min-height: 200px;
+  width: 100% !important;
+  height: 100% !important;
 }
 
 .bible-column-content {
-  overflow-y: auto;
-  padding: 1.5rem;
+  overflow-y: auto !important;
+  -webkit-overflow-scrolling: touch; /* Smooth scrolling on iOS/Android */
+  padding: 1rem 1rem 100px 1rem !important; /* Side padding, extra bottom for toolbar */
   scroll-behavior: smooth;
-  /* Use fixed height calculation as fallback */
-  min-height: calc(100vh - 180px); /* navbar ~80px + toolbar ~70px + padding */
-  max-height: calc(100vh - 160px);
-  padding-bottom: 100px; /* Extra padding for bottom toolbar */
+  /* Fixed heights for WebView */
+  height: calc(100vh - 150px) !important;
+  min-height: calc(100vh - 150px) !important;
+  max-height: none !important;
+  /* Force visibility in Android WebView */
   display: block !important;
   visibility: visible !important;
   opacity: 1 !important;
-  color: #FFFFFF; /* Explicit text color for WebView */
+  color: #FFFFFF !important; /* Explicit text color */
+  background: transparent !important;
 }
 
 /* Chapter Headers */
@@ -719,88 +732,97 @@ html {
 }
 
 /* =====================================================================
-   CHAPTER BLOCKS
+   CHAPTER BLOCKS - WebView Compatible
    ===================================================================== */
 .bible-chapter-block {
   display: block !important;
-  margin-bottom: 2rem;
+  margin-bottom: 2rem !important;
   visibility: visible !important;
   opacity: 1 !important;
+  color: #FFFFFF !important;
+  background: transparent !important;
 }
 
 .bible-chapter-title {
-  font-family: var(--font-serif);
-  font-size: 1.5rem;
-  font-weight: 700;
-  color: #8B5CF6 !important; /* Explicit color for WebView */
-  margin-bottom: 1rem;
-  padding-bottom: 0.5rem;
-  border-bottom: 1px solid var(--glass-border);
+  font-family: 'Merriweather', Georgia, serif !important;
+  font-size: 1.5rem !important;
+  font-weight: 700 !important;
+  color: #8B5CF6 !important; /* Explicit purple color for WebView */
+  margin-bottom: 1rem !important;
+  padding-bottom: 0.5rem !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
   display: block !important;
   visibility: visible !important;
   opacity: 1 !important;
+  /* Remove gradient text which doesn't work in WebView */
+  background: none !important;
+  -webkit-background-clip: unset !important;
+  -webkit-text-fill-color: #8B5CF6 !important;
+  background-clip: unset !important;
 }
 
 .bible-heading {
-  font-size: 1rem;
-  font-weight: 600;
+  font-size: 1rem !important;
+  font-weight: 600 !important;
   color: #A1A1C7 !important; /* Explicit color for WebView */
-  margin: 1.5rem 0 0.75rem;
-  font-style: italic;
+  margin: 1.5rem 0 0.75rem !important;
+  font-style: italic !important;
   display: block !important;
   visibility: visible !important;
   opacity: 1 !important;
 }
 
 /* =====================================================================
-   VERSES
+   VERSES - WebView Compatible
    ===================================================================== */
 .bible-verses {
-  font-family: var(--font-serif);
-  font-size: 1.1rem;
-  line-height: 2;
-  color: var(--text-primary);
+  font-family: 'Merriweather', Georgia, serif !important;
+  font-size: 1.1rem !important;
+  line-height: 2 !important;
+  color: #FFFFFF !important;
 }
 
 .bible-verse {
   display: block !important;
-  cursor: pointer;
-  padding: 0.35rem 0.5rem;
-  margin: 0.25rem 0;
-  border-radius: 6px;
-  transition: var(--transition-fast);
-  position: relative;
-  color: #FFFFFF !important; /* Explicit fallback for WebView */
+  cursor: pointer !important;
+  padding: 0.35rem 0.5rem !important;
+  margin: 0.25rem 0 !important;
+  border-radius: 6px !important;
+  transition: background-color 0.2s ease !important;
+  position: relative !important;
+  color: #FFFFFF !important; /* Explicit white text for WebView */
   visibility: visible !important;
   opacity: 1 !important;
+  background: transparent !important;
 }
 
 .bible-verse:hover {
-  background-color: rgba(139, 92, 246, 0.15);
+  background-color: rgba(139, 92, 246, 0.15) !important;
 }
 
 .bible-verse.selected {
-  background-color: rgba(139, 92, 246, 0.25);
-  outline: 2px solid var(--primary);
-  outline-offset: 1px;
+  background-color: rgba(139, 92, 246, 0.25) !important;
+  outline: 2px solid #8B5CF6 !important;
+  outline-offset: 1px !important;
 }
 
 .bible-verse-number {
-  font-family: var(--font-family), -apple-system, sans-serif;
-  font-size: 0.75rem;
-  font-weight: 700;
-  color: #8B5CF6 !important; /* Explicit fallback */
-  margin-right: 0.25rem;
+  font-family: 'Inter', -apple-system, sans-serif !important;
+  font-size: 0.75rem !important;
+  font-weight: 700 !important;
+  color: #8B5CF6 !important; /* Explicit purple for WebView */
+  margin-right: 0.25rem !important;
   display: inline !important;
   visibility: visible !important;
   opacity: 1 !important;
+  vertical-align: super !important;
 }
 
 .bible-verse-text {
-  font-family: var(--font-serif), Georgia, serif;
-  font-size: 1.05rem;
-  line-height: 1.7;
-  color: #FFFFFF !important; /* Explicit fallback for WebView */
+  font-family: 'Merriweather', Georgia, serif !important;
+  font-size: 1.05rem !important;
+  line-height: 1.7 !important;
+  color: #FFFFFF !important; /* Explicit white for WebView */
   display: inline !important;
   visibility: visible !important;
   opacity: 1 !important;
