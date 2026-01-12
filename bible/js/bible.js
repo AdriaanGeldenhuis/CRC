@@ -749,18 +749,11 @@
     if (!menu) return;
 
     menu.classList.remove('bible-context-hidden');
-    menu.style.left = `${x}px`;
-    menu.style.top = `${y}px`;
 
-    setTimeout(() => {
-      const rect = menu.getBoundingClientRect();
-      if (rect.right > window.innerWidth) {
-        menu.style.left = `${window.innerWidth - rect.width - 20}px`;
-      }
-      if (rect.bottom > window.innerHeight) {
-        menu.style.top = `${window.innerHeight - rect.height - 20}px`;
-      }
-    }, 0);
+    // Center the menu on screen (ignore x, y coordinates)
+    menu.style.left = '50%';
+    menu.style.top = '50%';
+    menu.style.transform = 'translate(-50%, -50%)';
   }
 
   function hideContextMenu() {
@@ -1498,16 +1491,11 @@
   }
 
   function applyFontSize() {
-    const sizeMap = {
-      small: '0.9rem',
-      medium: '1.05rem',
-      large: '1.2rem',
-      xlarge: '1.35rem'
-    };
-
-    document.querySelectorAll('.bible-verse-text').forEach(el => {
-      el.style.fontSize = sizeMap[state.fontSize];
-    });
+    // Remove all font size classes first
+    const container = els.leftContent || document.body;
+    container.classList.remove('bible-font-small', 'bible-font-medium', 'bible-font-large', 'bible-font-xlarge');
+    // Add the current font size class
+    container.classList.add(`bible-font-${state.fontSize}`);
   }
 
   function refreshVerseDisplay() {
