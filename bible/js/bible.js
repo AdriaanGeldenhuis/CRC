@@ -324,61 +324,45 @@
     const verses = document.querySelectorAll('.bible-verse[data-verse]');
     if (!verses.length) return;
 
-    // Find first and last visible verses within the scroll container
-    let firstVisible = null;
-    let lastVisible = null;
+    // Find the TOP verse (first one visible at top of container)
+    let topVerse = null;
+    let lastVisibleChapter = null;
+    let lastVisibleBookIdx = -1;
 
-    verses.forEach(v => {
+    for (const v of verses) {
       const rect = v.getBoundingClientRect();
-      // Check if verse is visible within the scroll container bounds
-      const isVisible = rect.top >= containerRect.top - 10 &&
-                       rect.bottom <= containerRect.bottom + 10 &&
-                       rect.top < containerRect.bottom;
-      if (isVisible) {
-        if (!firstVisible) {
-          firstVisible = v;
+      // Find first verse that's at or below the top of container
+      if (rect.top >= containerRect.top - 20 && rect.top < containerRect.bottom) {
+        if (!topVerse) {
+          topVerse = v;
         }
-        lastVisible = v;
+        // Track the last visible chapter for infinite scroll
+        lastVisibleChapter = parseInt(v.dataset.chapter, 10);
+        lastVisibleBookIdx = state.books.indexOf(v.dataset.book);
       }
-    });
+    }
 
-    if (firstVisible && lastVisible) {
-      const firstBook = firstVisible.dataset.book;
-      const firstChapter = parseInt(firstVisible.dataset.chapter, 10);
-      const firstVerse = firstVisible.dataset.verse;
-      const lastBook = lastVisible.dataset.book;
-      const lastChapter = parseInt(lastVisible.dataset.chapter, 10);
-      const lastVerse = lastVisible.dataset.verse;
-
-      // Update current position tracking for infinite scroll
-      const lastBookIdx = state.books.indexOf(lastBook);
-      if (lastBookIdx !== -1 && (lastBookIdx > state.currentBookIndex ||
-          (lastBookIdx === state.currentBookIndex && lastChapter > state.currentChapter))) {
-        state.currentBookIndex = lastBookIdx;
-        state.currentChapter = lastChapter;
+    // Update current position for infinite scroll (track furthest point scrolled)
+    if (lastVisibleBookIdx !== -1 && lastVisibleChapter) {
+      if (lastVisibleBookIdx > state.currentBookIndex ||
+          (lastVisibleBookIdx === state.currentBookIndex && lastVisibleChapter > state.currentChapter)) {
+        state.currentBookIndex = lastVisibleBookIdx;
+        state.currentChapter = lastVisibleChapter;
       }
+    }
 
-      let headerText;
-      if (firstBook === lastBook && firstChapter === lastChapter) {
-        // Same book and chapter: "Genesis 1:1-15"
-        if (firstVerse === lastVerse) {
-          headerText = `${firstBook} ${firstChapter}:${firstVerse}`;
-        } else {
-          headerText = `${firstBook} ${firstChapter}:${firstVerse}-${lastVerse}`;
-        }
-      } else if (firstBook === lastBook) {
-        // Same book, different chapters: "Genesis 1:25 - 2:5"
-        headerText = `${firstBook} ${firstChapter}:${firstVerse} - ${lastChapter}:${lastVerse}`;
-      } else {
-        // Different books: "Genesis 50:26 - Exodus 1:5"
-        headerText = `${firstBook} ${firstChapter}:${firstVerse} - ${lastBook} ${lastChapter}:${lastVerse}`;
-      }
-      headerTitle.textContent = headerText;
+    if (topVerse) {
+      const book = topVerse.dataset.book;
+      const chapter = topVerse.dataset.chapter;
+      const verse = topVerse.dataset.verse;
 
-      // Update URL to reflect current position (debounced by scroll handler)
+      // Header shows only the TOP verse: "John 8:48"
+      headerTitle.textContent = `${book} ${chapter}:${verse}`;
+
+      // Update URL
       const newUrl = new URL(window.location);
-      newUrl.searchParams.set('book', firstBook);
-      newUrl.searchParams.set('chapter', firstChapter);
+      newUrl.searchParams.set('book', book);
+      newUrl.searchParams.set('chapter', chapter);
       window.history.replaceState({}, '', newUrl);
     }
   }
@@ -497,37 +481,52 @@
     state.isLoading = true;
 
     let loaded = 0;
+    let skipped = 0;
+    const maxSkips = 20; // Safety limit
+
+    // Find the last rendered chapter to continue from there
     let bookIdx = state.currentBookIndex;
-    let chapter = state.currentChapter + 1;
+    let chapter = state.currentChapter;
 
     const loadChapter = () => {
+      // Stop if we've loaded enough or hit end of Bible
       if (loaded >= count || bookIdx >= state.books.length) {
         state.isLoading = false;
         return;
       }
 
-      const book = state.books[bookIdx];
-      const chapterCount = getChapterCount(state.data, book);
-
-      if (chapter > chapterCount) {
-        bookIdx++;
-        chapter = 1;
-        requestIdleCallback(loadChapter);
+      // Safety: don't loop forever if something's wrong
+      if (skipped > maxSkips) {
+        state.isLoading = false;
         return;
       }
 
+      // Move to next chapter
+      const nextInfo = getNextChapterInfo(bookIdx, chapter);
+      if (!nextInfo) {
+        state.isLoading = false;
+        return;
+      }
+
+      bookIdx = nextInfo.bookIndex;
+      chapter = nextInfo.chapter;
+
+      const book = state.books[bookIdx];
       const key = `${book}-${chapter}`;
+
       if (!state.renderedChapters.has(key)) {
         const chapterEl = createChapterElement(book, chapter);
         els.leftContent.appendChild(chapterEl);
         state.renderedChapters.add(key);
         bindVerseInteractions();
+        loaded++;
+      } else {
+        skipped++;
       }
 
-      loaded++;
-      chapter++;
-      state.currentChapter = chapter - 1;
+      // Update tracking to furthest point
       state.currentBookIndex = bookIdx;
+      state.currentChapter = chapter;
 
       requestIdleCallback(loadChapter);
     };
@@ -664,27 +663,34 @@
   // ===== INFINITE SCROLL =====
   function setupInfiniteScroll() {
     let scrollTimeout = null;
+    let headerTimeout = null;
+
     const handleScroll = () => {
+      // Update header immediately (with small debounce)
+      clearTimeout(headerTimeout);
+      headerTimeout = setTimeout(updateHeaderRef, 50);
+
+      // Load chapters with slightly longer debounce
       clearTimeout(scrollTimeout);
       scrollTimeout = setTimeout(() => {
         const column = els.leftColumn;
         const scrollHeight = column.scrollHeight;
         const scrollTop = column.scrollTop;
         const clientHeight = column.clientHeight;
+        const distanceFromBottom = scrollHeight - scrollTop - clientHeight;
 
-        // Load more chapters when scrolling near bottom
-        if (scrollHeight - scrollTop - clientHeight < 1000) {
+        // Load more chapters when within 2000px of bottom (more aggressive)
+        if (distanceFromBottom < 2000) {
           loadNextChapters(5);
         }
 
         // Load previous chapters when scrolling near top
-        if (scrollTop < 500) {
+        if (scrollTop < 800) {
           loadPreviousChapters(2);
         }
-
-        updateHeaderRef();
-      }, 100);
+      }, 50);
     };
+
     els.leftColumn.addEventListener('scroll', handleScroll, { passive: true });
   }
 
