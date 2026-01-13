@@ -1075,6 +1075,34 @@ body::after {
   padding: 1.5rem;
 }
 
+/* Desktop news adjustments */
+@media (min-width: 1025px) {
+  .news-list {
+    max-height: 500px;
+    overflow-y: auto;
+    padding: 0 0.5rem 0.5rem;
+  }
+
+  .news-item-image img {
+    max-height: 200px;
+    object-fit: cover;
+    width: 100%;
+  }
+
+  .news-item-content {
+    margin-top: -45px;
+    padding: 0.4rem 0.6rem;
+  }
+
+  .news-item-title {
+    font-size: 0.9rem;
+  }
+
+  .news-item-desc {
+    font-size: 0.75rem;
+  }
+}
+
 /* ===== MORNING WATCH CARD (Legacy) ===== */
 .morning-watch-card {
   background: linear-gradient(135deg, rgba(124, 58, 237, 0.1) 0%, var(--glass-bg) 100%);
