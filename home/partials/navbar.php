@@ -56,7 +56,7 @@ $isActive = function($path) use ($currentPath) {
   /* Backgrounds */
   --nav-bg-base: #030014;
   --nav-glass-bg: rgba(255, 255, 255, 0.03);
-  --nav-glass-bg-strong: rgba(255, 255, 255, 0.12);
+  --nav-glass-bg-strong: rgba(20, 10, 40, 0.95);
   --nav-glass-bg-hover: rgba(255, 255, 255, 0.08);
   --nav-glass-border: rgba(255, 255, 255, 0.1);
   --nav-glass-border-hover: rgba(255, 255, 255, 0.2);

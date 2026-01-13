@@ -93,53 +93,53 @@ $counts = [
     <style>
         .page-actions { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 1rem; }
         .filter-tabs { display: flex; gap: 0.5rem; }
-        .filter-tab { padding: 0.5rem 1rem; background: var(--gray-100); border: none; border-radius: var(--radius); cursor: pointer; font-size: 0.875rem; color: var(--gray-600); transition: var(--transition); text-decoration: none; }
-        .filter-tab:hover { background: var(--gray-200); }
-        .filter-tab.active { background: var(--primary); color: white; }
+        .filter-tab { padding: 0.5rem 1rem; background: var(--glass-bg); border: 1px solid var(--glass-border); border-radius: var(--radius); cursor: pointer; font-size: 0.875rem; color: var(--text-secondary); transition: var(--transition); text-decoration: none; }
+        .filter-tab:hover { background: var(--glass-bg-hover); border-color: var(--glass-border-hover); }
+        .filter-tab.active { background: var(--primary); color: white; border-color: var(--primary); }
         .filter-tab .count { margin-left: 0.5rem; opacity: 0.7; }
 
         .events-grid { display: grid; gap: 1rem; }
-        .event-card { background: white; border-radius: var(--radius-lg); box-shadow: var(--shadow); overflow: hidden; display: flex; }
-        .event-date-box { background: var(--primary); color: white; padding: 1rem; display: flex; flex-direction: column; align-items: center; justify-content: center; min-width: 80px; }
+        .event-card { background: var(--glass-bg); backdrop-filter: blur(20px); border: 1px solid var(--glass-border); border-radius: var(--radius-lg); box-shadow: var(--shadow); overflow: hidden; display: flex; }
+        .event-date-box { background: var(--gradient-primary); color: white; padding: 1rem; display: flex; flex-direction: column; align-items: center; justify-content: center; min-width: 80px; }
         .event-date-box .day { font-size: 1.75rem; font-weight: 700; line-height: 1; }
         .event-date-box .month { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; }
         .event-date-box .year { font-size: 0.7rem; opacity: 0.8; }
         .event-content { flex: 1; padding: 1rem 1.5rem; display: flex; flex-direction: column; }
         .event-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.5rem; }
-        .event-title { font-weight: 600; color: var(--gray-800); font-size: 1rem; }
+        .event-title { font-weight: 600; color: var(--text-primary); font-size: 1rem; }
         .event-status { font-size: 0.7rem; padding: 0.2rem 0.5rem; border-radius: 100px; }
-        .event-status.published { background: #D1FAE5; color: #065F46; }
-        .event-status.draft { background: #FEF3C7; color: #92400E; }
-        .event-status.cancelled { background: #FEE2E2; color: #991B1B; }
-        .event-meta { display: flex; gap: 1rem; font-size: 0.8rem; color: var(--gray-500); margin-bottom: 0.75rem; flex-wrap: wrap; }
+        .event-status.published { background: rgba(16, 185, 129, 0.2); color: var(--success); }
+        .event-status.draft { background: rgba(245, 158, 11, 0.2); color: #F59E0B; }
+        .event-status.cancelled { background: rgba(239, 68, 68, 0.2); color: var(--danger); }
+        .event-meta { display: flex; gap: 1rem; font-size: 0.8rem; color: var(--text-muted); margin-bottom: 0.75rem; flex-wrap: wrap; }
         .event-meta-item { display: flex; align-items: center; gap: 0.375rem; }
         .event-meta-item svg { width: 14px; height: 14px; }
-        .event-description { font-size: 0.875rem; color: var(--gray-600); line-height: 1.5; margin-bottom: 0.75rem; flex: 1; }
-        .event-footer { display: flex; justify-content: space-between; align-items: center; padding-top: 0.75rem; border-top: 1px solid var(--gray-100); }
-        .event-stats { font-size: 0.8rem; color: var(--gray-500); }
+        .event-description { font-size: 0.875rem; color: var(--text-secondary); line-height: 1.5; margin-bottom: 0.75rem; flex: 1; }
+        .event-footer { display: flex; justify-content: space-between; align-items: center; padding-top: 0.75rem; border-top: 1px solid var(--glass-border); }
+        .event-stats { font-size: 0.8rem; color: var(--text-muted); }
         .event-actions { display: flex; gap: 0.5rem; }
         .btn-xs { padding: 0.25rem 0.75rem; font-size: 0.75rem; }
-        .btn-outline { background: transparent; border: 1px solid var(--gray-300); color: var(--gray-600); }
+        .btn-outline { background: transparent; border: 1px solid var(--glass-border); color: var(--text-secondary); }
         .btn-primary { background: var(--primary); color: white; border: none; }
 
-        .modal { position: fixed; inset: 0; background: rgba(0,0,0,0.5); display: none; align-items: center; justify-content: center; z-index: 1000; overflow-y: auto; }
+        .modal { position: fixed; inset: 0; background: rgba(0,0,0,0.7); display: none; align-items: center; justify-content: center; z-index: 1000; overflow-y: auto; }
         .modal.show { display: flex; }
-        .modal-content { background: white; border-radius: var(--radius-lg); padding: 1.5rem; max-width: 600px; width: 90%; margin: 2rem; }
-        .modal-header { font-weight: 600; margin-bottom: 1rem; font-size: 1.1rem; }
-        .modal-body { margin-bottom: 1.5rem; max-height: 60vh; overflow-y: auto; }
+        .modal-content { background: var(--bg-surface); border: 1px solid var(--glass-border); border-radius: var(--radius-lg); padding: 1.5rem; max-width: 600px; width: 90%; margin: 2rem; }
+        .modal-header { font-weight: 600; margin-bottom: 1rem; font-size: 1.1rem; color: var(--text-primary); }
+        .modal-body { margin-bottom: 1.5rem; max-height: 60vh; overflow-y: auto; color: var(--text-secondary); }
         .modal-footer { display: flex; gap: 0.5rem; justify-content: flex-end; }
 
         .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
         .form-group { margin-bottom: 1rem; }
-        .form-group label { display: block; font-size: 0.875rem; font-weight: 500; margin-bottom: 0.5rem; color: var(--gray-700); }
-        .form-group input, .form-group select, .form-group textarea { width: 100%; padding: 0.625rem; border: 1px solid var(--gray-300); border-radius: var(--radius); font-size: 0.875rem; }
+        .form-group label { display: block; font-size: 0.875rem; font-weight: 500; margin-bottom: 0.5rem; color: var(--text-primary); }
+        .form-group input, .form-group select, .form-group textarea { width: 100%; padding: 0.625rem; border: 1px solid var(--glass-border); border-radius: var(--radius); font-size: 0.875rem; background: var(--bg-elevated); color: var(--text-primary); }
         .form-group textarea { min-height: 100px; resize: vertical; }
-        .form-group small { font-size: 0.75rem; color: var(--gray-500); margin-top: 0.25rem; display: block; }
+        .form-group small { font-size: 0.75rem; color: var(--text-muted); margin-top: 0.25rem; display: block; }
 
         .empty-state { text-align: center; padding: 3rem; }
-        .empty-state svg { width: 64px; height: 64px; color: var(--gray-300); margin-bottom: 1rem; }
-        .empty-state h3 { color: var(--gray-700); margin-bottom: 0.5rem; }
-        .empty-state p { color: var(--gray-500); margin-bottom: 1.5rem; }
+        .empty-state svg { width: 64px; height: 64px; color: var(--text-dim); margin-bottom: 1rem; }
+        .empty-state h3 { color: var(--text-primary); margin-bottom: 0.5rem; }
+        .empty-state p { color: var(--text-muted); margin-bottom: 1.5rem; }
 
         @media (max-width: 600px) {
             .event-card { flex-direction: column; }

@@ -40,20 +40,20 @@ $pageTitle = 'Settings - ' . $congregation['name'] . ' - CRC';
     </script>
     <style>
         .settings-grid { display: grid; gap: 1.5rem; }
-        .settings-section { background: white; border-radius: var(--radius-lg); box-shadow: var(--shadow); }
-        .settings-header { padding: 1.25rem 1.5rem; border-bottom: 1px solid var(--gray-100); }
-        .settings-header h2 { font-size: 1rem; font-weight: 600; color: var(--gray-800); margin: 0; }
-        .settings-header p { font-size: 0.8rem; color: var(--gray-500); margin: 0.25rem 0 0; }
+        .settings-section { background: var(--glass-bg); backdrop-filter: blur(20px); border: 1px solid var(--glass-border); border-radius: var(--radius-lg); box-shadow: var(--shadow); }
+        .settings-header { padding: 1.25rem 1.5rem; border-bottom: 1px solid var(--glass-border); }
+        .settings-header h2 { font-size: 1rem; font-weight: 600; color: var(--text-primary); margin: 0; }
+        .settings-header p { font-size: 0.8rem; color: var(--text-muted); margin: 0.25rem 0 0; }
         .settings-body { padding: 1.5rem; }
         .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
         .form-group { margin-bottom: 1.25rem; }
         .form-group:last-child { margin-bottom: 0; }
-        .form-group label { display: block; font-size: 0.875rem; font-weight: 500; margin-bottom: 0.5rem; color: var(--gray-700); }
-        .form-group input, .form-group select, .form-group textarea { width: 100%; padding: 0.625rem; border: 1px solid var(--gray-300); border-radius: var(--radius); font-size: 0.875rem; }
-        .form-group input:focus, .form-group select:focus, .form-group textarea:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px rgba(79,70,229,0.1); }
+        .form-group label { display: block; font-size: 0.875rem; font-weight: 500; margin-bottom: 0.5rem; color: var(--text-primary); }
+        .form-group input, .form-group select, .form-group textarea { width: 100%; padding: 0.625rem; border: 1px solid var(--glass-border); border-radius: var(--radius); font-size: 0.875rem; background: var(--bg-elevated); color: var(--text-primary); }
+        .form-group input:focus, .form-group select:focus, .form-group textarea:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px var(--primary-glow); }
         .form-group textarea { min-height: 80px; resize: vertical; }
-        .form-group small { font-size: 0.75rem; color: var(--gray-500); margin-top: 0.25rem; display: block; }
-        .form-actions { display: flex; gap: 0.75rem; padding-top: 1rem; border-top: 1px solid var(--gray-100); margin-top: 1rem; }
+        .form-group small { font-size: 0.75rem; color: var(--text-muted); margin-top: 0.25rem; display: block; }
+        .form-actions { display: flex; gap: 0.75rem; padding-top: 1rem; border-top: 1px solid var(--glass-border); margin-top: 1rem; }
         .btn { display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem; padding: 0.625rem 1.25rem; font-size: 0.875rem; font-weight: 500; border: none; border-radius: var(--radius); cursor: pointer; transition: var(--transition); text-decoration: none; }
         .btn-primary { background: var(--primary); color: white; }
         .btn-primary:hover { background: var(--primary-dark); }
