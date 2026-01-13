@@ -684,15 +684,21 @@
   // ===== CONTEXT MENU =====
   function showContextMenu(x, y) {
     const menu = els.verseContextMenu;
-    if (!menu) return;
+    console.log('showContextMenu called', { menu, x, y, menuExists: !!menu });
+    if (!menu) {
+      console.error('Context menu element not found! els.verseContextMenu is null');
+      return;
+    }
 
     menu.classList.remove('bible-context-hidden');
     menu.style.left = `${x}px`;
     menu.style.top = `${y}px`;
+    console.log('Menu should now be visible at', x, y);
 
     // Adjust if off-screen
     setTimeout(() => {
       const rect = menu.getBoundingClientRect();
+      console.log('Menu rect:', rect);
       if (rect.right > window.innerWidth) {
         menu.style.left = `${window.innerWidth - rect.width - 20}px`;
       }
