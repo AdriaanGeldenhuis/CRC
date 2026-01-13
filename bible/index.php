@@ -22,7 +22,7 @@ $pageTitle = 'Bible - CRC';
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Merriweather:wght@400;700&display=swap" rel="stylesheet">
 
-  <link rel="stylesheet" href="/bible/css/bible.css?v=<?= time() ?>">
+  <link rel="stylesheet" href="/bible/css/bible.css?v=<?= filemtime(__DIR__ . '/css/bible.css') ?>">
 </head>
 <body class="bible-body">
   <?php include __DIR__ . '/../home/partials/navbar.php'; ?>
@@ -314,7 +314,7 @@ $pageTitle = 'Bible - CRC';
       path: '/bible/api/bible_data.php'
     };
   </script>
-  <script src="/bible/js/bible.js?v=<?= time() ?>"></script>
+  <script src="/bible/js/bible.js?v=<?= filemtime(__DIR__ . '/js/bible.js') ?>"></script>
 
 </body>
 </html>

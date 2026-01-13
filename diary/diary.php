@@ -66,7 +66,7 @@ function getWeatherEmoji($weather) {
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Parisienne&display=swap" rel="stylesheet">
 
-    <link rel="stylesheet" href="/diary/css/diary.css?v=<?= time() ?>">
+    <link rel="stylesheet" href="/diary/css/diary.css?v=<?= filemtime(__DIR__ . '/css/diary.css') ?>">
 </head>
 <body class="diary-body">
     <?php include __DIR__ . '/../home/partials/navbar.php'; ?>
@@ -397,7 +397,7 @@ function getWeatherEmoji($weather) {
         window.USER_ID = <?= $userId ?>;
         window.CSRF_TOKEN = '<?= CSRF::generate() ?>';
     </script>
-    <script src="/diary/js/diary.js?v=<?= time() ?>"></script>
+    <script src="/diary/js/diary.js?v=<?= filemtime(__DIR__ . '/js/diary.js') ?>"></script>
 
 </body>
 </html>
