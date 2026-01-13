@@ -107,12 +107,12 @@ $totalPages = ceil($totalPosts / $perPage);
                     <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
                 </svg>
             </a>
-            <button class="header-btn" onclick="openPostModal()">
+            <a href="/gospel_media/create.php" class="header-btn">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <line x1="12" y1="5" x2="12" y2="19"></line>
                     <line x1="5" y1="12" x2="19" y2="12"></line>
                 </svg>
-            </button>
+            </a>
         </div>
     </header>
 
@@ -229,33 +229,33 @@ $totalPages = ceil($totalPosts / $perPage);
                 <?php else: ?>
                     <div class="create-avatar-placeholder"><?= strtoupper(substr($user['name'], 0, 1)) ?></div>
                 <?php endif; ?>
-                <button class="create-post-input" onclick="openPostModal()">
+                <a class="create-post-input" href="/gospel_media/create.php">
                     What's on your heart?
-                </button>
+                </a>
             </div>
             <div class="create-post-actions">
-                <button class="create-action" onclick="openPostModal('image')">
+                <a href="/gospel_media/create.php" class="create-action">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
                         <circle cx="8.5" cy="8.5" r="1.5"></circle>
                         <polyline points="21 15 16 10 5 21"></polyline>
                     </svg>
                     <span>Photo</span>
-                </button>
-                <button class="create-action" onclick="openPostModal('video')">
+                </a>
+                <a href="/gospel_media/create.php" class="create-action">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <polygon points="23 7 16 12 23 17 23 7"></polygon>
                         <rect x="1" y="5" width="15" height="14" rx="2" ry="2"></rect>
                     </svg>
                     <span>Video</span>
-                </button>
-                <button class="create-action" onclick="openPostModal('scripture')">
+                </a>
+                <a href="/gospel_media/create.php" class="create-action">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
                         <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
                     </svg>
                     <span>Scripture</span>
-                </button>
+                </a>
             </div>
         </div>
 
@@ -396,7 +396,7 @@ $totalPages = ceil($totalPosts / $perPage);
                     </div>
                     <h3>No posts yet</h3>
                     <p>Be the first to share something with the community!</p>
-                    <button class="btn-primary" onclick="openPostModal()">Create Post</button>
+                    <a href="/gospel_media/create.php" class="btn-primary">Create Post</a>
                 </div>
             <?php endif; ?>
         </div>
@@ -419,12 +419,12 @@ $totalPages = ceil($totalPosts / $perPage);
             </svg>
             <span>Feed</span>
         </a>
-        <button class="bottom-nav-item create-btn" onclick="openPostModal()">
+        <a href="/gospel_media/create.php" class="bottom-nav-item create-btn">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
                 <line x1="12" y1="5" x2="12" y2="19"></line>
                 <line x1="5" y1="12" x2="19" y2="12"></line>
             </svg>
-        </button>
+        </a>
         <a href="/calendar/" class="bottom-nav-item">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
@@ -444,69 +444,7 @@ $totalPages = ceil($totalPosts / $perPage);
         </a>
     </nav>
 
-    <!-- Create Post Modal -->
-    <div class="modal" id="postModal">
-        <div class="modal-overlay" onclick="closePostModal()"></div>
-        <div class="modal-content">
-            <div class="modal-header">
-                <button class="modal-back" onclick="closePostModal()">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <polyline points="15 18 9 12 15 6"></polyline>
-                    </svg>
-                </button>
-                <h2>Create Post</h2>
-                <button type="submit" form="createPostForm" class="modal-post-btn" id="postSubmitBtn">Post</button>
-            </div>
-            <form id="createPostForm" onsubmit="createPost(event)">
-                <div class="modal-body">
-                    <div class="post-author-row">
-                        <?php if ($user['avatar']): ?>
-                            <img src="<?= e($user['avatar']) ?>" alt="" class="modal-avatar">
-                        <?php else: ?>
-                            <div class="modal-avatar-placeholder"><?= strtoupper(substr($user['name'], 0, 1)) ?></div>
-                        <?php endif; ?>
-                        <div class="author-select">
-                            <strong><?= e($user['name']) ?></strong>
-                            <select id="postScope" name="scope">
-                                <option value="congregation"><?= e($primaryCong['name']) ?></option>
-                                <?php if (Auth::isAdmin()): ?>
-                                    <option value="global">Global (All)</option>
-                                <?php endif; ?>
-                            </select>
-                        </div>
-                    </div>
-                    <textarea id="postContent" name="content" placeholder="What's on your heart, <?= e(explode(' ', $user['name'])[0]) ?>?" rows="5" required></textarea>
-                    <div id="mediaPreview" class="media-preview"></div>
-                </div>
-                <div class="modal-toolbar">
-                    <label class="toolbar-btn">
-                        <input type="file" id="postMedia" accept="image/*" multiple style="display:none" onchange="previewMedia(this)">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
-                            <circle cx="8.5" cy="8.5" r="1.5"></circle>
-                            <polyline points="21 15 16 10 5 21"></polyline>
-                        </svg>
-                    </label>
-                    <label class="toolbar-btn">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <polygon points="23 7 16 12 23 17 23 7"></polygon>
-                            <rect x="1" y="5" width="15" height="14" rx="2" ry="2"></rect>
-                        </svg>
-                    </label>
-                    <label class="toolbar-btn">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <circle cx="12" cy="12" r="10"></circle>
-                            <path d="M8 14s1.5 2 4 2 4-2 4-2"></path>
-                            <line x1="9" y1="9" x2="9.01" y2="9"></line>
-                            <line x1="15" y1="9" x2="15.01" y2="9"></line>
-                        </svg>
-                    </label>
-                </div>
-            </form>
-        </div>
-    </div>
-
-    <!-- Image Viewer Modal -->
+    <!-- Image Viewer -->
     <div class="image-viewer" id="imageViewer" onclick="closeImageViewer()">
         <button class="viewer-close">&times;</button>
         <img src="" alt="" id="viewerImage">
