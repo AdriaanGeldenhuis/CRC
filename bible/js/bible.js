@@ -102,8 +102,11 @@
     navState: { testament: null, book: null, chapter: null },
     currentBookIndex: 0,
     currentChapter: 1,
+    earliestBookIndex: 0,
+    earliestChapter: 1,
     renderedChapters: new Set(),
-    isLoading: false
+    isLoading: false,
+    isLoadingPrev: false
   };
 
   // ===== ELEMENTS =====
@@ -317,42 +320,155 @@
     const verses = document.querySelectorAll('.bible-verse[data-verse]');
     if (!verses.length) return;
 
-    let topVerse = null;
-    let minDist = Infinity;
+    // Find first and last visible verses in viewport
+    let firstVisible = null;
+    let lastVisible = null;
 
     verses.forEach(v => {
       const rect = v.getBoundingClientRect();
-      const dist = Math.abs(rect.top - 150);
-      if (rect.top > 70 && rect.top < window.innerHeight && dist < minDist) {
-        minDist = dist;
-        topVerse = v;
+      // Check if verse is in viewport (between header and bottom)
+      if (rect.top > 60 && rect.bottom < window.innerHeight + 50) {
+        if (!firstVisible) {
+          firstVisible = v;
+        }
+        lastVisible = v;
       }
     });
 
-    if (topVerse) {
-      const book = topVerse.dataset.book;
-      const chapter = topVerse.dataset.chapter;
-      const verse = topVerse.dataset.verse;
-      headerTitle.textContent = `${book} ${chapter}:${verse}`;
+    if (firstVisible && lastVisible) {
+      const firstBook = firstVisible.dataset.book;
+      const firstChapter = firstVisible.dataset.chapter;
+      const firstVerse = firstVisible.dataset.verse;
+      const lastBook = lastVisible.dataset.book;
+      const lastChapter = lastVisible.dataset.chapter;
+      const lastVerse = lastVisible.dataset.verse;
+
+      let headerText;
+      if (firstBook === lastBook && firstChapter === lastChapter) {
+        // Same book and chapter: "Genesis 1:1-15"
+        if (firstVerse === lastVerse) {
+          headerText = `${firstBook} ${firstChapter}:${firstVerse}`;
+        } else {
+          headerText = `${firstBook} ${firstChapter}:${firstVerse}-${lastVerse}`;
+        }
+      } else if (firstBook === lastBook) {
+        // Same book, different chapters: "Genesis 1:25 - 2:5"
+        headerText = `${firstBook} ${firstChapter}:${firstVerse} - ${lastChapter}:${lastVerse}`;
+      } else {
+        // Different books: "Genesis 50:26 - Exodus 1:5"
+        headerText = `${firstBook} ${firstChapter}:${firstVerse} - ${lastBook} ${lastChapter}:${lastVerse}`;
+      }
+      headerTitle.textContent = headerText;
     }
+  }
+
+  // ===== URL PARAMETER HANDLING =====
+  function getUrlParams() {
+    const params = new URLSearchParams(window.location.search);
+    return {
+      book: params.get('book'),
+      chapter: parseInt(params.get('chapter'), 10) || 1
+    };
+  }
+
+  function getPreviousChapterInfo(bookIndex, chapter) {
+    if (chapter > 1) {
+      return { bookIndex, chapter: chapter - 1 };
+    }
+    if (bookIndex > 0) {
+      const prevBook = state.books[bookIndex - 1];
+      const prevChapterCount = getChapterCount(state.data, prevBook);
+      return { bookIndex: bookIndex - 1, chapter: prevChapterCount };
+    }
+    return null;
+  }
+
+  function getNextChapterInfo(bookIndex, chapter) {
+    const book = state.books[bookIndex];
+    const chapterCount = getChapterCount(state.data, book);
+    if (chapter < chapterCount) {
+      return { bookIndex, chapter: chapter + 1 };
+    }
+    if (bookIndex < state.books.length - 1) {
+      return { bookIndex: bookIndex + 1, chapter: 1 };
+    }
+    return null;
   }
 
   // ===== RENDERING =====
   function renderInitialChapters() {
-    const startBook = state.books[0] || 'Genesis';
-    state.currentBookIndex = 0;
-    state.currentChapter = 1;
+    const urlParams = getUrlParams();
+    let startBookIndex = 0;
+    let startChapter = 1;
 
-    const chapterEl = createChapterElement(startBook, 1);
+    // Check if URL has book parameter
+    if (urlParams.book) {
+      const bookIdx = state.books.indexOf(urlParams.book);
+      if (bookIdx !== -1) {
+        startBookIndex = bookIdx;
+        startChapter = urlParams.chapter;
+        // Validate chapter number
+        const maxChapters = getChapterCount(state.data, state.books[startBookIndex]);
+        if (startChapter > maxChapters) startChapter = maxChapters;
+        if (startChapter < 1) startChapter = 1;
+      }
+    }
+
+    state.currentBookIndex = startBookIndex;
+    state.currentChapter = startChapter;
+    state.earliestBookIndex = startBookIndex;
+    state.earliestChapter = startChapter;
+
     els.leftContent.innerHTML = '';
-    els.leftContent.appendChild(chapterEl);
-    state.renderedChapters.add(`${startBook}-1`);
+
+    // Load 2 chapters BEFORE the target chapter
+    const chaptersBefore = [];
+    let prevInfo = { bookIndex: startBookIndex, chapter: startChapter };
+    for (let i = 0; i < 2; i++) {
+      prevInfo = getPreviousChapterInfo(prevInfo.bookIndex, prevInfo.chapter);
+      if (prevInfo) {
+        chaptersBefore.unshift(prevInfo);
+      } else {
+        break;
+      }
+    }
+
+    // Render the chapters before (in order)
+    chaptersBefore.forEach(info => {
+      const book = state.books[info.bookIndex];
+      const key = `${book}-${info.chapter}`;
+      if (!state.renderedChapters.has(key)) {
+        const chapterEl = createChapterElement(book, info.chapter);
+        els.leftContent.appendChild(chapterEl);
+        state.renderedChapters.add(key);
+      }
+      state.earliestBookIndex = info.bookIndex;
+      state.earliestChapter = info.chapter;
+    });
+
+    // Render the target chapter
+    const startBook = state.books[startBookIndex];
+    const targetKey = `${startBook}-${startChapter}`;
+    if (!state.renderedChapters.has(targetKey)) {
+      const chapterEl = createChapterElement(startBook, startChapter);
+      els.leftContent.appendChild(chapterEl);
+      state.renderedChapters.add(targetKey);
+    }
 
     applyFontSize();
     bindVerseInteractions();
-    updateHeaderRef();
 
-    requestIdleCallback(() => loadNextChapters(3));
+    // Scroll to target chapter after a brief delay
+    setTimeout(() => {
+      const targetChapterEl = document.querySelector(`.bible-chapter-block[data-book="${startBook}"][data-chapter="${startChapter}"]`);
+      if (targetChapterEl) {
+        targetChapterEl.scrollIntoView({ behavior: 'auto', block: 'start' });
+      }
+      updateHeaderRef();
+    }, 50);
+
+    // Load 4 chapters AFTER the target chapter
+    requestIdleCallback(() => loadNextChapters(4));
   }
 
   function loadNextChapters(count = 5) {
@@ -391,6 +507,59 @@
       chapter++;
       state.currentChapter = chapter - 1;
       state.currentBookIndex = bookIdx;
+
+      requestIdleCallback(loadChapter);
+    };
+
+    requestIdleCallback(loadChapter);
+  }
+
+  function loadPreviousChapters(count = 2) {
+    if (state.isLoadingPrev) return;
+    state.isLoadingPrev = true;
+
+    let loaded = 0;
+    let bookIdx = state.earliestBookIndex;
+    let chapter = state.earliestChapter;
+
+    const loadChapter = () => {
+      if (loaded >= count) {
+        state.isLoadingPrev = false;
+        return;
+      }
+
+      const prevInfo = getPreviousChapterInfo(bookIdx, chapter);
+      if (!prevInfo) {
+        state.isLoadingPrev = false;
+        return;
+      }
+
+      bookIdx = prevInfo.bookIndex;
+      chapter = prevInfo.chapter;
+      const book = state.books[bookIdx];
+      const key = `${book}-${chapter}`;
+
+      if (!state.renderedChapters.has(key)) {
+        // Save current scroll position
+        const scrollContainer = els.leftColumn;
+        const scrollHeightBefore = scrollContainer.scrollHeight;
+        const scrollTopBefore = scrollContainer.scrollTop;
+
+        // Create and prepend chapter
+        const chapterEl = createChapterElement(book, chapter);
+        els.leftContent.insertBefore(chapterEl, els.leftContent.firstChild);
+        state.renderedChapters.add(key);
+        bindVerseInteractions();
+
+        // Restore scroll position to prevent jump
+        const scrollHeightAfter = scrollContainer.scrollHeight;
+        const heightDiff = scrollHeightAfter - scrollHeightBefore;
+        scrollContainer.scrollTop = scrollTopBefore + heightDiff;
+      }
+
+      state.earliestBookIndex = bookIdx;
+      state.earliestChapter = chapter;
+      loaded++;
 
       requestIdleCallback(loadChapter);
     };
@@ -482,9 +651,16 @@
         const scrollTop = column.scrollTop;
         const clientHeight = column.clientHeight;
 
+        // Load more chapters when scrolling near bottom
         if (scrollHeight - scrollTop - clientHeight < 1000) {
           loadNextChapters(5);
         }
+
+        // Load previous chapters when scrolling near top
+        if (scrollTop < 500) {
+          loadPreviousChapters(2);
+        }
+
         updateHeaderRef();
       }, 100);
     };
@@ -649,11 +825,20 @@
     state.currentChapter = parsed.chapter;
     const key = `${parsed.book}-${parsed.chapter}`;
 
+    // Update URL without reloading
+    const newUrl = new URL(window.location);
+    newUrl.searchParams.set('book', parsed.book);
+    newUrl.searchParams.set('chapter', parsed.chapter);
+    window.history.replaceState({}, '', newUrl);
+
     if (!state.renderedChapters.has(key)) {
       const chapterEl = createChapterElement(parsed.book, parsed.chapter);
       els.leftContent.appendChild(chapterEl);
       state.renderedChapters.add(key);
       bindVerseInteractions();
+
+      // Load a couple chapters after if needed
+      requestIdleCallback(() => loadNextChapters(2));
     }
 
     setTimeout(() => {
@@ -662,6 +847,7 @@
         verseEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
         verseEl.classList.add('bible-verse-flash');
         setTimeout(() => verseEl.classList.remove('bible-verse-flash'), 2000);
+        updateHeaderRef();
       }
     }, 100);
   }
@@ -837,8 +1023,74 @@
 
   function goToChapter(book, chapter) {
     hideQuickNav();
-    const ref = makeRef(book, chapter, 1);
-    goToReference(ref);
+
+    const bookIdx = state.books.indexOf(book);
+    if (bookIdx === -1) return;
+
+    // Update URL
+    const newUrl = new URL(window.location);
+    newUrl.searchParams.set('book', book);
+    newUrl.searchParams.set('chapter', chapter);
+    window.history.replaceState({}, '', newUrl);
+
+    // Reset state
+    state.currentBookIndex = bookIdx;
+    state.currentChapter = chapter;
+    state.earliestBookIndex = bookIdx;
+    state.earliestChapter = chapter;
+    state.renderedChapters.clear();
+    state.isLoading = false;
+    state.isLoadingPrev = false;
+
+    els.leftContent.innerHTML = '';
+
+    // Load 2 chapters BEFORE the target chapter
+    const chaptersBefore = [];
+    let prevInfo = { bookIndex: bookIdx, chapter: chapter };
+    for (let i = 0; i < 2; i++) {
+      prevInfo = getPreviousChapterInfo(prevInfo.bookIndex, prevInfo.chapter);
+      if (prevInfo) {
+        chaptersBefore.unshift(prevInfo);
+      } else {
+        break;
+      }
+    }
+
+    // Render the chapters before (in order)
+    chaptersBefore.forEach(info => {
+      const bookName = state.books[info.bookIndex];
+      const key = `${bookName}-${info.chapter}`;
+      if (!state.renderedChapters.has(key)) {
+        const chapterEl = createChapterElement(bookName, info.chapter);
+        els.leftContent.appendChild(chapterEl);
+        state.renderedChapters.add(key);
+      }
+      state.earliestBookIndex = info.bookIndex;
+      state.earliestChapter = info.chapter;
+    });
+
+    // Render the target chapter
+    const targetKey = `${book}-${chapter}`;
+    if (!state.renderedChapters.has(targetKey)) {
+      const chapterEl = createChapterElement(book, chapter);
+      els.leftContent.appendChild(chapterEl);
+      state.renderedChapters.add(targetKey);
+    }
+
+    applyFontSize();
+    bindVerseInteractions();
+
+    // Scroll to target chapter
+    setTimeout(() => {
+      const targetChapterEl = document.querySelector(`.bible-chapter-block[data-book="${book}"][data-chapter="${chapter}"]`);
+      if (targetChapterEl) {
+        targetChapterEl.scrollIntoView({ behavior: 'auto', block: 'start' });
+      }
+      updateHeaderRef();
+    }, 50);
+
+    // Load 4 chapters AFTER the target chapter
+    requestIdleCallback(() => loadNextChapters(4));
   }
 
   // ===== SEARCH =====
