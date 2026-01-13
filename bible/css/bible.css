@@ -1887,10 +1887,18 @@ html {
     padding: 0;
     z-index: 9999;
     box-shadow: 0 -10px 40px rgba(0, 0, 0, 0.5);
+    /* WebView fix: explicit hidden state */
+    transform: translateY(100%);
+    visibility: hidden;
+    opacity: 0;
+    transition: transform 0.3s ease, opacity 0.3s ease, visibility 0.3s;
   }
 
   .bible-context-menu:not(.bible-context-hidden) {
     display: block;
+    visibility: visible;
+    transform: translateY(0);
+    opacity: 1;
   }
 }
 

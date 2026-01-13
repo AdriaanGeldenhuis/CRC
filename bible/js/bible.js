@@ -841,23 +841,51 @@
   }
 
   // ===== VERSE INTERACTIONS =====
+  function handleVerseInteraction(verse, e) {
+    // Click on note indicator opens note editor
+    if (e.target.classList.contains('bible-note-indicator')) {
+      const ref = e.target.dataset.ref;
+      showNoteEditor(ref);
+      showPanel(els.notesPanel);
+      return;
+    }
+
+    // Click on verse shows context menu
+    document.querySelectorAll('.bible-verse').forEach(v => v.classList.remove('selected'));
+    verse.classList.add('selected');
+    state.selectedVerse = verse.dataset.ref;
+    showContextMenu();
+  }
+
   function bindVerseInteractions() {
     document.querySelectorAll('.bible-verse:not(.bound)').forEach(verse => {
       verse.classList.add('bound');
-      verse.addEventListener('click', (e) => {
-        // Click on note indicator opens note editor
-        if (e.target.classList.contains('bible-note-indicator')) {
-          const ref = e.target.dataset.ref;
-          showNoteEditor(ref);
-          showPanel(els.notesPanel);
-          return;
-        }
 
-        // Click on verse shows context menu
-        document.querySelectorAll('.bible-verse').forEach(v => v.classList.remove('selected'));
-        verse.classList.add('selected');
-        state.selectedVerse = verse.dataset.ref;
-        showContextMenu();
+      // Click for desktop
+      verse.addEventListener('click', (e) => handleVerseInteraction(verse, e));
+
+      // Touch for WebView - use touchend with tap detection
+      let touchStartTime = 0;
+      let touchStartX = 0;
+      let touchStartY = 0;
+
+      verse.addEventListener('touchstart', (e) => {
+        touchStartTime = Date.now();
+        touchStartX = e.touches[0].clientX;
+        touchStartY = e.touches[0].clientY;
+      }, { passive: true });
+
+      verse.addEventListener('touchend', (e) => {
+        const touchDuration = Date.now() - touchStartTime;
+        const touch = e.changedTouches[0];
+        const moveX = Math.abs(touch.clientX - touchStartX);
+        const moveY = Math.abs(touch.clientY - touchStartY);
+
+        // Only trigger if it was a tap (short duration, minimal movement)
+        if (touchDuration < 300 && moveX < 10 && moveY < 10) {
+          e.preventDefault();
+          handleVerseInteraction(verse, e);
+        }
       });
     });
   }
