@@ -1834,77 +1834,24 @@ html {
 }
 
 /* =====================================================================
-   CONTEXT MENU (Verse Actions) - WebView compatible with visibility fix
+   CONTEXT MENU (Verse Actions) - Simple positioned menu like working app
    ===================================================================== */
-
-/* Desktop: Centered modal box */
-@media (min-width: 769px) {
-  .bible-context-menu {
-    position: fixed;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%) scale(0.9);
-    width: 400px;
-    max-width: 90vw;
-    max-height: 80vh;
-    overflow-y: auto;
-    background-color: #1A1A2E;
-    border: 1px solid rgba(139, 92, 246, 0.3);
-    border-radius: 16px;
-    padding: 0;
-    z-index: 9999;
-    box-shadow: 0 25px 50px rgba(0, 0, 0, 0.5);
-    opacity: 0;
-    visibility: hidden;
-    transition: transform 0.2s ease, opacity 0.2s ease, visibility 0.2s ease;
-  }
-
-  /* FIX: Add visibility: visible when showing */
-  .bible-context-menu:not(.bible-context-hidden) {
-    display: block;
-    transform: translate(-50%, -50%);
-    opacity: 1;
-    visibility: visible;
-  }
+.bible-context-menu {
+  position: fixed;
+  width: 280px;
+  max-width: 90vw;
+  max-height: 80vh;
+  overflow-y: auto;
+  background-color: #1A1A2E;
+  border: 1px solid rgba(139, 92, 246, 0.3);
+  border-radius: 12px;
+  padding: 0;
+  z-index: 9999;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
 }
 
-/* Mobile: Bottom sheet */
-@media (max-width: 768px) {
-  .bible-context-menu {
-    position: fixed;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    top: auto;
-    width: 100%;
-    max-width: 100%;
-    max-height: 80vh;
-    overflow-y: auto;
-    background-color: #1A1A2E;
-    border: none;
-    border-top: 1px solid rgba(139, 92, 246, 0.3);
-    border-radius: 20px 20px 0 0;
-    padding: 0;
-    z-index: 9999;
-    box-shadow: 0 -10px 40px rgba(0, 0, 0, 0.5);
-    /* WebView fix: explicit hidden state */
-    transform: translateY(100%);
-    visibility: hidden;
-    opacity: 0;
-    transition: transform 0.3s ease, opacity 0.3s ease, visibility 0.3s;
-  }
-
-  .bible-context-menu:not(.bible-context-hidden) {
-    display: block;
-    visibility: visible;
-    transform: translateY(0);
-    opacity: 1;
-  }
-}
-
-/* CRITICAL: WebView-compatible hiding - use display:none */
 .bible-context-hidden {
-  display: none !important;
+  display: none;
 }
 
 .bible-context-header {
