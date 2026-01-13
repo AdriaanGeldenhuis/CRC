@@ -85,6 +85,20 @@
     background: linear-gradient(to top, var(--bg-base), transparent);
 }
 
+/* ==================== Base Styles ==================== */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background: var(--bg-base);
+    color: var(--text-primary);
+    min-height: 100vh;
+}
+
 /* ==================== Base Layout ==================== */
 .profile-container {
     max-width: 1000px;
