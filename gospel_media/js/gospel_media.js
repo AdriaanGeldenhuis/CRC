@@ -383,8 +383,69 @@ function updateCommentCount(postId, added) {
 }
 
 // =====================================================
-// POST MANAGEMENT (Delete/Edit)
+// POST MANAGEMENT (Delete/Edit/Pin)
 // =====================================================
+
+async function togglePin(postId, currentlyPinned) {
+    try {
+        const response = await fetch('/gospel_media/api/posts.php?action=pin', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-Token': getCSRFToken()
+            },
+            body: JSON.stringify({ post_id: postId })
+        });
+
+        const data = await response.json();
+
+        if (data.ok) {
+            const postCard = document.querySelector(`[data-post-id="${postId}"]`);
+            if (postCard) {
+                // Update pin badge
+                const headerRight = postCard.querySelector('.post-header-right');
+                let pinnedBadge = postCard.querySelector('.pinned-badge');
+
+                if (data.pinned) {
+                    // Add pin badge if not exists
+                    if (!pinnedBadge && headerRight) {
+                        pinnedBadge = document.createElement('span');
+                        pinnedBadge.className = 'pinned-badge';
+                        pinnedBadge.innerHTML = '<svg viewBox="0 0 24 24" fill="currentColor" width="14" height="14"><path d="M16 12V4h1V2H7v2h1v8l-2 2v2h5v6l1 1 1-1v-6h5v-2l-2-2z"/></svg>';
+                        headerRight.insertBefore(pinnedBadge, headerRight.firstChild);
+                    }
+                } else {
+                    // Remove pin badge
+                    pinnedBadge?.remove();
+                }
+
+                // Update menu button text
+                const pinBtn = postCard.querySelector('.post-option:first-child');
+                if (pinBtn && pinBtn.textContent.includes('pin')) {
+                    const svg = pinBtn.querySelector('svg');
+                    if (svg) {
+                        svg.setAttribute('fill', data.pinned ? 'currentColor' : 'none');
+                    }
+                    pinBtn.innerHTML = pinBtn.innerHTML.replace(
+                        data.pinned ? 'Pin' : 'Unpin',
+                        data.pinned ? 'Unpin' : 'Pin'
+                    );
+                }
+            }
+
+            showToast(data.pinned ? 'Post pinned' : 'Post unpinned');
+
+            // Close menu
+            document.querySelectorAll('.post-options-menu.show').forEach(menu => {
+                menu.classList.remove('show');
+            });
+        } else {
+            showToast(data.error || 'Failed to update', 'error');
+        }
+    } catch (error) {
+        showToast('Network error', 'error');
+    }
+}
 
 async function deletePost(postId) {
     if (!confirm('Are you sure you want to delete this post?')) return;

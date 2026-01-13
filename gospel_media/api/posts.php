@@ -183,6 +183,48 @@ switch ($action) {
         Response::success([], 'Post deleted');
         break;
 
+    case 'pin':
+        // POST - Pin/Unpin post (admin only)
+        Response::requirePost();
+        CSRF::require();
+
+        if (!Auth::isAdmin()) {
+            $primaryCong = Auth::primaryCongregation();
+            if (!$primaryCong || !Auth::isCongregationAdmin($primaryCong['id'])) {
+                Response::forbidden('Only admins can pin posts');
+            }
+        }
+
+        $postId = (int) input('post_id');
+
+        $post = Database::fetchOne(
+            "SELECT * FROM posts WHERE id = ? AND status = 'active'",
+            [$postId]
+        );
+
+        if (!$post) {
+            Response::notFound('Post not found');
+        }
+
+        $isPinned = !$post['is_pinned'];
+
+        Database::update(
+            'posts',
+            [
+                'is_pinned' => $isPinned ? 1 : 0,
+                'pinned_by' => $isPinned ? Auth::id() : null,
+                'pinned_at' => $isPinned ? date('Y-m-d H:i:s') : null,
+                'updated_at' => date('Y-m-d H:i:s')
+            ],
+            'id = ?',
+            [$postId]
+        );
+
+        Logger::audit(Auth::id(), $isPinned ? 'pinned_post' : 'unpinned_post', ['post_id' => $postId]);
+
+        Response::success(['pinned' => $isPinned], $isPinned ? 'Post pinned' : 'Post unpinned');
+        break;
+
     default:
         Response::error('Invalid action');
 }

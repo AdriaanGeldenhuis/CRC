@@ -346,6 +346,12 @@ $totalPages = ceil($totalPosts / $perPage);
                                             </svg>
                                         </button>
                                         <div class="post-options-menu" id="postMenu-<?= $post['id'] ?>">
+                                            <?php if (Auth::isAdmin()): ?>
+                                            <button class="post-option" onclick="togglePin(<?= $post['id'] ?>, <?= $post['is_pinned'] ? 'true' : 'false' ?>)">
+                                                <svg viewBox="0 0 24 24" fill="<?= $post['is_pinned'] ? 'currentColor' : 'none' ?>" stroke="currentColor" stroke-width="2"><path d="M16 12V4h1V2H7v2h1v8l-2 2v2h5v6l1 1 1-1v-6h5v-2l-2-2z"/></svg>
+                                                <?= $post['is_pinned'] ? 'Unpin' : 'Pin' ?>
+                                            </button>
+                                            <?php endif; ?>
                                             <button class="post-option" onclick="editPost(<?= $post['id'] ?>)">
                                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
                                                 Edit
