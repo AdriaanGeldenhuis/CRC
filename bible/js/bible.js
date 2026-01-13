@@ -631,6 +631,9 @@
     vDiv.dataset.chapter = chapter;
     vDiv.dataset.verse = verseNum;
 
+    // Use inline onclick for WebView compatibility
+    vDiv.setAttribute('onclick', `BibleApp.verseClick('${ref}')`);
+
     if (state.highlights[ref]) {
       vDiv.classList.add(`bible-highlight-${state.highlights[ref]}`);
     }
@@ -1416,23 +1419,34 @@
   function showPanel(panel) {
     if (!panel) return;
     hideAllPanels();
+    panel.style.display = 'flex';
     panel.classList.remove('bible-panel-hidden');
   }
 
   function hidePanel(panel) {
     if (!panel) return;
+    panel.style.display = 'none';
     panel.classList.add('bible-panel-hidden');
   }
 
   function hideAllPanels() {
     [els.searchPanel, els.notesPanel, els.bookmarksPanel, els.aiPanel, els.crossRefPanel, els.readingPlanPanel]
-      .forEach(panel => panel?.classList.add('bible-panel-hidden'));
+      .forEach(panel => {
+        if (panel) {
+          panel.style.display = 'none';
+          panel.classList.add('bible-panel-hidden');
+        }
+      });
   }
 
   function togglePanel(panel) {
     if (!panel) return;
-    if (panel.classList.contains('bible-panel-hidden')) showPanel(panel);
-    else hidePanel(panel);
+    const isHidden = panel.style.display === 'none' || panel.classList.contains('bible-panel-hidden');
+    if (isHidden) {
+      showPanel(panel);
+    } else {
+      hidePanel(panel);
+    }
   }
 
   // ===== EVENT BINDINGS =====
@@ -1533,6 +1547,106 @@
       }
     }
   }
+
+  // ===== GLOBAL API FOR INLINE ONCLICK HANDLERS =====
+  window.BibleApp = {
+    // Navigation
+    showNav: function() {
+      const modal = document.getElementById('quickNavModal');
+      if (modal) {
+        modal.style.display = 'flex';
+        modal.classList.remove('bible-modal-hidden');
+      }
+      state.navState = { testament: null, book: null, chapter: null };
+      showNavStep('testament');
+    },
+    hideNav: function() {
+      const modal = document.getElementById('quickNavModal');
+      if (modal) {
+        modal.style.display = 'none';
+        modal.classList.add('bible-modal-hidden');
+      }
+    },
+    selectTestament: function(t) {
+      state.navState.testament = t;
+      renderBookChoice();
+      showNavStep('book');
+    },
+    showStep: function(step) {
+      showNavStep(step);
+    },
+
+    // Context Menu
+    showMenu: function() {
+      const menu = document.getElementById('verseContextMenu');
+      if (menu) {
+        menu.style.display = 'block';
+        menu.classList.remove('bible-context-hidden');
+      }
+    },
+    hideMenu: function() {
+      const menu = document.getElementById('verseContextMenu');
+      if (menu) {
+        menu.style.display = 'none';
+        menu.classList.add('bible-context-hidden');
+      }
+    },
+
+    // Panels
+    toggleSearch: function() {
+      togglePanel(els.searchPanel);
+    },
+    toggleNotes: function() {
+      togglePanel(els.notesPanel);
+      renderNotesList();
+    },
+    toggleBookmarks: function() {
+      togglePanel(els.bookmarksPanel);
+      renderBookmarksList();
+    },
+    showReadingPlan: showReadingPlan,
+    closePanel: function(name) {
+      const panels = {
+        search: els.searchPanel,
+        notes: els.notesPanel,
+        bookmarks: els.bookmarksPanel,
+        ai: els.aiPanel,
+        crossRef: els.crossRefPanel,
+        readingPlan: els.readingPlanPanel
+      };
+      const panel = panels[name];
+      if (panel) {
+        panel.style.display = 'none';
+        panel.classList.add('bible-panel-hidden');
+      }
+    },
+
+    // Verse actions
+    highlight: applyHighlight,
+    bookmark: toggleBookmark,
+    addNote: addNoteToVerse,
+    askAI: showAIPrompt,
+    crossRef: loadCrossReferences,
+    copy: copyVerse,
+    share: shareVerse,
+    saveNote: saveNote,
+    cancelNote: cancelNote,
+
+    // Font size
+    fontIncrease: function() { changeFontSize('increase'); },
+    fontDecrease: function() { changeFontSize('decrease'); },
+
+    // Verse click handler
+    verseClick: function(ref) {
+      document.querySelectorAll('.bible-verse').forEach(v => v.classList.remove('selected'));
+      const verse = document.querySelector(`[data-ref="${ref}"]`);
+      if (verse) {
+        verse.classList.add('selected');
+        state.selectedVerse = ref;
+        window.BibleApp.showMenu();
+      }
+    }
+  };
 
   init();
 })();
