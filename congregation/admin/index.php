@@ -12,7 +12,7 @@ $primaryCong = Auth::primaryCongregation();
 
 // Check if user is congregation admin
 $membership = Database::fetchOne(
-    "SELECT * FROM congregation_members WHERE user_id = ? AND congregation_id = ? AND status = 'active'",
+    "SELECT * FROM user_congregations WHERE user_id = ? AND congregation_id = ? AND status = 'active'",
     [$user['id'], $primaryCong['id']]
 );
 
@@ -25,11 +25,11 @@ $pageTitle = "Congregation Admin - " . e($primaryCong['name']);
 // Get statistics
 $stats = [
     'members' => Database::fetchColumn(
-        "SELECT COUNT(*) FROM congregation_members WHERE congregation_id = ? AND status = 'active'",
+        "SELECT COUNT(*) FROM user_congregations WHERE congregation_id = ? AND status = 'active'",
         [$primaryCong['id']]
     ),
     'pending_members' => Database::fetchColumn(
-        "SELECT COUNT(*) FROM congregation_members WHERE congregation_id = ? AND status = 'pending'",
+        "SELECT COUNT(*) FROM user_congregations WHERE congregation_id = ? AND status = 'pending'",
         [$primaryCong['id']]
     ),
     'events' => Database::fetchColumn(
@@ -48,11 +48,11 @@ $stats = [
 
 // Recent members
 $recentMembers = Database::fetchAll(
-    "SELECT u.name, u.email, cm.created_at, cm.role
-     FROM congregation_members cm
-     JOIN users u ON cm.user_id = u.id
-     WHERE cm.congregation_id = ? AND cm.status = 'active'
-     ORDER BY cm.created_at DESC LIMIT 5",
+    "SELECT u.name, u.email, uc.created_at, uc.role
+     FROM user_congregations uc
+     JOIN users u ON uc.user_id = u.id
+     WHERE uc.congregation_id = ? AND uc.status = 'active'
+     ORDER BY uc.created_at DESC LIMIT 5",
     [$primaryCong['id']]
 );
 

@@ -12,7 +12,7 @@ $primaryCong = Auth::primaryCongregation();
 
 // Check if user is congregation admin
 $membership = Database::fetchOne(
-    "SELECT * FROM congregation_members WHERE user_id = ? AND congregation_id = ? AND status = 'active'",
+    "SELECT * FROM user_congregations WHERE user_id = ? AND congregation_id = ? AND status = 'active'",
     [$user['id'], $primaryCong['id']]
 );
 
@@ -53,15 +53,15 @@ if ($status) {
 
 // Get total count
 $totalCount = Database::fetchColumn(
-    "SELECT COUNT(*) FROM congregation_members cm JOIN users u ON cm.user_id = u.id $whereClause",
+    "SELECT COUNT(*) FROM user_congregations cm JOIN users u ON cm.user_id = u.id $whereClause",
     $params
 );
 
 // Get members
 $members = Database::fetchAll(
-    "SELECT cm.*, u.name, u.email, u.avatar_url, u.phone,
+    "SELECT cm.*, u.name, u.email, u.avatar, u.phone,
             (SELECT name FROM homecells WHERE id = (SELECT homecell_id FROM homecell_members WHERE user_id = cm.user_id AND status = 'active' LIMIT 1)) as homecell_name
-     FROM congregation_members cm
+     FROM user_congregations cm
      JOIN users u ON cm.user_id = u.id
      $whereClause
      ORDER BY cm.created_at DESC
@@ -188,8 +188,8 @@ $roles = ['member', 'leader', 'deacon', 'elder', 'pastor', 'admin'];
                                         <tr>
                                             <td>
                                                 <div class="user-cell">
-                                                    <?php if ($m['avatar_url']): ?>
-                                                        <img src="<?= e($m['avatar_url']) ?>" alt="" class="user-avatar">
+                                                    <?php if ($m['avatar']): ?>
+                                                        <img src="<?= e($m['avatar']) ?>" alt="" class="user-avatar">
                                                     <?php else: ?>
                                                         <div class="user-avatar-placeholder">
                                                             <?= strtoupper(substr($m['name'], 0, 1)) ?>

@@ -52,7 +52,7 @@ $totalCount = Database::fetchColumn(
 // Get users
 $users = Database::fetchAll(
     "SELECT u.*,
-            (SELECT COUNT(*) FROM congregation_members WHERE user_id = u.id) as congregation_count
+            (SELECT COUNT(*) FROM user_congregations WHERE user_id = u.id) as congregation_count
      FROM users u
      $whereClause
      ORDER BY u.created_at DESC
@@ -79,51 +79,18 @@ $roles = [
     <link rel="stylesheet" href="/admin/css/admin.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script>
+        (function() {
+            const saved = localStorage.getItem('theme') || 'dark';
+            document.documentElement.setAttribute('data-theme', saved);
+        })();
+    </script>
 </head>
 <body>
+    <?php include __DIR__ . '/../home/partials/navbar.php'; ?>
+
     <div class="admin-layout">
-        <!-- Sidebar -->
-        <aside class="admin-sidebar">
-            <div class="sidebar-header">
-                <a href="/admin/" class="admin-logo">CRC Admin</a>
-            </div>
-            <nav class="sidebar-nav">
-                <a href="/admin/" class="nav-item">
-                    <span class="nav-icon">📊</span>
-                    Dashboard
-                </a>
-                <a href="/admin/users.php" class="nav-item active">
-                    <span class="nav-icon">👥</span>
-                    Users
-                </a>
-                <a href="/admin/congregations.php" class="nav-item">
-                    <span class="nav-icon">⛪</span>
-                    Congregations
-                </a>
-                <a href="/admin/sermons.php" class="nav-item">
-                    <span class="nav-icon">🎤</span>
-                    Sermons
-                </a>
-                <a href="/admin/courses.php" class="nav-item">
-                    <span class="nav-icon">📚</span>
-                    Courses
-                </a>
-                <a href="/admin/content.php" class="nav-item">
-                    <span class="nav-icon">📝</span>
-                    Content
-                </a>
-                <a href="/admin/settings.php" class="nav-item">
-                    <span class="nav-icon">⚙️</span>
-                    Settings
-                </a>
-            </nav>
-            <div class="sidebar-footer">
-                <a href="/home/" class="nav-item">
-                    <span class="nav-icon">🏠</span>
-                    Back to App
-                </a>
-            </div>
-        </aside>
+        <?php include __DIR__ . '/partials/sidebar.php'; ?>
 
         <!-- Main Content -->
         <main class="admin-main">
@@ -185,8 +152,8 @@ $roles = [
                                         <tr>
                                             <td>
                                                 <div class="user-cell">
-                                                    <?php if ($u['avatar_url']): ?>
-                                                        <img src="<?= e($u['avatar_url']) ?>" alt="" class="user-avatar">
+                                                    <?php if (!empty($u['avatar'])): ?>
+                                                        <img src="<?= e($u['avatar']) ?>" alt="" class="user-avatar">
                                                     <?php else: ?>
                                                         <div class="user-avatar-placeholder">
                                                             <?= strtoupper(substr($u['name'], 0, 1)) ?>

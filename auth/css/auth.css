@@ -15,10 +15,10 @@
   --primary-glow: rgba(139, 92, 246, 0.6);
   --primary-intense: rgba(139, 92, 246, 0.9);
 
-  /* Accent - Electric Cyan */
-  --accent: #22D3EE;
-  --accent-light: #67E8F9;
-  --accent-glow: rgba(34, 211, 238, 0.6);
+  /* Accent - Purple */
+  --accent: #A855F7;
+  --accent-light: #C084FC;
+  --accent-glow: rgba(168, 85, 247, 0.6);
 
   /* Secondary - Hot Pink */
   --secondary: #F472B6;
@@ -70,12 +70,12 @@
   --gradient-primary: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 50%, var(--accent) 100%);
   --gradient-accent: linear-gradient(135deg, var(--accent) 0%, var(--primary) 100%);
   --gradient-secondary: linear-gradient(135deg, var(--secondary) 0%, var(--primary) 100%);
-  --gradient-rainbow: linear-gradient(135deg, #7C3AED 0%, #EC4899 25%, #F59E0B 50%, #10B981 75%, #06B6D4 100%);
+  --gradient-rainbow: linear-gradient(135deg, #7C3AED 0%, #A855F7 25%, #C084FC 50%, #8B5CF6 75%, #6D28D9 100%);
   --gradient-mesh: radial-gradient(at 40% 20%, rgba(124, 58, 237, 0.4) 0px, transparent 50%),
-                   radial-gradient(at 80% 0%, rgba(6, 182, 212, 0.35) 0px, transparent 50%),
-                   radial-gradient(at 0% 50%, rgba(236, 72, 153, 0.3) 0px, transparent 50%),
+                   radial-gradient(at 80% 0%, rgba(168, 85, 247, 0.35) 0px, transparent 50%),
+                   radial-gradient(at 0% 50%, rgba(192, 132, 252, 0.3) 0px, transparent 50%),
                    radial-gradient(at 80% 50%, rgba(124, 58, 237, 0.25) 0px, transparent 50%),
-                   radial-gradient(at 0% 100%, rgba(6, 182, 212, 0.3) 0px, transparent 50%);
+                   radial-gradient(at 0% 100%, rgba(139, 92, 246, 0.3) 0px, transparent 50%);
 
   /* Blur */
   --blur-sm: blur(8px);

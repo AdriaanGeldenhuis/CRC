@@ -100,63 +100,71 @@ $churchPositions = Database::fetchAll(
     <link rel="stylesheet" href="/admin_congregation/css/admin_congregation.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script>
+        (function() {
+            const saved = localStorage.getItem('theme') || 'dark';
+            document.documentElement.setAttribute('data-theme', saved);
+        })();
+    </script>
     <style>
         .filters { display: flex; gap: 1rem; flex-wrap: wrap; margin-bottom: 1.5rem; align-items: center; }
         .filter-tabs { display: flex; gap: 0.5rem; }
-        .filter-tab { padding: 0.5rem 1rem; background: var(--gray-100); border: none; border-radius: var(--radius); cursor: pointer; font-size: 0.875rem; color: var(--gray-600); transition: var(--transition); }
-        .filter-tab:hover { background: var(--gray-200); }
-        .filter-tab.active { background: var(--primary); color: white; }
+        .filter-tab { padding: 0.5rem 1rem; background: var(--glass-bg); border: 1px solid var(--glass-border); border-radius: var(--radius); cursor: pointer; font-size: 0.875rem; color: var(--text-secondary); transition: var(--transition); }
+        .filter-tab:hover { background: var(--glass-bg-hover); border-color: var(--glass-border-hover); }
+        .filter-tab.active { background: var(--primary); color: white; border-color: var(--primary); }
         .filter-tab .count { margin-left: 0.5rem; opacity: 0.7; }
         .search-box { flex: 1; max-width: 300px; }
-        .search-box input { width: 100%; padding: 0.5rem 1rem; border: 1px solid var(--gray-300); border-radius: var(--radius); font-size: 0.875rem; }
-        .search-box input:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px rgba(79,70,229,0.1); }
-        .role-select { padding: 0.5rem 1rem; border: 1px solid var(--gray-300); border-radius: var(--radius); font-size: 0.875rem; background: white; }
+        .search-box input { width: 100%; padding: 0.5rem 1rem; border: 1px solid var(--glass-border); border-radius: var(--radius); font-size: 0.875rem; background: var(--bg-elevated); color: var(--text-primary); }
+        .search-box input:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px var(--primary-glow); }
+        .role-select { padding: 0.5rem 1rem; border: 1px solid var(--glass-border); border-radius: var(--radius); font-size: 0.875rem; background: var(--bg-elevated); color: var(--text-primary); }
 
         .member-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 1rem; }
-        .member-card { background: white; border-radius: var(--radius-lg); padding: 1.5rem; box-shadow: var(--shadow); transition: var(--transition); }
-        .member-card:hover { box-shadow: var(--shadow-lg); }
+        .member-card { background: var(--glass-bg); backdrop-filter: blur(20px); border: 1px solid var(--glass-border); border-radius: var(--radius-lg); padding: 1.5rem; box-shadow: var(--shadow); transition: var(--transition); }
+        .member-card:hover { box-shadow: var(--shadow-lg); border-color: var(--glass-border-hover); }
         .member-card-header { display: flex; align-items: center; gap: 1rem; margin-bottom: 1rem; }
         .member-avatar-lg { width: 60px; height: 60px; border-radius: 50%; object-fit: cover; }
-        .member-avatar-lg-placeholder { width: 60px; height: 60px; border-radius: 50%; background: var(--primary); color: white; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; font-weight: 600; }
-        .member-name { font-weight: 600; color: var(--gray-800); }
-        .member-email { font-size: 0.8rem; color: var(--gray-500); }
+        .member-avatar-lg-placeholder { width: 60px; height: 60px; border-radius: 50%; background: var(--gradient-primary); color: white; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; font-weight: 600; }
+        .member-name { font-weight: 600; color: var(--text-primary); }
+        .member-email { font-size: 0.8rem; color: var(--text-muted); }
         .member-meta { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 0.5rem; }
         .role-tag { font-size: 0.7rem; padding: 0.2rem 0.5rem; border-radius: 100px; font-weight: 500; }
-        .role-tag.pastor { background: #FEF3C7; color: #92400E; }
-        .role-tag.admin { background: #DBEAFE; color: #1E40AF; }
-        .role-tag.leader { background: #D1FAE5; color: #065F46; }
-        .role-tag.member { background: var(--gray-100); color: var(--gray-600); }
+        .role-tag.pastor { background: rgba(245, 158, 11, 0.2); color: #F59E0B; }
+        .role-tag.admin { background: rgba(139, 92, 246, 0.2); color: var(--primary-light); }
+        .role-tag.leader { background: rgba(16, 185, 129, 0.2); color: var(--success); }
+        .role-tag.member { background: var(--glass-bg); color: var(--text-muted); }
         .status-tag { font-size: 0.7rem; padding: 0.2rem 0.5rem; border-radius: 100px; }
-        .status-tag.pending { background: #FEF3C7; color: #92400E; }
-        .status-tag.suspended { background: #FEE2E2; color: #991B1B; }
+        .status-tag.pending { background: rgba(245, 158, 11, 0.2); color: #F59E0B; }
+        .status-tag.suspended { background: rgba(239, 68, 68, 0.2); color: var(--danger); }
 
-        .member-details { font-size: 0.8rem; color: var(--gray-500); margin-bottom: 1rem; }
+        .member-details { font-size: 0.8rem; color: var(--text-muted); margin-bottom: 1rem; }
         .member-details p { margin: 0.25rem 0; display: flex; align-items: center; gap: 0.5rem; }
         .member-details svg { width: 14px; height: 14px; }
 
         .member-actions { display: flex; gap: 0.5rem; flex-wrap: wrap; }
         .btn-xs { padding: 0.25rem 0.5rem; font-size: 0.7rem; }
-        .btn-outline { background: transparent; border: 1px solid var(--gray-300); color: var(--gray-600); }
-        .btn-outline:hover { background: var(--gray-50); }
+        .btn-outline { background: transparent; border: 1px solid var(--glass-border); color: var(--text-secondary); }
+        .btn-outline:hover { background: var(--glass-bg-hover); }
         .btn-primary { background: var(--primary); color: white; border: none; }
         .btn-primary:hover { background: var(--primary-dark); }
 
-        .modal { position: fixed; inset: 0; background: rgba(0,0,0,0.5); display: none; align-items: center; justify-content: center; z-index: 1000; }
+        .modal { position: fixed; inset: 0; background: rgba(0,0,0,0.7); display: none; align-items: center; justify-content: center; z-index: 1000; }
         .modal.show { display: flex; }
-        .modal-content { background: white; border-radius: var(--radius-lg); padding: 1.5rem; max-width: 400px; width: 90%; }
-        .modal-header { font-weight: 600; margin-bottom: 1rem; }
-        .modal-body { margin-bottom: 1.5rem; }
+        .modal-content { background: var(--bg-surface); border: 1px solid var(--glass-border); border-radius: var(--radius-lg); padding: 1.5rem; max-width: 400px; width: 90%; }
+        .modal-header { font-weight: 600; margin-bottom: 1rem; color: var(--text-primary); }
+        .modal-body { margin-bottom: 1.5rem; color: var(--text-secondary); }
         .modal-footer { display: flex; gap: 0.5rem; justify-content: flex-end; }
 
         .form-group { margin-bottom: 1rem; }
-        .form-group label { display: block; font-size: 0.875rem; font-weight: 500; margin-bottom: 0.5rem; }
-        .form-group select, .form-group input { width: 100%; padding: 0.5rem; border: 1px solid var(--gray-300); border-radius: var(--radius); }
+        .form-group label { display: block; font-size: 0.875rem; font-weight: 500; margin-bottom: 0.5rem; color: var(--text-primary); }
+        .form-group select, .form-group input { width: 100%; padding: 0.5rem; border: 1px solid var(--glass-border); border-radius: var(--radius); background: var(--bg-elevated); color: var(--text-primary); }
 
         .positions-list { display: flex; flex-wrap: wrap; gap: 0.25rem; }
-        .position-tag { font-size: 0.65rem; padding: 0.125rem 0.375rem; background: #EEF2FF; color: #4F46E5; border-radius: 4px; }
+        .position-tag { font-size: 0.65rem; padding: 0.125rem 0.375rem; background: rgba(139, 92, 246, 0.2); color: var(--primary-light); border-radius: 4px; }
     </style>
 </head>
 <body>
+    <?php include __DIR__ . '/../home/partials/navbar.php'; ?>
+
     <div class="admin-layout">
         <!-- Sidebar -->
         <aside class="sidebar">
