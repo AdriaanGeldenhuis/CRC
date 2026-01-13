@@ -11,6 +11,9 @@
     '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
   })[m]);
 
+  // Polyfill for scheduleTask (not supported in Android WebView)
+  const scheduleTask = (fn) => setTimeout(fn, 10);
+
   // ===== INDEXEDDB SETUP =====
   let db = null;
   const DB_NAME = 'CRCBibleDB';
@@ -474,7 +477,7 @@
     }, 50);
 
     // Load 4 chapters AFTER the target chapter
-    requestIdleCallback(() => loadNextChapters(4));
+    scheduleTask(() => loadNextChapters(4));
   }
 
   function loadNextChapters(count = 5) {
@@ -529,10 +532,10 @@
       state.currentBookIndex = bookIdx;
       state.currentChapter = chapter;
 
-      requestIdleCallback(loadChapter);
+      scheduleTask(loadChapter);
     };
 
-    requestIdleCallback(loadChapter);
+    scheduleTask(loadChapter);
   }
 
   function loadPreviousChapters(count = 2) {
@@ -582,10 +585,10 @@
       state.earliestChapter = chapter;
       loaded++;
 
-      requestIdleCallback(loadChapter);
+      scheduleTask(loadChapter);
     };
 
-    requestIdleCallback(loadChapter);
+    scheduleTask(loadChapter);
   }
 
   function createChapterElement(book, chapter) {
@@ -725,23 +728,23 @@
     verse.classList.add('selected');
     state.selectedVerse = verse.dataset.ref;
 
-    showContextMenu(e.clientX, e.clientY);
+    showContextMenu();
   }
 
-  function showContextMenu(x, y) {
+  function showContextMenu() {
     const menu = els.verseContextMenu;
     if (!menu) return;
 
-    // Clear any inline styles that might interfere with CSS
-    menu.style.left = '';
-    menu.style.top = '';
-    menu.style.transform = '';
-
+    // Show the menu - must set display explicitly for WebView
+    menu.style.display = 'block';
     menu.classList.remove('bible-context-hidden');
   }
 
   function hideContextMenu() {
-    els.verseContextMenu?.classList.add('bible-context-hidden');
+    const menu = els.verseContextMenu;
+    if (!menu) return;
+    menu.style.display = 'none';
+    menu.classList.add('bible-context-hidden');
   }
 
   // ===== HIGHLIGHTS =====
@@ -872,7 +875,7 @@
       bindVerseInteractions();
 
       // Load a couple chapters after if needed
-      requestIdleCallback(() => loadNextChapters(2));
+      scheduleTask(() => loadNextChapters(2));
     }
 
     setTimeout(() => {
@@ -1124,7 +1127,7 @@
     }, 50);
 
     // Load 4 chapters AFTER the target chapter
-    requestIdleCallback(() => loadNextChapters(4));
+    scheduleTask(() => loadNextChapters(4));
   }
 
   // ===== SEARCH =====
