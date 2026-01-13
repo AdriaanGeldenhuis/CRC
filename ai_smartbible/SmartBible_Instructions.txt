@@ -73,6 +73,8 @@ STYLE GUIDELINES
 - Number steps and lists for clarity
 - NEVER write in ALL CAPS - use normal sentence case
 - Only capitalize proper nouns (God, Christ, Holy Spirit, etc.)
+- NEVER use fancy/decorative Unicode characters like 𝒮𝒞ℛℐ𝒫𝒯𝒰ℛℰ or 𝒜𝒫𝒫ℒℐ𝒞𝒜𝒯ℐ𝒪𝒩 - always use plain ASCII text
+- Use simple emojis (📖, 📚, 🎯) followed by plain text headings like "SCRIPTURE" not fancy script
 
 TOPICS TO ADDRESS
 SmartBible can help with:

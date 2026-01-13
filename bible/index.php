@@ -29,56 +29,11 @@ $pageTitle = 'Bible - CRC';
 
   <main class="bible-main">
 
-    <!-- Quick Navigation Modal (Fullscreen) -->
-    <div class="bible-modal bible-modal-hidden" id="quickNavModal">
-      <div class="bible-modal-overlay" id="quickNavOverlay"></div>
-      <div class="bible-modal-content">
-        <div class="bible-modal-header">
-          <h2 class="bible-modal-title">Quick Navigation</h2>
-          <button class="bible-modal-close" id="quickNavClose">&times;</button>
-        </div>
-        <div class="bible-modal-body">
-
-          <!-- Step 1: Testament Selection -->
-          <div class="bible-nav-step" id="navStepTestament">
-            <h3 class="bible-nav-step-title">Choose Testament</h3>
-            <div class="bible-nav-grid">
-              <div class="bible-nav-card" data-testament="old">
-                <div class="bible-nav-card-icon">📖</div>
-                <div class="bible-nav-card-title">Old Testament</div>
-                <div class="bible-nav-card-subtitle">Genesis - Malachi</div>
-              </div>
-              <div class="bible-nav-card" data-testament="new">
-                <div class="bible-nav-card-icon">✨</div>
-                <div class="bible-nav-card-title">New Testament</div>
-                <div class="bible-nav-card-subtitle">Matthew - Revelation</div>
-              </div>
-            </div>
-          </div>
-
-          <!-- Step 2: Book Selection -->
-          <div class="bible-nav-step bible-nav-hidden" id="navStepBook">
-            <button class="bible-nav-back" id="navBackToTestament">&larr; Back</button>
-            <h3 class="bible-nav-step-title" id="navBookTitle">Choose Book</h3>
-            <div class="bible-nav-grid" id="navBookGrid"></div>
-          </div>
-
-          <!-- Step 3: Chapter Selection -->
-          <div class="bible-nav-step bible-nav-hidden" id="navStepChapter">
-            <button class="bible-nav-back" id="navBackToBook">&larr; Back</button>
-            <h3 class="bible-nav-step-title" id="navChapterTitle">Choose Chapter</h3>
-            <div class="bible-nav-grid bible-nav-grid-small" id="navChapterGrid"></div>
-          </div>
-
-        </div>
-      </div>
-    </div>
-
     <!-- Search Panel -->
-    <section class="bible-panel bible-panel-hidden" id="searchPanel">
+    <section class="bible-panel bible-panel-hidden" id="searchPanel" style="display:none;">
       <div class="bible-panel-header">
         <h3 class="bible-panel-title">Search Bible</h3>
-        <button class="bible-panel-close" id="searchClose">&times;</button>
+        <button class="bible-panel-close" onclick="BibleApp.closePanel('search')">&times;</button>
       </div>
       <div class="bible-panel-body">
         <div class="bible-search-container">
@@ -96,10 +51,10 @@ $pageTitle = 'Bible - CRC';
     </section>
 
     <!-- Notes Panel -->
-    <section class="bible-panel bible-panel-hidden" id="notesPanel">
+    <section class="bible-panel bible-panel-hidden" id="notesPanel" style="display:none;">
       <div class="bible-panel-header">
         <h3 class="bible-panel-title">Notes</h3>
-        <button class="bible-panel-close" id="notesClose">&times;</button>
+        <button class="bible-panel-close" onclick="BibleApp.closePanel('notes')">&times;</button>
       </div>
       <div class="bible-panel-body">
         <div id="notesList" class="bible-notes-list">
@@ -109,18 +64,18 @@ $pageTitle = 'Bible - CRC';
           <div class="bible-note-ref" id="noteReference"></div>
           <textarea id="noteText" class="bible-textarea" placeholder="Write your note here..."></textarea>
           <div class="bible-note-actions">
-            <button class="bible-btn bible-btn-primary" id="saveNoteBtn">Save</button>
-            <button class="bible-btn" id="cancelNoteBtn">Cancel</button>
+            <button class="bible-btn bible-btn-primary" onclick="BibleApp.saveNote()">Save</button>
+            <button class="bible-btn" onclick="BibleApp.cancelNote()">Cancel</button>
           </div>
         </div>
       </div>
     </section>
 
     <!-- Bookmarks Panel -->
-    <section class="bible-panel bible-panel-hidden" id="bookmarksPanel">
+    <section class="bible-panel bible-panel-hidden" id="bookmarksPanel" style="display:none;">
       <div class="bible-panel-header">
         <h3 class="bible-panel-title">Bookmarks</h3>
-        <button class="bible-panel-close" id="bookmarksClose">&times;</button>
+        <button class="bible-panel-close" onclick="BibleApp.closePanel('bookmarks')">&times;</button>
       </div>
       <div class="bible-panel-body">
         <div id="bookmarksList" class="bible-bookmarks-list">
@@ -130,10 +85,10 @@ $pageTitle = 'Bible - CRC';
     </section>
 
     <!-- AI Commentary Panel -->
-    <section class="bible-panel bible-panel-hidden" id="aiPanel">
+    <section class="bible-panel bible-panel-hidden" id="aiPanel" style="display:none;">
       <div class="bible-panel-header">
         <h3 class="bible-panel-title">AI Commentary</h3>
-        <button class="bible-panel-close" id="aiClose">&times;</button>
+        <button class="bible-panel-close" onclick="BibleApp.closePanel('ai')">&times;</button>
       </div>
       <div class="bible-panel-body">
         <div id="aiOutput" class="bible-ai-output">
@@ -143,10 +98,10 @@ $pageTitle = 'Bible - CRC';
     </section>
 
     <!-- Cross References Panel -->
-    <section class="bible-panel bible-panel-hidden" id="crossRefPanel">
+    <section class="bible-panel bible-panel-hidden" id="crossRefPanel" style="display:none;">
       <div class="bible-panel-header">
         <h3 class="bible-panel-title">Cross References</h3>
-        <button class="bible-panel-close" id="crossRefClose">&times;</button>
+        <button class="bible-panel-close" onclick="BibleApp.closePanel('crossRef')">&times;</button>
       </div>
       <div class="bible-panel-body">
         <div id="crossRefList" class="bible-cross-ref-list">
@@ -156,10 +111,10 @@ $pageTitle = 'Bible - CRC';
     </section>
 
     <!-- Reading Plan Panel -->
-    <section class="bible-panel bible-panel-hidden" id="readingPlanPanel">
+    <section class="bible-panel bible-panel-hidden" id="readingPlanPanel" style="display:none;">
       <div class="bible-panel-header">
         <h3 class="bible-panel-title">Reading Plan</h3>
-        <button class="bible-panel-close" id="readingPlanClose">&times;</button>
+        <button class="bible-panel-close" onclick="BibleApp.closePanel('readingPlan')">&times;</button>
       </div>
       <div class="bible-panel-body">
         <div id="readingPlanContent"></div>
@@ -177,89 +132,11 @@ $pageTitle = 'Bible - CRC';
       </div>
     </section>
 
-    <!-- Context Menu - Full Screen Bottom Sheet -->
-    <div id="verseContextMenu" class="bible-context-menu bible-context-hidden">
-      <div class="bible-context-header">
-        <h2 class="bible-context-title">Verse Actions</h2>
-        <button class="bible-context-close" id="ctxClose">&times;</button>
-      </div>
-      <div class="bible-context-body">
-        <div class="bible-context-section-title">Highlight Color</div>
-        <div class="bible-highlight-colors">
-          <button class="bible-color-btn bible-color-1" data-color="1" title="Pink"></button>
-          <button class="bible-color-btn bible-color-2" data-color="2" title="Orange"></button>
-          <button class="bible-color-btn bible-color-3" data-color="3" title="Yellow"></button>
-          <button class="bible-color-btn bible-color-4" data-color="4" title="Green"></button>
-          <button class="bible-color-btn bible-color-5" data-color="5" title="Blue"></button>
-          <button class="bible-color-btn bible-color-6" data-color="6" title="Purple"></button>
-          <button class="bible-color-btn bible-color-btn-clear" data-color="0" title="Remove">&times;</button>
-        </div>
-
-        <div class="bible-context-divider"></div>
-
-        <button class="bible-context-item" id="ctxBookmark">
-          <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z" stroke="currentColor" stroke-width="2"/>
-          </svg>
-          Bookmark
-        </button>
-
-        <button class="bible-context-item" id="ctxAddNote">
-          <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path d="M12 20h9M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" stroke="currentColor" stroke-width="2"/>
-          </svg>
-          Add Note
-        </button>
-
-        <button class="bible-context-item" id="ctxAI">
-          <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="2"/>
-            <path d="M12 1v6m0 6v6M1 12h6m6 0h6" stroke="currentColor" stroke-width="2"/>
-          </svg>
-          Ask AI
-        </button>
-
-        <button class="bible-context-item" id="ctxCrossRef">
-          <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" stroke="currentColor" stroke-width="2"/>
-            <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" stroke="currentColor" stroke-width="2"/>
-          </svg>
-          Cross Refs
-        </button>
-
-        <button class="bible-context-item" id="ctxCopy">
-          <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <rect x="9" y="9" width="13" height="13" rx="2" stroke="currentColor" stroke-width="2"/>
-            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" stroke="currentColor" stroke-width="2"/>
-          </svg>
-          Copy
-        </button>
-
-        <button class="bible-context-item" id="ctxShare">
-          <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <circle cx="18" cy="5" r="3" stroke="currentColor" stroke-width="2"/>
-            <circle cx="6" cy="12" r="3" stroke="currentColor" stroke-width="2"/>
-            <circle cx="18" cy="19" r="3" stroke="currentColor" stroke-width="2"/>
-            <path d="M8.59 13.51l6.83 3.98m-.01-10.98l-6.82 3.98" stroke="currentColor" stroke-width="2"/>
-          </svg>
-          Share
-        </button>
-      </div>
-    </div>
-
   </main>
 
   <!-- Fixed Footer Toolbar -->
   <section class="bible-toolbar">
-    <button class="bible-tool-btn bible-tool-btn-primary" id="quickNavToggle">
-      <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <path d="M12 2L2 7l10 5 10-5-10-5z" stroke="currentColor" stroke-width="2"/>
-        <path d="M2 17l10 5 10-5M2 12l10 5 10-5" stroke="currentColor" stroke-width="2"/>
-      </svg>
-      <span>Navigate</span>
-    </button>
-
-    <button class="bible-tool-btn" id="searchToggle">
+    <button class="bible-tool-btn" onclick="BibleApp.toggleSearch()">
       <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
         <circle cx="11" cy="11" r="8" stroke="currentColor" stroke-width="2"/>
         <path d="M21 21l-4.35-4.35" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
@@ -267,21 +144,21 @@ $pageTitle = 'Bible - CRC';
       <span>Search</span>
     </button>
 
-    <button class="bible-tool-btn" id="notesToggle">
+    <button class="bible-tool-btn" onclick="BibleApp.toggleNotes()">
       <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
         <path d="M12 20h9M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" stroke="currentColor" stroke-width="2"/>
       </svg>
       <span>Notes</span>
     </button>
 
-    <button class="bible-tool-btn" id="bookmarksToggle">
+    <button class="bible-tool-btn" onclick="BibleApp.toggleBookmarks()">
       <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
         <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z" stroke="currentColor" stroke-width="2"/>
       </svg>
       <span>Bookmarks</span>
     </button>
 
-    <button class="bible-tool-btn" id="readingPlanToggle">
+    <button class="bible-tool-btn" onclick="BibleApp.showReadingPlan()">
       <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
         <rect x="3" y="4" width="18" height="18" rx="2" stroke="currentColor" stroke-width="2"/>
         <path d="M16 2v4M8 2v4M3 10h18" stroke="currentColor" stroke-width="2"/>
@@ -289,7 +166,7 @@ $pageTitle = 'Bible - CRC';
       <span>Plan</span>
     </button>
 
-    <button class="bible-tool-btn" id="fontSizeDecrease" title="Decrease font size">
+    <button class="bible-tool-btn" onclick="BibleApp.fontDecrease()">
       <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
         <path d="M4 7V4h16v3M9 20h6M12 4v16" stroke="currentColor" stroke-width="2"/>
         <circle cx="18" cy="18" r="4" fill="currentColor"/>
@@ -298,7 +175,7 @@ $pageTitle = 'Bible - CRC';
       <span>A-</span>
     </button>
 
-    <button class="bible-tool-btn" id="fontSizeIncrease" title="Increase font size">
+    <button class="bible-tool-btn" onclick="BibleApp.fontIncrease()">
       <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
         <path d="M4 7V4h16v3M9 20h6M12 4v16" stroke="currentColor" stroke-width="2"/>
         <circle cx="18" cy="18" r="4" fill="currentColor"/>
