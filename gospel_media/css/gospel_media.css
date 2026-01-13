@@ -112,6 +112,95 @@ body {
 
 .header-btn svg { width: 20px; height: 20px; }
 
+/* Theme toggle icons */
+.header-btn .sun-icon { display: none; }
+.header-btn .moon-icon { display: block; }
+[data-theme="light"] .header-btn .sun-icon { display: block; }
+[data-theme="light"] .header-btn .moon-icon { display: none; }
+
+/* Mobile Menu Dropdown */
+.mobile-menu {
+    position: absolute;
+    top: calc(100% + 8px);
+    right: 0;
+    min-width: 220px;
+    background: var(--bg-elevated);
+    border: 1px solid var(--glass-border);
+    border-radius: var(--radius-lg);
+    box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(-10px);
+    transition: var(--transition);
+    z-index: 200;
+}
+
+.mobile-menu.show {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+}
+
+.mobile-menu-header {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 1rem;
+}
+
+.mobile-menu-avatar, .mobile-menu-avatar-placeholder {
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+
+.mobile-menu-avatar { object-fit: cover; }
+
+.mobile-menu-avatar-placeholder {
+    background: var(--gradient-primary);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 600;
+}
+
+.mobile-menu-header strong {
+    display: block;
+    font-size: 0.95rem;
+    color: var(--text-primary);
+}
+
+.mobile-menu-header span {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+}
+
+.mobile-menu-divider {
+    height: 1px;
+    background: var(--glass-border);
+}
+
+.mobile-menu-item {
+    display: block;
+    padding: 0.75rem 1rem;
+    color: var(--text-secondary);
+    text-decoration: none;
+    font-size: 0.9rem;
+    transition: var(--transition);
+}
+
+.mobile-menu-item:hover {
+    background: var(--glass-hover);
+    color: var(--primary);
+}
+
+.mobile-menu-item.logout { color: var(--danger); }
+.mobile-menu-item.logout:hover { background: rgba(239, 68, 68, 0.1); }
+
+.header-actions { position: relative; }
+
 /* ===== FEED TABS (Mobile) ===== */
 .feed-tabs {
     position: fixed;

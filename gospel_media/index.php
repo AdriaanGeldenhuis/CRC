@@ -99,20 +99,60 @@ $totalPages = ceil($totalPosts / $perPage);
     <!-- Mobile Header -->
     <header class="mobile-header">
         <a href="/home/" class="header-logo">CRC</a>
-        <h1 class="header-title">Feed</h1>
         <div class="header-actions">
+            <button class="header-btn" onclick="toggleTheme()" id="themeToggle">
+                <svg class="sun-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="12" r="5"></circle>
+                    <line x1="12" y1="1" x2="12" y2="3"></line>
+                    <line x1="12" y1="21" x2="12" y2="23"></line>
+                    <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+                    <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+                    <line x1="1" y1="12" x2="3" y2="12"></line>
+                    <line x1="21" y1="12" x2="23" y2="12"></line>
+                    <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+                    <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+                </svg>
+                <svg class="moon-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+                </svg>
+            </button>
             <a href="/notifications/" class="header-btn">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
                     <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
                 </svg>
             </a>
-            <a href="/gospel_media/create.php" class="header-btn">
+            <button class="header-btn" onclick="toggleMobileMenu()" id="mobileMenuBtn">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <line x1="12" y1="5" x2="12" y2="19"></line>
-                    <line x1="5" y1="12" x2="19" y2="12"></line>
+                    <circle cx="12" cy="12" r="1"></circle>
+                    <circle cx="12" cy="5" r="1"></circle>
+                    <circle cx="12" cy="19" r="1"></circle>
                 </svg>
-            </a>
+            </button>
+            <div class="mobile-menu" id="mobileMenu">
+                <div class="mobile-menu-header">
+                    <?php if ($user['avatar']): ?>
+                        <img src="<?= e($user['avatar']) ?>" alt="" class="mobile-menu-avatar">
+                    <?php else: ?>
+                        <div class="mobile-menu-avatar-placeholder"><?= strtoupper(substr($user['name'], 0, 1)) ?></div>
+                    <?php endif; ?>
+                    <div>
+                        <strong><?= e($user['name']) ?></strong>
+                        <span><?= e($primaryCong['name']) ?></span>
+                    </div>
+                </div>
+                <div class="mobile-menu-divider"></div>
+                <a href="/profile/" class="mobile-menu-item">Profile</a>
+                <a href="/home/" class="mobile-menu-item">Home</a>
+                <?php if (Auth::isCongregationAdmin($primaryCong['id'])): ?>
+                    <a href="/admin_congregation/" class="mobile-menu-item">Manage Congregation</a>
+                <?php endif; ?>
+                <?php if (Auth::isAdmin()): ?>
+                    <a href="/admin/" class="mobile-menu-item">Admin Panel</a>
+                <?php endif; ?>
+                <div class="mobile-menu-divider"></div>
+                <a href="/auth/logout.php" class="mobile-menu-item logout">Logout</a>
+            </div>
         </div>
     </header>
 
@@ -454,13 +494,32 @@ $totalPages = ceil($totalPosts / $perPage);
 
     <script src="/gospel_media/js/gospel_media.js"></script>
     <script>
+        // Theme Toggle
+        function toggleTheme() {
+            const html = document.documentElement;
+            const current = html.getAttribute('data-theme') || 'dark';
+            const next = current === 'dark' ? 'light' : 'dark';
+            html.setAttribute('data-theme', next);
+            localStorage.setItem('theme', next);
+        }
+
+        // Mobile Menu
+        function toggleMobileMenu() {
+            document.getElementById('mobileMenu').classList.toggle('show');
+        }
+
+        // Desktop User Menu
         function toggleUserMenu() {
             document.getElementById('userDropdown').classList.toggle('show');
         }
 
+        // Close menus when clicking outside
         document.addEventListener('click', function(e) {
             if (!e.target.closest('.user-menu')) {
                 document.getElementById('userDropdown')?.classList.remove('show');
+            }
+            if (!e.target.closest('#mobileMenuBtn') && !e.target.closest('#mobileMenu')) {
+                document.getElementById('mobileMenu')?.classList.remove('show');
             }
         });
 
