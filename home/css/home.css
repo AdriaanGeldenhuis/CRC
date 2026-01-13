@@ -867,7 +867,282 @@ body::after {
   transform: scale(1.05);
 }
 
-/* ===== MORNING WATCH CARD ===== */
+/* ===== AI MESSAGE OF THE DAY CARD ===== */
+.ai-message-card {
+  background: linear-gradient(135deg, rgba(6, 182, 212, 0.08) 0%, rgba(139, 92, 246, 0.08) 100%);
+  position: relative;
+  overflow: hidden;
+}
+
+.ai-message-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, var(--accent), var(--primary), var(--secondary));
+  opacity: 0.8;
+}
+
+.ai-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  background: linear-gradient(135deg, var(--accent) 0%, var(--primary) 100%);
+  color: white;
+  font-size: 0.75rem;
+  font-weight: 700;
+  border-radius: var(--radius-full);
+  box-shadow: 0 4px 16px var(--accent-glow);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  animation: aiPulse 3s ease-in-out infinite;
+}
+
+@keyframes aiPulse {
+  0%, 100% { box-shadow: 0 4px 16px var(--accent-glow); }
+  50% { box-shadow: 0 4px 24px var(--accent-glow), 0 0 30px var(--accent-glow); }
+}
+
+.ai-message-content {
+  padding: 1rem 0 1.5rem;
+  position: relative;
+}
+
+.ai-message-icon {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 80px;
+  height: 80px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: radial-gradient(circle, var(--accent-glow) 0%, transparent 70%);
+  opacity: 0.3;
+}
+
+.ai-message-icon svg {
+  color: var(--accent);
+}
+
+.ai-message-text {
+  font-size: 1.15rem;
+  font-style: italic;
+  color: var(--text-primary);
+  line-height: 1.7;
+  margin: 0;
+  padding: 0;
+  border: none;
+  position: relative;
+  z-index: 1;
+}
+
+.ai-scripture-ref {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 1rem;
+  padding: 8px 16px;
+  background: rgba(139, 92, 246, 0.1);
+  border-radius: var(--radius-full);
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--primary-light);
+}
+
+.ai-scripture-ref svg {
+  opacity: 0.7;
+}
+
+.btn-ai-chat {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 14px 28px;
+  background: linear-gradient(135deg, var(--accent) 0%, var(--primary) 100%);
+  color: white;
+  font-size: 0.95rem;
+  font-weight: 700;
+  text-decoration: none;
+  border-radius: var(--radius-lg);
+  border: none;
+  cursor: pointer;
+  transition: var(--transition-bounce);
+  box-shadow: var(--btn-shadow), 0 0 20px var(--accent-glow);
+  position: relative;
+  overflow: hidden;
+}
+
+.btn-ai-chat::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 50%;
+  background: linear-gradient(180deg, rgba(255,255,255,0.2) 0%, rgba(255,255,255,0) 100%);
+}
+
+.btn-ai-chat:hover {
+  transform: translateY(-4px) scale(1.03);
+  box-shadow: var(--btn-shadow-hover), 0 0 40px var(--accent-glow);
+}
+
+/* ===== NEWS CARD ===== */
+.news-card {
+  background: linear-gradient(135deg, rgba(244, 114, 182, 0.08) 0%, rgba(139, 92, 246, 0.06) 100%);
+  padding: 0;
+  overflow: hidden;
+}
+
+.news-card .card-header {
+  padding: 1.5rem 2rem;
+  border-bottom: 1px solid var(--glass-border);
+}
+
+.news-carousel {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 16/9;
+  overflow: hidden;
+}
+
+.news-carousel-inner {
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
+
+.news-slide {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  transition: opacity 0.6s ease-in-out, transform 0.6s ease-in-out;
+  transform: scale(1.05);
+}
+
+.news-slide.active {
+  opacity: 1;
+  transform: scale(1);
+  z-index: 1;
+}
+
+.news-slide-link {
+  display: block;
+  width: 100%;
+  height: 100%;
+  text-decoration: none;
+}
+
+.news-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.6s ease;
+}
+
+.news-slide:hover .news-image {
+  transform: scale(1.05);
+}
+
+.news-overlay {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: 2rem;
+  background: linear-gradient(transparent, rgba(0,0,0,0.9));
+  color: white;
+}
+
+.news-title {
+  font-size: 1.25rem;
+  font-weight: 700;
+  margin-bottom: 0.5rem;
+  text-shadow: 0 2px 8px rgba(0,0,0,0.5);
+}
+
+.news-desc {
+  font-size: 0.9rem;
+  opacity: 0.9;
+  line-height: 1.5;
+}
+
+.news-dots {
+  position: absolute;
+  bottom: 1rem;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 8px;
+  z-index: 10;
+}
+
+.news-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.4);
+  border: none;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.news-dot.active {
+  background: var(--primary);
+  box-shadow: 0 0 10px var(--primary-glow);
+  transform: scale(1.2);
+}
+
+.news-dot:hover {
+  background: rgba(255,255,255,0.8);
+}
+
+.news-nav {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0,0,0,0.5);
+  border: 1px solid rgba(255,255,255,0.2);
+  border-radius: 50%;
+  color: white;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  z-index: 10;
+  backdrop-filter: blur(10px);
+}
+
+.news-nav:hover {
+  background: var(--primary);
+  border-color: var(--primary);
+  transform: translateY(-50%) scale(1.1);
+}
+
+.news-prev { left: 1rem; }
+.news-next { right: 1rem; }
+
+.news-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 200px;
+  padding: 2rem;
+}
+
+/* ===== MORNING WATCH CARD (Legacy) ===== */
 .morning-watch-card {
   background: linear-gradient(135deg, rgba(124, 58, 237, 0.1) 0%, var(--glass-bg) 100%);
 }

@@ -1,7 +1,7 @@
 <?php
 /**
  * CRC Home Dashboard
- * Main page after login
+ * Main page after login - Redesigned with AI Message of the Day and News
  */
 
 require_once __DIR__ . '/../core/bootstrap.php';
@@ -25,6 +25,8 @@ $streak = null;
 $upcomingEvents = [];
 $recentPosts = [];
 $unreadNotifications = 0;
+$newsItems = [];
+$aiMessage = null;
 
 try {
     $todaySession = Database::fetchOne(
@@ -98,6 +100,41 @@ try {
         [$user['id']]
     ) ?: 0;
 } catch (Exception $e) {}
+
+// Get active news items for carousel
+try {
+    $newsItems = Database::fetchAll(
+        "SELECT * FROM news_items WHERE is_active = 1 ORDER BY display_order ASC"
+    ) ?: [];
+} catch (Exception $e) {}
+
+// Get or generate AI message of the day
+try {
+    $aiMessage = Database::fetchOne(
+        "SELECT * FROM ai_daily_messages WHERE message_date = CURDATE()"
+    );
+} catch (Exception $e) {}
+
+// Default inspirational messages if no AI message
+$defaultMessages = [
+    ['message' => "May the Lord bless your day with peace and grace. Remember, in Him we have everything we need.", 'scripture' => "Philippians 4:19"],
+    ['message' => "Today is a new opportunity to experience God's love and share it with others.", 'scripture' => "Lamentations 3:22-23"],
+    ['message' => "Let your light shine before others, that they may see your good deeds and glorify your Father in heaven.", 'scripture' => "Matthew 5:16"],
+    ['message' => "The Lord is your shepherd, you shall not want. Trust in His provision today.", 'scripture' => "Psalm 23:1"],
+    ['message' => "Be strong and courageous! Do not be afraid, for the Lord your God is with you wherever you go.", 'scripture' => "Joshua 1:9"],
+    ['message' => "In all things we are more than conquerors through Him who loved us.", 'scripture' => "Romans 8:37"],
+    ['message' => "Cast all your anxiety on Him, because He cares for you.", 'scripture' => "1 Peter 5:7"],
+];
+
+if (!$aiMessage) {
+    // Use a daily rotating message based on day of year
+    $dayIndex = date('z') % count($defaultMessages);
+    $aiMessage = [
+        'message_content' => $defaultMessages[$dayIndex]['message'],
+        'scripture_ref' => $defaultMessages[$dayIndex]['scripture'],
+        'mood' => 'inspirational'
+    ];
+}
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -178,6 +215,13 @@ try {
                                 <path d="M8 9h8"></path>
                             </svg>
                             Bible
+                        </a>
+                        <a href="/ai_smartbible/" class="more-dropdown-item">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path>
+                                <circle cx="19" cy="5" r="3" fill="currentColor"></circle>
+                            </svg>
+                            AI SmartBible
                         </a>
                         <a href="/morning_watch/" class="more-dropdown-item">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -278,82 +322,104 @@ try {
             </section>
 
             <div class="dashboard-grid">
-                <!-- Morning Study Card -->
-                <div class="dashboard-card morning-watch-card">
+                <!-- AI Message of the Day Card -->
+                <div class="dashboard-card ai-message-card">
                     <div class="card-header">
-                        <h2>Morning Study</h2>
-                        <?php if ($streak): ?>
-                            <span class="streak-badge"><?= $streak['current_streak'] ?> day streak</span>
-                        <?php endif; ?>
+                        <h2>
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display:inline;vertical-align:middle;margin-right:8px;color:var(--accent);">
+                                <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"></path>
+                            </svg>
+                            AI Message of the Day
+                        </h2>
+                        <span class="ai-badge">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="12" cy="12" r="10"></circle>
+                                <path d="M12 16v-4"></path>
+                                <path d="M12 8h.01"></path>
+                            </svg>
+                            AI
+                        </span>
                     </div>
-                    <?php if ($todaySession): ?>
-                        <div class="morning-watch-preview">
-                            <h3><?= e($todaySession['title'] ?: $todaySession['theme']) ?></h3>
-                            <p class="scripture-ref"><?= e($todaySession['scripture_ref']) ?></p>
-                            <?php if ($completedToday): ?>
-                                <div class="completed-badge">
-                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                        <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
-                                        <polyline points="22 4 12 14.01 9 11.01"></polyline>
-                                    </svg>
-                                    Completed
-                                </div>
-                            <?php else: ?>
-                                <a href="/morning_watch/" class="btn btn-primary">Start Today's Session</a>
-                            <?php endif; ?>
+                    <div class="ai-message-content">
+                        <div class="ai-message-icon">
+                            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                                <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"></path>
+                            </svg>
                         </div>
-                    <?php else: ?>
-                        <div class="no-content">
-                            <p>No Morning Study session for today yet.</p>
-                        </div>
-                    <?php endif; ?>
-                </div>
-
-                <!-- Quick Actions -->
-                <div class="dashboard-card quick-actions-card">
-                    <h2>Quick Actions</h2>
-                    <div class="quick-actions-grid">
-                        <a href="/bible/" class="quick-action">
-                            <div class="quick-action-icon">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <blockquote class="ai-message-text">
+                            "<?= e($aiMessage['message_content']) ?>"
+                        </blockquote>
+                        <?php if (!empty($aiMessage['scripture_ref'])): ?>
+                            <p class="ai-scripture-ref">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                     <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
                                     <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
                                 </svg>
-                            </div>
-                            <span>Bible</span>
-                        </a>
-                        <a href="/gospel_media/create.php" class="quick-action">
-                            <div class="quick-action-icon">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                    <line x1="12" y1="5" x2="12" y2="19"></line>
-                                    <line x1="5" y1="12" x2="19" y2="12"></line>
-                                </svg>
-                            </div>
-                            <span>New Post</span>
-                        </a>
-                        <a href="/diary/create.php" class="quick-action">
-                            <div class="quick-action-icon">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-                                    <polyline points="14 2 14 8 20 8"></polyline>
-                                    <line x1="16" y1="13" x2="8" y2="13"></line>
-                                    <line x1="16" y1="17" x2="8" y2="17"></line>
-                                </svg>
-                            </div>
-                            <span>Journal</span>
-                        </a>
-                        <a href="/calendar/create.php" class="quick-action">
-                            <div class="quick-action-icon">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                    <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
-                                    <line x1="16" y1="2" x2="16" y2="6"></line>
-                                    <line x1="8" y1="2" x2="8" y2="6"></line>
-                                    <line x1="3" y1="10" x2="21" y2="10"></line>
-                                </svg>
-                            </div>
-                            <span>Add Event</span>
-                        </a>
+                                <?= e($aiMessage['scripture_ref']) ?>
+                            </p>
+                        <?php endif; ?>
                     </div>
+                    <a href="/ai_smartbible/" class="btn btn-ai-chat">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+                        </svg>
+                        Chat with AI SmartBible
+                    </a>
+                </div>
+
+                <!-- News Card -->
+                <div class="dashboard-card news-card">
+                    <div class="card-header">
+                        <h2>
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display:inline;vertical-align:middle;margin-right:8px;color:var(--secondary);">
+                                <rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18"/><path d="M9 21V9"/>
+                            </svg>
+                            NEWS
+                        </h2>
+                    </div>
+                    <?php if ($newsItems): ?>
+                        <div class="news-carousel" id="newsCarousel">
+                            <div class="news-carousel-inner">
+                                <?php foreach ($newsItems as $index => $news): ?>
+                                    <div class="news-slide <?= $index === 0 ? 'active' : '' ?>">
+                                        <?php if ($news['link_url']): ?>
+                                            <a href="<?= e($news['link_url']) ?>" class="news-slide-link" target="_blank">
+                                        <?php endif; ?>
+                                            <img src="<?= e($news['image_path']) ?>" alt="<?= e($news['title']) ?>" class="news-image">
+                                            <div class="news-overlay">
+                                                <h3 class="news-title"><?= e($news['title']) ?></h3>
+                                                <?php if ($news['description']): ?>
+                                                    <p class="news-desc"><?= e($news['description']) ?></p>
+                                                <?php endif; ?>
+                                            </div>
+                                        <?php if ($news['link_url']): ?>
+                                            </a>
+                                        <?php endif; ?>
+                                    </div>
+                                <?php endforeach; ?>
+                            </div>
+                            <?php if (count($newsItems) > 1): ?>
+                                <div class="news-dots">
+                                    <?php foreach ($newsItems as $index => $news): ?>
+                                        <button class="news-dot <?= $index === 0 ? 'active' : '' ?>" onclick="goToSlide(<?= $index ?>)"></button>
+                                    <?php endforeach; ?>
+                                </div>
+                                <button class="news-nav news-prev" onclick="prevSlide()">
+                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"></polyline></svg>
+                                </button>
+                                <button class="news-nav news-next" onclick="nextSlide()">
+                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                                </button>
+                            <?php endif; ?>
+                        </div>
+                    <?php else: ?>
+                        <div class="no-content news-empty">
+                            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="opacity:0.5;margin-bottom:1rem;">
+                                <rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m21 15-5-5L5 21"/>
+                            </svg>
+                            <p>No news at the moment.</p>
+                        </div>
+                    <?php endif; ?>
                 </div>
 
                 <!-- Upcoming Events -->
@@ -463,6 +529,43 @@ try {
                 toggleTheme();
             }
         });
+
+        // News Carousel
+        let currentSlide = 0;
+        const slides = document.querySelectorAll('.news-slide');
+        const dots = document.querySelectorAll('.news-dot');
+        const totalSlides = slides.length;
+
+        function showSlide(index) {
+            if (totalSlides === 0) return;
+
+            currentSlide = (index + totalSlides) % totalSlides;
+
+            slides.forEach((slide, i) => {
+                slide.classList.toggle('active', i === currentSlide);
+            });
+
+            dots.forEach((dot, i) => {
+                dot.classList.toggle('active', i === currentSlide);
+            });
+        }
+
+        function nextSlide() {
+            showSlide(currentSlide + 1);
+        }
+
+        function prevSlide() {
+            showSlide(currentSlide - 1);
+        }
+
+        function goToSlide(index) {
+            showSlide(index);
+        }
+
+        // Auto-advance slides every 5 seconds
+        if (totalSlides > 1) {
+            setInterval(nextSlide, 5000);
+        }
     </script>
 </body>
 </html>
