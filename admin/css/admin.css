@@ -60,26 +60,29 @@
     --transition-fast: all 0.15s ease;
 }
 
-/* ==================== Light Theme ==================== */
+/* ==================== Light Theme - Keep Dark Admin Style ==================== */
 [data-theme="light"] {
-    --bg-base: #F8FAFC;
-    --bg-elevated: #FFFFFF;
-    --bg-surface: #F1F5F9;
+    /* Keep sidebar dark */
     --bg-sidebar: #0F172A;
 
-    --glass-bg: rgba(255, 255, 255, 0.8);
-    --glass-bg-hover: rgba(255, 255, 255, 0.9);
-    --glass-border: rgba(0, 0, 0, 0.08);
-    --glass-border-hover: rgba(0, 0, 0, 0.12);
+    /* Main content area uses same dark style */
+    --bg-base: #000000;
+    --bg-elevated: #0a0a0a;
+    --bg-surface: #111111;
 
-    --text-primary: #0F172A;
-    --text-secondary: #475569;
-    --text-muted: #64748B;
-    --text-dim: #94A3B8;
+    --glass-bg: rgba(255, 255, 255, 0.03);
+    --glass-bg-hover: rgba(255, 255, 255, 0.06);
+    --glass-border: rgba(255, 255, 255, 0.08);
+    --glass-border-hover: rgba(255, 255, 255, 0.15);
 
-    --shadow: 0 4px 24px rgba(0, 0, 0, 0.08);
-    --shadow-lg: 0 8px 40px rgba(0, 0, 0, 0.12);
-    --shadow-glow: 0 0 40px rgba(139, 92, 246, 0.2);
+    --text-primary: #FFFFFF;
+    --text-secondary: rgba(255, 255, 255, 0.7);
+    --text-muted: rgba(255, 255, 255, 0.5);
+    --text-dim: rgba(255, 255, 255, 0.3);
+
+    --shadow: 0 4px 24px rgba(0, 0, 0, 0.4);
+    --shadow-lg: 0 8px 40px rgba(0, 0, 0, 0.5);
+    --shadow-glow: 0 0 40px rgba(139, 92, 246, 0.3);
 }
 
 /* ==================== Base Styles ==================== */
