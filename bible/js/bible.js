@@ -722,39 +722,92 @@
   function bindVerseInteractions() {
     document.querySelectorAll('.bible-verse:not(.bound)').forEach(verse => {
       verse.classList.add('bound');
-      verse.addEventListener('click', handleVerseClick);
-      verse.addEventListener('contextmenu', handleVerseClick);
+
+      // Handle click for verse selection
+      const clickHandler = (e) => {
+        handleVerseClick(e, verse);
+      };
+
+      verse.addEventListener('click', clickHandler);
+      verse.addEventListener('contextmenu', clickHandler);
+
+      // Also handle touch for mobile WebView
+      let touchTimeout = null;
+      verse.addEventListener('touchstart', (e) => {
+        touchTimeout = setTimeout(() => {
+          // Long press - show context menu
+          handleVerseClick(e, verse);
+        }, 500);
+      }, { passive: true });
+
+      verse.addEventListener('touchend', (e) => {
+        if (touchTimeout) {
+          clearTimeout(touchTimeout);
+          touchTimeout = null;
+        }
+      });
+
+      verse.addEventListener('touchmove', () => {
+        if (touchTimeout) {
+          clearTimeout(touchTimeout);
+          touchTimeout = null;
+        }
+      }, { passive: true });
     });
   }
 
-  function handleVerseClick(e) {
+  function handleVerseClick(e, verse) {
     e.preventDefault();
+    e.stopPropagation();
 
-    if (e.target.classList.contains('bible-note-indicator')) {
-      const ref = e.target.dataset.ref;
+    // Check if clicking on note indicator
+    const target = e.target;
+    if (target && target.classList && target.classList.contains('bible-note-indicator')) {
+      const ref = target.dataset.ref;
       showNoteEditor(ref);
       showPanel(els.notesPanel);
       return;
     }
 
-    const verse = e.currentTarget;
-    document.querySelectorAll('.bible-verse').forEach(v => v.classList.remove('selected'));
-    verse.classList.add('selected');
-    state.selectedVerse = verse.dataset.ref;
+    // Get the verse element - either from parameter or currentTarget
+    const verseEl = verse || e.currentTarget;
+    if (!verseEl || !verseEl.dataset) return;
 
-    showContextMenu(e.clientX, e.clientY);
+    // Deselect all other verses
+    document.querySelectorAll('.bible-verse.selected').forEach(v => v.classList.remove('selected'));
+
+    // Select this verse
+    verseEl.classList.add('selected');
+    state.selectedVerse = verseEl.dataset.ref;
+
+    // Show the context menu
+    const x = e.clientX || (e.touches && e.touches[0] ? e.touches[0].clientX : window.innerWidth / 2);
+    const y = e.clientY || (e.touches && e.touches[0] ? e.touches[0].clientY : window.innerHeight / 2);
+
+    showContextMenu(x, y);
   }
 
   function showContextMenu(x, y) {
     const menu = els.verseContextMenu;
-    if (!menu) return;
+    if (!menu) {
+      console.warn('Context menu element not found');
+      return;
+    }
 
-    // Show the bottom sheet (CSS handles positioning)
-    menu.classList.remove('bible-context-hidden');
+    // First ensure it's hidden, then show it (forces re-render)
+    menu.classList.add('bible-context-hidden');
+
+    // Use setTimeout to ensure the hide is applied before showing
+    setTimeout(() => {
+      menu.classList.remove('bible-context-hidden');
+    }, 10);
   }
 
   function hideContextMenu() {
-    els.verseContextMenu?.classList.add('bible-context-hidden');
+    const menu = els.verseContextMenu;
+    if (menu) {
+      menu.classList.add('bible-context-hidden');
+    }
   }
 
   // ===== HIGHLIGHTS =====
@@ -1083,32 +1136,68 @@
 
   // ===== NAVIGATION =====
   function showQuickNav() {
-    if (!els.quickNavModal) return;
-    els.quickNavModal.classList.remove('bible-modal-hidden');
+    const modal = els.quickNavModal;
+    if (!modal) {
+      console.warn('Navigation modal not found');
+      return;
+    }
+
+    // Reset state
     state.navState = { testament: null, book: null, chapter: null };
+
+    // Show testament step first
     showNavStep('testament');
+
+    // Show modal
+    modal.classList.remove('bible-modal-hidden');
     document.body.style.overflow = 'hidden';
   }
 
   function hideQuickNav() {
-    if (!els.quickNavModal) return;
-    els.quickNavModal.classList.add('bible-modal-hidden');
+    const modal = els.quickNavModal;
+    if (!modal) return;
+
+    modal.classList.add('bible-modal-hidden');
     document.body.style.overflow = '';
   }
 
   function showNavStep(step) {
-    els.navStepTestament?.classList.toggle('bible-nav-hidden', step !== 'testament');
-    els.navStepBook?.classList.toggle('bible-nav-hidden', step !== 'book');
-    els.navStepChapter?.classList.toggle('bible-nav-hidden', step !== 'chapter');
+    // Get all step elements
+    const stepTestament = els.navStepTestament;
+    const stepBook = els.navStepBook;
+    const stepChapter = els.navStepChapter;
+
+    // Hide all steps first
+    if (stepTestament) {
+      stepTestament.style.display = step === 'testament' ? 'block' : 'none';
+      stepTestament.classList.toggle('bible-nav-hidden', step !== 'testament');
+    }
+    if (stepBook) {
+      stepBook.style.display = step === 'book' ? 'block' : 'none';
+      stepBook.classList.toggle('bible-nav-hidden', step !== 'book');
+    }
+    if (stepChapter) {
+      stepChapter.style.display = step === 'chapter' ? 'block' : 'none';
+      stepChapter.classList.toggle('bible-nav-hidden', step !== 'chapter');
+    }
   }
 
   function renderTestamentChoice() {
-    document.querySelectorAll('[data-testament]').forEach(btn => {
-      btn.addEventListener('click', () => {
+    const cards = document.querySelectorAll('[data-testament]');
+
+    cards.forEach(btn => {
+      // Use both click and touchend for better mobile support
+      const handler = (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+
         state.navState.testament = btn.dataset.testament;
         renderBookChoice();
         showNavStep('book');
-      });
+      };
+
+      btn.addEventListener('click', handler);
+      btn.addEventListener('touchend', handler);
     });
   }
 
@@ -1126,13 +1215,24 @@
     books.forEach(book => {
       const btn = document.createElement('button');
       btn.className = 'bible-nav-card bible-nav-card-small';
-      btn.textContent = book;
+      btn.type = 'button';
 
-      btn.addEventListener('click', () => {
+      // Create inner content
+      const titleDiv = document.createElement('div');
+      titleDiv.className = 'bible-nav-card-title';
+      titleDiv.textContent = book;
+      btn.appendChild(titleDiv);
+
+      const handler = (e) => {
+        e.preventDefault();
+        e.stopPropagation();
         state.navState.book = book;
         renderChapterChoice();
         showNavStep('chapter');
-      });
+      };
+
+      btn.addEventListener('click', handler);
+      btn.addEventListener('touchend', handler);
 
       frag.appendChild(btn);
     });
@@ -1160,12 +1260,23 @@
     for (let i = 1; i <= chapterCount; i++) {
       const btn = document.createElement('button');
       btn.className = 'bible-nav-card bible-nav-card-small';
-      btn.textContent = String(i);
+      btn.type = 'button';
 
-      btn.addEventListener('click', () => {
-        state.navState.chapter = i;
-        goToChapter(state.navState.book, i);
-      });
+      const titleDiv = document.createElement('div');
+      titleDiv.className = 'bible-nav-card-title';
+      titleDiv.textContent = String(i);
+      btn.appendChild(titleDiv);
+
+      const chapterNum = i;
+      const handler = (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        state.navState.chapter = chapterNum;
+        goToChapter(state.navState.book, chapterNum);
+      };
+
+      btn.addEventListener('click', handler);
+      btn.addEventListener('touchend', handler);
 
       frag.appendChild(btn);
     }
