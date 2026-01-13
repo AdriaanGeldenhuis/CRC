@@ -60,29 +60,51 @@
     --transition-fast: all 0.15s ease;
 }
 
-/* ==================== Light Theme - Keep Dark Admin Style ==================== */
+/* ==================== Light Theme ==================== */
 [data-theme="light"] {
-    /* Keep sidebar dark */
-    --bg-sidebar: #0F172A;
+    --bg-base: #F0F4FF;
+    --bg-elevated: #FFFFFF;
+    --bg-surface: #F8FAFF;
+    --bg-sidebar: #1E1B4B;
 
-    /* Main content area uses same dark style */
-    --bg-base: #000000;
-    --bg-elevated: #0a0a0a;
-    --bg-surface: #111111;
+    --glass-bg: rgba(255, 255, 255, 0.7);
+    --glass-bg-hover: rgba(255, 255, 255, 0.9);
+    --glass-border: rgba(124, 58, 237, 0.15);
+    --glass-border-hover: rgba(124, 58, 237, 0.3);
 
-    --glass-bg: rgba(255, 255, 255, 0.03);
-    --glass-bg-hover: rgba(255, 255, 255, 0.06);
-    --glass-border: rgba(255, 255, 255, 0.08);
-    --glass-border-hover: rgba(255, 255, 255, 0.15);
+    --text-primary: #1E1B4B;
+    --text-secondary: #4C4687;
+    --text-muted: #8B85B1;
+    --text-dim: #A5A0C7;
 
-    --text-primary: #FFFFFF;
-    --text-secondary: rgba(255, 255, 255, 0.7);
-    --text-muted: rgba(255, 255, 255, 0.5);
-    --text-dim: rgba(255, 255, 255, 0.3);
+    --shadow: 0 4px 24px rgba(124, 58, 237, 0.08);
+    --shadow-lg: 0 8px 40px rgba(124, 58, 237, 0.12);
+    --shadow-glow: 0 0 40px rgba(139, 92, 246, 0.2);
+}
 
-    --shadow: 0 4px 24px rgba(0, 0, 0, 0.4);
-    --shadow-lg: 0 8px 40px rgba(0, 0, 0, 0.5);
-    --shadow-glow: 0 0 40px rgba(139, 92, 246, 0.3);
+/* Light theme specific element overrides */
+[data-theme="light"] .admin-content::before {
+    background:
+        radial-gradient(ellipse at 20% 20%, rgba(139, 92, 246, 0.08) 0%, transparent 50%),
+        radial-gradient(ellipse at 80% 80%, rgba(168, 85, 247, 0.06) 0%, transparent 50%);
+}
+
+[data-theme="light"] .stat-card,
+[data-theme="light"] .card {
+    background: rgba(255, 255, 255, 0.8);
+    border-color: rgba(124, 58, 237, 0.15);
+}
+
+[data-theme="light"] .data-table th {
+    background: var(--bg-surface);
+}
+
+[data-theme="light"] .quick-action {
+    background: rgba(255, 255, 255, 0.8);
+}
+
+[data-theme="light"] .quick-action:hover {
+    background: rgba(255, 255, 255, 0.95);
 }
 
 /* ==================== Base Styles ==================== */
