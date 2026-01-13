@@ -102,7 +102,6 @@
     notes: {},
     bookmarks: {},
     fontSize: 'medium',
-    navState: { testament: null, book: null, chapter: null },
     currentBookIndex: 0,
     currentChapter: 1,
     earliestBookIndex: 0,
@@ -114,60 +113,25 @@
 
   // ===== ELEMENTS =====
   const els = {
-    quickNavToggle: $('quickNavToggle'),
-    quickNavModal: $('quickNavModal'),
-    quickNavOverlay: $('quickNavOverlay'),
-    quickNavClose: $('quickNavClose'),
-    navStepTestament: $('navStepTestament'),
-    navStepBook: $('navStepBook'),
-    navStepChapter: $('navStepChapter'),
-    navBookTitle: $('navBookTitle'),
-    navChapterTitle: $('navChapterTitle'),
-    navBookGrid: $('navBookGrid'),
-    navChapterGrid: $('navChapterGrid'),
-    navBackToTestament: $('navBackToTestament'),
-    navBackToBook: $('navBackToBook'),
-    searchToggle: $('searchToggle'),
-    notesToggle: $('notesToggle'),
-    bookmarksToggle: $('bookmarksToggle'),
-    readingPlanToggle: $('readingPlanToggle'),
     searchPanel: $('searchPanel'),
-    searchClose: $('searchClose'),
     searchInput: $('searchInput'),
     searchBtn: $('searchBtn'),
     searchResults: $('searchResults'),
     notesPanel: $('notesPanel'),
-    notesClose: $('notesClose'),
     notesList: $('notesList'),
     noteEditor: $('noteEditor'),
     noteReference: $('noteReference'),
     noteText: $('noteText'),
-    saveNoteBtn: $('saveNoteBtn'),
-    cancelNoteBtn: $('cancelNoteBtn'),
     bookmarksPanel: $('bookmarksPanel'),
-    bookmarksClose: $('bookmarksClose'),
     bookmarksList: $('bookmarksList'),
     aiPanel: $('aiPanel'),
-    aiClose: $('aiClose'),
     aiOutput: $('aiOutput'),
     crossRefPanel: $('crossRefPanel'),
-    crossRefClose: $('crossRefClose'),
     crossRefList: $('crossRefList'),
     readingPlanPanel: $('readingPlanPanel'),
-    readingPlanClose: $('readingPlanClose'),
     readingPlanContent: $('readingPlanContent'),
     leftContent: $('leftContent'),
-    leftColumn: $('leftColumn'),
-    verseContextMenu: $('verseContextMenu'),
-    ctxBookmark: $('ctxBookmark'),
-    ctxAddNote: $('ctxAddNote'),
-    ctxAI: $('ctxAI'),
-    ctxCrossRef: $('ctxCrossRef'),
-    ctxCopy: $('ctxCopy'),
-    ctxShare: $('ctxShare'),
-    ctxClose: $('ctxClose'),
-    fontSizeIncrease: $('fontSizeIncrease'),
-    fontSizeDecrease: $('fontSizeDecrease')
+    leftColumn: $('leftColumn')
   };
 
   // ===== LOADING OVERLAY =====
@@ -708,43 +672,15 @@
   function bindVerseInteractions() {
     document.querySelectorAll('.bible-verse:not(.bound)').forEach(verse => {
       verse.classList.add('bound');
-      verse.addEventListener('click', handleVerseClick);
-      verse.addEventListener('contextmenu', handleVerseClick);
+      // Click on note indicator opens note editor
+      verse.addEventListener('click', (e) => {
+        if (e.target.classList.contains('bible-note-indicator')) {
+          const ref = e.target.dataset.ref;
+          showNoteEditor(ref);
+          showPanel(els.notesPanel);
+        }
+      });
     });
-  }
-
-  function handleVerseClick(e) {
-    e.preventDefault();
-
-    if (e.target.classList.contains('bible-note-indicator')) {
-      const ref = e.target.dataset.ref;
-      showNoteEditor(ref);
-      showPanel(els.notesPanel);
-      return;
-    }
-
-    const verse = e.currentTarget;
-    document.querySelectorAll('.bible-verse').forEach(v => v.classList.remove('selected'));
-    verse.classList.add('selected');
-    state.selectedVerse = verse.dataset.ref;
-
-    showContextMenu();
-  }
-
-  function showContextMenu() {
-    const menu = els.verseContextMenu;
-    if (!menu) return;
-
-    // Show the menu - must set display explicitly for WebView
-    menu.style.display = 'block';
-    menu.classList.remove('bible-context-hidden');
-  }
-
-  function hideContextMenu() {
-    const menu = els.verseContextMenu;
-    if (!menu) return;
-    menu.style.display = 'none';
-    menu.classList.add('bible-context-hidden');
   }
 
   // ===== HIGHLIGHTS =====
@@ -780,8 +716,7 @@
     } catch (e) {
       console.error('Highlight save failed:', e);
     }
-    hideContextMenu();
-  }
+      }
 
   // ===== BOOKMARKS =====
   async function toggleBookmark() {
@@ -817,8 +752,7 @@
     } catch (e) {
       console.error('Bookmark toggle failed:', e);
     }
-    hideContextMenu();
-  }
+      }
 
   function renderBookmarksList() {
     if (!els.bookmarksList) return;
@@ -974,160 +908,6 @@
     if (!state.selectedVerse) return;
     showPanel(els.notesPanel);
     showNoteEditor(state.selectedVerse);
-    hideContextMenu();
-  }
-
-  // ===== NAVIGATION =====
-  function showQuickNav() {
-    if (!els.quickNavModal) return;
-    els.quickNavModal.classList.remove('bible-modal-hidden');
-    state.navState = { testament: null, book: null, chapter: null };
-    showNavStep('testament');
-    document.body.style.overflow = 'hidden';
-  }
-
-  function hideQuickNav() {
-    if (!els.quickNavModal) return;
-    els.quickNavModal.classList.add('bible-modal-hidden');
-    document.body.style.overflow = '';
-  }
-
-  function showNavStep(step) {
-    els.navStepTestament?.classList.toggle('bible-nav-hidden', step !== 'testament');
-    els.navStepBook?.classList.toggle('bible-nav-hidden', step !== 'book');
-    els.navStepChapter?.classList.toggle('bible-nav-hidden', step !== 'chapter');
-  }
-
-  function renderTestamentChoice() {
-    document.querySelectorAll('[data-testament]').forEach(btn => {
-      btn.addEventListener('click', () => {
-        state.navState.testament = btn.dataset.testament;
-        renderBookChoice();
-        showNavStep('book');
-      });
-    });
-  }
-
-  function renderBookChoice() {
-    const books = state.navState.testament === 'old' ? OLD_TESTAMENT : NEW_TESTAMENT;
-    const title = state.navState.testament === 'old' ? 'Old Testament Books' : 'New Testament Books';
-
-    if (!els.navBookTitle || !els.navBookGrid) return;
-    els.navBookTitle.textContent = title;
-    els.navBookGrid.innerHTML = '';
-
-    const frag = document.createDocumentFragment();
-    books.forEach(book => {
-      const btn = document.createElement('button');
-      btn.className = 'bible-nav-card bible-nav-card-small';
-      btn.textContent = book;
-      btn.addEventListener('click', () => {
-        state.navState.book = book;
-        renderChapterChoice();
-        showNavStep('chapter');
-      });
-      frag.appendChild(btn);
-    });
-    els.navBookGrid.appendChild(frag);
-  }
-
-  function renderChapterChoice() {
-    if (!state.navState.book) return;
-    const chapterCount = getChapterCount(state.data, state.navState.book);
-
-    if (!els.navChapterTitle || !els.navChapterGrid) return;
-    els.navChapterTitle.textContent = `${state.navState.book} - Choose Chapter`;
-    els.navChapterGrid.innerHTML = '';
-
-    if (chapterCount === 0) {
-      els.navChapterGrid.innerHTML = `<p class="bible-empty-state">No chapters found.</p>`;
-      return;
-    }
-
-    const frag = document.createDocumentFragment();
-    for (let i = 1; i <= chapterCount; i++) {
-      const btn = document.createElement('button');
-      btn.className = 'bible-nav-card bible-nav-card-small';
-      btn.textContent = String(i);
-      btn.addEventListener('click', () => {
-        state.navState.chapter = i;
-        goToChapter(state.navState.book, i);
-      });
-      frag.appendChild(btn);
-    }
-    els.navChapterGrid.appendChild(frag);
-  }
-
-  function goToChapter(book, chapter) {
-    hideQuickNav();
-
-    const bookIdx = state.books.indexOf(book);
-    if (bookIdx === -1) return;
-
-    // Update URL
-    const newUrl = new URL(window.location);
-    newUrl.searchParams.set('book', book);
-    newUrl.searchParams.set('chapter', chapter);
-    window.history.replaceState({}, '', newUrl);
-
-    // Reset state
-    state.currentBookIndex = bookIdx;
-    state.currentChapter = chapter;
-    state.earliestBookIndex = bookIdx;
-    state.earliestChapter = chapter;
-    state.renderedChapters.clear();
-    state.isLoading = false;
-    state.isLoadingPrev = false;
-
-    els.leftContent.innerHTML = '';
-
-    // Load 2 chapters BEFORE the target chapter
-    const chaptersBefore = [];
-    let prevInfo = { bookIndex: bookIdx, chapter: chapter };
-    for (let i = 0; i < 2; i++) {
-      prevInfo = getPreviousChapterInfo(prevInfo.bookIndex, prevInfo.chapter);
-      if (prevInfo) {
-        chaptersBefore.unshift(prevInfo);
-      } else {
-        break;
-      }
-    }
-
-    // Render the chapters before (in order)
-    chaptersBefore.forEach(info => {
-      const bookName = state.books[info.bookIndex];
-      const key = `${bookName}-${info.chapter}`;
-      if (!state.renderedChapters.has(key)) {
-        const chapterEl = createChapterElement(bookName, info.chapter);
-        els.leftContent.appendChild(chapterEl);
-        state.renderedChapters.add(key);
-      }
-      state.earliestBookIndex = info.bookIndex;
-      state.earliestChapter = info.chapter;
-    });
-
-    // Render the target chapter
-    const targetKey = `${book}-${chapter}`;
-    if (!state.renderedChapters.has(targetKey)) {
-      const chapterEl = createChapterElement(book, chapter);
-      els.leftContent.appendChild(chapterEl);
-      state.renderedChapters.add(targetKey);
-    }
-
-    applyFontSize();
-    bindVerseInteractions();
-
-    // Scroll to target chapter
-    setTimeout(() => {
-      const targetChapterEl = document.querySelector(`.bible-chapter-block[data-book="${book}"][data-chapter="${chapter}"]`);
-      if (targetChapterEl) {
-        targetChapterEl.scrollIntoView({ behavior: 'auto', block: 'start' });
-      }
-      updateHeaderRef();
-    }, 50);
-
-    // Load 4 chapters AFTER the target chapter
-    scheduleTask(() => loadNextChapters(4));
   }
 
   // ===== SEARCH =====
@@ -1193,8 +973,7 @@
     const verseRef = `${parsed.book} ${parsed.chapter}:${parsed.verse}`;
     const bookIndex = state.books.indexOf(parsed.book) + 1;
 
-    hideContextMenu();
-    if (!els.aiPanel || !els.aiOutput) return;
+        if (!els.aiPanel || !els.aiOutput) return;
 
     els.aiOutput.innerHTML = `<div class="bible-loading">AI explaining passage...</div>`;
     showPanel(els.aiPanel);
@@ -1234,8 +1013,7 @@
     const parsed = parseRef(state.selectedVerse);
     const bookIndex = state.books.indexOf(parsed.book) + 1;
 
-    hideContextMenu();
-    if (!els.crossRefPanel || !els.crossRefList) return;
+        if (!els.crossRefPanel || !els.crossRefList) return;
 
     els.crossRefList.innerHTML = '<div class="bible-loading">Loading cross references...</div>';
     showPanel(els.crossRefPanel);
@@ -1305,8 +1083,7 @@
     }).catch(() => {
       alert('Failed to copy');
     });
-    hideContextMenu();
-  }
+      }
 
   function shareVerse() {
     if (!state.selectedVerse) return;
@@ -1320,8 +1097,7 @@
     } else {
       copyVerse();
     }
-    hideContextMenu();
-  }
+      }
 
   function changeFontSize(direction) {
     const sizes = ['small', 'medium', 'large', 'xlarge'];
@@ -1448,54 +1224,11 @@
 
   // ===== EVENT BINDINGS =====
   function bindEvents() {
-    els.quickNavToggle?.addEventListener('click', showQuickNav);
-    els.quickNavClose?.addEventListener('click', hideQuickNav);
-    els.quickNavOverlay?.addEventListener('click', hideQuickNav);
-    els.navBackToTestament?.addEventListener('click', () => showNavStep('testament'));
-    els.navBackToBook?.addEventListener('click', () => showNavStep('book'));
-    renderTestamentChoice();
-
-    els.searchToggle?.addEventListener('click', () => togglePanel(els.searchPanel));
-    els.notesToggle?.addEventListener('click', () => { togglePanel(els.notesPanel); renderNotesList(); });
-    els.bookmarksToggle?.addEventListener('click', () => { togglePanel(els.bookmarksPanel); renderBookmarksList(); });
-    els.readingPlanToggle?.addEventListener('click', showReadingPlan);
-
-    els.searchClose?.addEventListener('click', () => hidePanel(els.searchPanel));
-    els.notesClose?.addEventListener('click', () => hidePanel(els.notesPanel));
-    els.bookmarksClose?.addEventListener('click', () => hidePanel(els.bookmarksPanel));
-    els.aiClose?.addEventListener('click', () => hidePanel(els.aiPanel));
-    els.crossRefClose?.addEventListener('click', () => hidePanel(els.crossRefPanel));
-    els.readingPlanClose?.addEventListener('click', () => hidePanel(els.readingPlanPanel));
-
     els.searchBtn?.addEventListener('click', handleSearch);
     els.searchInput?.addEventListener('keydown', (e) => { if (e.key === 'Enter') handleSearch(); });
 
-    els.saveNoteBtn?.addEventListener('click', saveNote);
-    els.cancelNoteBtn?.addEventListener('click', cancelNote);
-
-    document.querySelectorAll('.bible-color-btn').forEach(btn => {
-      btn.addEventListener('click', () => applyHighlight(parseInt(btn.dataset.color, 10)));
-    });
-
-    els.ctxClose?.addEventListener('click', hideContextMenu);
-    els.ctxBookmark?.addEventListener('click', toggleBookmark);
-    els.ctxAddNote?.addEventListener('click', addNoteToVerse);
-    els.ctxAI?.addEventListener('click', showAIPrompt);
-    els.ctxCrossRef?.addEventListener('click', loadCrossReferences);
-    els.ctxCopy?.addEventListener('click', copyVerse);
-    els.ctxShare?.addEventListener('click', shareVerse);
-
-    els.fontSizeIncrease?.addEventListener('click', () => changeFontSize('increase'));
-    els.fontSizeDecrease?.addEventListener('click', () => changeFontSize('decrease'));
-
-    document.addEventListener('click', (e) => {
-      if (els.verseContextMenu && !els.verseContextMenu.contains(e.target) && !e.target.closest('.bible-verse')) {
-        hideContextMenu();
-      }
-    });
-
     document.addEventListener('keydown', (e) => {
-      if (e.key === 'Escape') { hideAllPanels(); hideContextMenu(); hideQuickNav(); }
+      if (e.key === 'Escape') { hideAllPanels(); }
     });
   }
 
@@ -1506,8 +1239,6 @@
     try {
       await initDB();
       updateLoadingProgress(10, 'Database ready');
-
-      els.quickNavModal?.classList.add('bible-modal-hidden');
 
       const data = await loadJSON(state.path, (p) => updateLoadingProgress(10 + (p * 0.6), 'Loading Bible...'));
 
@@ -1547,39 +1278,7 @@
 
   // ===== GLOBAL API FOR INLINE ONCLICK HANDLERS =====
   window.BibleApp = {
-    // Navigation - uses same pattern as toggleSearch/toggleNotes/toggleBookmarks
-    showNav: function() {
-      if (els.quickNavModal) {
-        els.quickNavModal.style.display = 'flex';
-        els.quickNavModal.classList.remove('bible-modal-hidden');
-      }
-      state.navState = { testament: null, book: null, chapter: null };
-      showNavStep('testament');
-    },
-    hideNav: function() {
-      if (els.quickNavModal) {
-        els.quickNavModal.style.display = 'none';
-        els.quickNavModal.classList.add('bible-modal-hidden');
-      }
-    },
-    selectTestament: function(t) {
-      state.navState.testament = t;
-      renderBookChoice();
-      showNavStep('book');
-    },
-    showStep: function(step) {
-      showNavStep(step);
-    },
-
-    // Context Menu - uses existing functions that use els.verseContextMenu
-    showMenu: function() {
-      showContextMenu();
-    },
-    hideMenu: function() {
-      hideContextMenu();
-    },
-
-    // Panels - these already work
+    // Panels
     toggleSearch: function() {
       togglePanel(els.searchPanel);
     },
@@ -1608,14 +1307,7 @@
       }
     },
 
-    // Verse actions
-    highlight: applyHighlight,
-    bookmark: toggleBookmark,
-    addNote: addNoteToVerse,
-    askAI: showAIPrompt,
-    crossRef: loadCrossReferences,
-    copy: copyVerse,
-    share: shareVerse,
+    // Notes
     saveNote: saveNote,
     cancelNote: cancelNote,
 
