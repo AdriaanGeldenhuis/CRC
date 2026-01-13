@@ -1,7 +1,7 @@
 <?php
 /**
  * CRC Gospel Media Feed
- * Global and congregation posts
+ * Social media style feed for the church community
  */
 
 require_once __DIR__ . '/../core/bootstrap.php';
@@ -85,284 +85,457 @@ $totalPages = ceil($totalPosts / $perPage);
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><?= e($pageTitle) ?></title>
     <?= CSRF::meta() ?>
-    <link rel="stylesheet" href="/gospel_media/css/gospel_media.css">
+    <link rel="stylesheet" href="/gospel_media/css/gospel_media.css?v=<?= time() ?>">
     <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <script>
+        (function() {
+            const saved = localStorage.getItem('theme') || 'dark';
+            document.documentElement.setAttribute('data-theme', saved);
+        })();
+    </script>
 </head>
 <body>
-    <?php include __DIR__ . '/../home/partials/navbar.php'; ?>
+    <!-- Mobile Header -->
+    <header class="mobile-header">
+        <a href="/home/" class="header-logo">CRC</a>
+        <h1 class="header-title">Feed</h1>
+        <div class="header-actions">
+            <a href="/notifications/" class="header-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+                    <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+                </svg>
+            </a>
+            <button class="header-btn" onclick="openPostModal()">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="12" y1="5" x2="12" y2="19"></line>
+                    <line x1="5" y1="12" x2="19" y2="12"></line>
+                </svg>
+            </button>
+        </div>
+    </header>
 
-    <main class="main-content">
-        <div class="container">
-            <div class="feed-layout">
-                <!-- Sidebar -->
-                <aside class="feed-sidebar">
-                    <div class="sidebar-section">
-                        <h3>Feed</h3>
-                        <nav class="sidebar-nav">
-                            <a href="?scope=all" class="sidebar-link <?= $scope === 'all' ? 'active' : '' ?>">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                    <rect x="3" y="3" width="7" height="7"></rect>
-                                    <rect x="14" y="3" width="7" height="7"></rect>
-                                    <rect x="14" y="14" width="7" height="7"></rect>
-                                    <rect x="3" y="14" width="7" height="7"></rect>
-                                </svg>
-                                All Posts
-                            </a>
-                            <a href="?scope=global" class="sidebar-link <?= $scope === 'global' ? 'active' : '' ?>">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                    <circle cx="12" cy="12" r="10"></circle>
-                                    <line x1="2" y1="12" x2="22" y2="12"></line>
-                                    <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
-                                </svg>
-                                Global
-                            </a>
-                            <a href="?scope=congregation" class="sidebar-link <?= $scope === 'congregation' ? 'active' : '' ?>">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                    <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
-                                    <polyline points="9 22 9 12 15 12 15 22"></polyline>
-                                </svg>
-                                <?= e($primaryCong['name']) ?>
-                            </a>
-                        </nav>
-                    </div>
+    <!-- Feed Filter Tabs (Mobile) -->
+    <nav class="feed-tabs">
+        <a href="?scope=all" class="feed-tab <?= $scope === 'all' ? 'active' : '' ?>">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="3" y="3" width="7" height="7"></rect>
+                <rect x="14" y="3" width="7" height="7"></rect>
+                <rect x="14" y="14" width="7" height="7"></rect>
+                <rect x="3" y="14" width="7" height="7"></rect>
+            </svg>
+            <span>All</span>
+        </a>
+        <a href="?scope=global" class="feed-tab <?= $scope === 'global' ? 'active' : '' ?>">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="10"></circle>
+                <line x1="2" y1="12" x2="22" y2="12"></line>
+                <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
+            </svg>
+            <span>Global</span>
+        </a>
+        <a href="?scope=congregation" class="feed-tab <?= $scope === 'congregation' ? 'active' : '' ?>">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+                <polyline points="9 22 9 12 15 12 15 22"></polyline>
+            </svg>
+            <span>Church</span>
+        </a>
+        <a href="/gospel_media/groups.php" class="feed-tab">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                <circle cx="9" cy="7" r="4"></circle>
+                <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+            </svg>
+            <span>Groups</span>
+        </a>
+    </nav>
 
-                    <div class="sidebar-section">
-                        <h3>Groups</h3>
-                        <a href="/gospel_media/groups.php" class="sidebar-link">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
-                                <circle cx="9" cy="7" r="4"></circle>
-                                <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
-                                <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
-                            </svg>
-                            Browse Groups
-                        </a>
-                        <a href="/gospel_media/sell.php" class="sidebar-link">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <circle cx="9" cy="21" r="1"></circle>
-                                <circle cx="20" cy="21" r="1"></circle>
-                                <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path>
-                            </svg>
-                            Marketplace
-                        </a>
-                    </div>
-
-                    <div class="sidebar-section">
-                        <h3>Events</h3>
-                        <a href="/calendar/" class="sidebar-link">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
-                                <line x1="16" y1="2" x2="16" y2="6"></line>
-                                <line x1="8" y1="2" x2="8" y2="6"></line>
-                                <line x1="3" y1="10" x2="21" y2="10"></line>
-                            </svg>
-                            View Calendar
-                        </a>
-                    </div>
-                </aside>
-
-                <!-- Main Feed -->
-                <div class="feed-main">
-                    <!-- Create Post -->
-                    <div class="create-post-card">
-                        <div class="create-post-header">
-                            <?php if ($user['avatar']): ?>
-                                <img src="<?= e($user['avatar']) ?>" alt="" class="user-avatar">
-                            <?php else: ?>
-                                <div class="user-avatar-placeholder"><?= strtoupper(substr($user['name'], 0, 1)) ?></div>
-                            <?php endif; ?>
-                            <button class="create-post-input" onclick="openPostModal()">
-                                What's on your heart, <?= e(explode(' ', $user['name'])[0]) ?>?
-                            </button>
+    <!-- Desktop Navbar (shows on larger screens) -->
+    <nav class="desktop-navbar">
+        <div class="nav-container">
+            <a href="/home/" class="nav-logo">CRC</a>
+            <div class="nav-center">
+                <a href="?scope=all" class="nav-tab <?= $scope === 'all' ? 'active' : '' ?>">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <rect x="3" y="3" width="7" height="7"></rect>
+                        <rect x="14" y="3" width="7" height="7"></rect>
+                        <rect x="14" y="14" width="7" height="7"></rect>
+                        <rect x="3" y="14" width="7" height="7"></rect>
+                    </svg>
+                    All
+                </a>
+                <a href="?scope=global" class="nav-tab <?= $scope === 'global' ? 'active' : '' ?>">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <line x1="2" y1="12" x2="22" y2="12"></line>
+                        <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
+                    </svg>
+                    Global
+                </a>
+                <a href="?scope=congregation" class="nav-tab <?= $scope === 'congregation' ? 'active' : '' ?>">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+                        <polyline points="9 22 9 12 15 12 15 22"></polyline>
+                    </svg>
+                    <?= e($primaryCong['name']) ?>
+                </a>
+            </div>
+            <div class="nav-actions">
+                <a href="/notifications/" class="nav-icon-btn">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+                        <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+                    </svg>
+                </a>
+                <div class="user-menu">
+                    <button class="user-menu-btn" onclick="toggleUserMenu()">
+                        <?php if ($user['avatar']): ?>
+                            <img src="<?= e($user['avatar']) ?>" alt="" class="user-avatar">
+                        <?php else: ?>
+                            <div class="user-avatar-placeholder"><?= strtoupper(substr($user['name'], 0, 1)) ?></div>
+                        <?php endif; ?>
+                    </button>
+                    <div class="user-dropdown" id="userDropdown">
+                        <div class="user-dropdown-header">
+                            <strong><?= e($user['name']) ?></strong>
+                            <span><?= e($primaryCong['name']) ?></span>
                         </div>
-                        <div class="create-post-actions">
-                            <button class="create-action" onclick="openPostModal('image')">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                    <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
-                                    <circle cx="8.5" cy="8.5" r="1.5"></circle>
-                                    <polyline points="21 15 16 10 5 21"></polyline>
-                                </svg>
-                                Photo
-                            </button>
-                            <button class="create-action" onclick="openPostModal('video')">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                    <polygon points="23 7 16 12 23 17 23 7"></polygon>
-                                    <rect x="1" y="5" width="15" height="14" rx="2" ry="2"></rect>
-                                </svg>
-                                Video
-                            </button>
-                            <button class="create-action" onclick="openPostModal('scripture')">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                    <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
-                                    <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
-                                </svg>
-                                Scripture
-                            </button>
-                        </div>
+                        <div class="user-dropdown-divider"></div>
+                        <a href="/profile/" class="user-dropdown-item">Profile</a>
+                        <a href="/home/" class="user-dropdown-item">Home</a>
+                        <?php if (Auth::isCongregationAdmin($primaryCong['id'])): ?>
+                            <a href="/admin_congregation/" class="user-dropdown-item">Manage Congregation</a>
+                        <?php endif; ?>
+                        <?php if (Auth::isAdmin()): ?>
+                            <a href="/admin/" class="user-dropdown-item">Admin Panel</a>
+                        <?php endif; ?>
+                        <div class="user-dropdown-divider"></div>
+                        <a href="/auth/logout.php" class="user-dropdown-item logout">Logout</a>
                     </div>
+                </div>
+            </div>
+        </div>
+    </nav>
 
-                    <!-- Posts -->
-                    <?php if ($posts): ?>
-                        <?php foreach ($posts as $post): ?>
-                            <article class="post-card" data-post-id="<?= $post['id'] ?>">
-                                <div class="post-header">
-                                    <div class="post-author">
-                                        <?php if ($post['author_avatar']): ?>
-                                            <img src="<?= e($post['author_avatar']) ?>" alt="" class="author-avatar">
-                                        <?php else: ?>
-                                            <div class="author-avatar-placeholder"><?= strtoupper(substr($post['author_name'], 0, 1)) ?></div>
-                                        <?php endif; ?>
-                                        <div class="author-info">
-                                            <strong><?= e($post['author_name']) ?></strong>
-                                            <span>
-                                                <?= time_ago($post['created_at']) ?>
-                                                <?php if ($post['scope'] === 'congregation' && $post['congregation_name']): ?>
-                                                    • <?= e($post['congregation_name']) ?>
-                                                <?php elseif ($post['scope'] === 'global'): ?>
-                                                    • Global
-                                                <?php endif; ?>
-                                            </span>
-                                        </div>
-                                    </div>
-                                    <?php if ($post['is_pinned']): ?>
-                                        <span class="pinned-badge">Pinned</span>
-                                    <?php endif; ?>
-                                </div>
+    <main class="feed-container">
+        <!-- Create Post Card -->
+        <div class="create-post-card">
+            <div class="create-post-row">
+                <?php if ($user['avatar']): ?>
+                    <img src="<?= e($user['avatar']) ?>" alt="" class="create-avatar">
+                <?php else: ?>
+                    <div class="create-avatar-placeholder"><?= strtoupper(substr($user['name'], 0, 1)) ?></div>
+                <?php endif; ?>
+                <button class="create-post-input" onclick="openPostModal()">
+                    What's on your heart?
+                </button>
+            </div>
+            <div class="create-post-actions">
+                <button class="create-action" onclick="openPostModal('image')">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                        <circle cx="8.5" cy="8.5" r="1.5"></circle>
+                        <polyline points="21 15 16 10 5 21"></polyline>
+                    </svg>
+                    <span>Photo</span>
+                </button>
+                <button class="create-action" onclick="openPostModal('video')">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polygon points="23 7 16 12 23 17 23 7"></polygon>
+                        <rect x="1" y="5" width="15" height="14" rx="2" ry="2"></rect>
+                    </svg>
+                    <span>Video</span>
+                </button>
+                <button class="create-action" onclick="openPostModal('scripture')">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
+                        <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
+                    </svg>
+                    <span>Scripture</span>
+                </button>
+            </div>
+        </div>
 
-                                <div class="post-content">
-                                    <?= nl2br(e($post['content'])) ?>
-                                </div>
-
-                                <?php if ($post['media']): ?>
-                                    <?php $media = json_decode($post['media'], true); ?>
-                                    <?php if ($media): ?>
-                                        <div class="post-media">
-                                            <?php foreach ($media as $item): ?>
-                                                <?php if (strpos($item['type'] ?? '', 'image') !== false): ?>
-                                                    <img src="<?= e($item['url']) ?>" alt="" class="media-image">
-                                                <?php endif; ?>
-                                            <?php endforeach; ?>
-                                        </div>
-                                    <?php endif; ?>
+        <!-- Posts Feed -->
+        <div class="posts-feed">
+            <?php if ($posts): ?>
+                <?php foreach ($posts as $post): ?>
+                    <article class="post-card" data-post-id="<?= $post['id'] ?>">
+                        <div class="post-header">
+                            <div class="post-author">
+                                <?php if ($post['author_avatar']): ?>
+                                    <img src="<?= e($post['author_avatar']) ?>" alt="" class="author-avatar">
+                                <?php else: ?>
+                                    <div class="author-avatar-placeholder"><?= strtoupper(substr($post['author_name'], 0, 1)) ?></div>
                                 <?php endif; ?>
+                                <div class="author-info">
+                                    <strong><?= e($post['author_name']) ?></strong>
+                                    <span class="post-meta">
+                                        <?= time_ago($post['created_at']) ?>
+                                        <?php if ($post['scope'] === 'global'): ?>
+                                            <span class="scope-badge global">Global</span>
+                                        <?php elseif ($post['congregation_name']): ?>
+                                            <span class="scope-badge"><?= e($post['congregation_name']) ?></span>
+                                        <?php endif; ?>
+                                    </span>
+                                </div>
+                            </div>
+                            <?php if ($post['is_pinned']): ?>
+                                <span class="pinned-badge">
+                                    <svg viewBox="0 0 24 24" fill="currentColor" width="14" height="14">
+                                        <path d="M16 12V4h1V2H7v2h1v8l-2 2v2h5v6l1 1 1-1v-6h5v-2l-2-2z"/>
+                                    </svg>
+                                    Pinned
+                                </span>
+                            <?php endif; ?>
+                        </div>
 
-                                <div class="post-stats">
+                        <div class="post-content">
+                            <?= nl2br(e($post['content'])) ?>
+                        </div>
+
+                        <?php if ($post['media']): ?>
+                            <?php $media = json_decode($post['media'], true); ?>
+                            <?php if ($media): ?>
+                                <div class="post-media <?= count($media) > 1 ? 'media-grid-' . min(count($media), 4) : '' ?>">
+                                    <?php foreach (array_slice($media, 0, 4) as $item): ?>
+                                        <?php if (strpos($item['type'] ?? '', 'image') !== false): ?>
+                                            <img src="<?= e($item['url']) ?>" alt="" class="media-image" onclick="openImageViewer('<?= e($item['url']) ?>')">
+                                        <?php endif; ?>
+                                    <?php endforeach; ?>
+                                </div>
+                            <?php endif; ?>
+                        <?php endif; ?>
+
+                        <div class="post-engagement">
+                            <?php if ($post['reaction_count'] > 0 || $post['comment_count'] > 0): ?>
+                                <div class="engagement-stats">
                                     <?php if ($post['reaction_count'] > 0): ?>
-                                        <span class="stat"><?= $post['reaction_count'] ?> reactions</span>
+                                        <span class="stat">
+                                            <span class="reaction-icons">
+                                                <svg viewBox="0 0 24 24" fill="var(--danger)" width="16" height="16">
+                                                    <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+                                                </svg>
+                                            </span>
+                                            <?= $post['reaction_count'] ?>
+                                        </span>
                                     <?php endif; ?>
                                     <?php if ($post['comment_count'] > 0): ?>
                                         <span class="stat"><?= $post['comment_count'] ?> comments</span>
                                     <?php endif; ?>
                                 </div>
-
-                                <div class="post-actions">
-                                    <button class="post-action <?= $post['user_reaction'] ? 'active' : '' ?>" onclick="toggleReaction(<?= $post['id'] ?>)">
-                                        <svg viewBox="0 0 24 24" fill="<?= $post['user_reaction'] ? 'currentColor' : 'none' ?>" stroke="currentColor" stroke-width="2">
-                                            <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
-                                        </svg>
-                                        Like
-                                    </button>
-                                    <button class="post-action" onclick="toggleComments(<?= $post['id'] ?>)">
-                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
-                                        </svg>
-                                        Comment
-                                    </button>
-                                    <button class="post-action" onclick="sharePost(<?= $post['id'] ?>)">
-                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                            <circle cx="18" cy="5" r="3"></circle>
-                                            <circle cx="6" cy="12" r="3"></circle>
-                                            <circle cx="18" cy="19" r="3"></circle>
-                                            <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line>
-                                            <line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line>
-                                        </svg>
-                                        Share
-                                    </button>
-                                </div>
-
-                                <!-- Comments Section (hidden by default) -->
-                                <div class="comments-section" id="comments-<?= $post['id'] ?>" style="display: none;">
-                                    <div class="comments-list"></div>
-                                    <form class="comment-form" onsubmit="submitComment(event, <?= $post['id'] ?>)">
-                                        <input type="text" placeholder="Write a comment..." class="comment-input" required>
-                                        <button type="submit" class="btn btn-primary btn-sm">Post</button>
-                                    </form>
-                                </div>
-                            </article>
-                        <?php endforeach; ?>
-
-                        <!-- Pagination -->
-                        <?php if ($totalPages > 1): ?>
-                            <div class="pagination">
-                                <?php if ($page > 1): ?>
-                                    <a href="?scope=<?= $scope ?>&page=<?= $page - 1 ?>" class="pagination-link">Previous</a>
-                                <?php endif; ?>
-                                <span class="pagination-info">Page <?= $page ?> of <?= $totalPages ?></span>
-                                <?php if ($page < $totalPages): ?>
-                                    <a href="?scope=<?= $scope ?>&page=<?= $page + 1 ?>" class="pagination-link">Next</a>
-                                <?php endif; ?>
-                            </div>
-                        <?php endif; ?>
-                    <?php else: ?>
-                        <div class="empty-feed">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
-                            </svg>
-                            <h3>No posts yet</h3>
-                            <p>Be the first to share something!</p>
+                            <?php endif; ?>
                         </div>
-                    <?php endif; ?>
+
+                        <div class="post-actions">
+                            <button class="post-action <?= $post['user_reaction'] ? 'liked' : '' ?>" onclick="toggleReaction(<?= $post['id'] ?>)">
+                                <svg viewBox="0 0 24 24" fill="<?= $post['user_reaction'] ? 'currentColor' : 'none' ?>" stroke="currentColor" stroke-width="2">
+                                    <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
+                                </svg>
+                                <span>Like</span>
+                            </button>
+                            <button class="post-action" onclick="toggleComments(<?= $post['id'] ?>)">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+                                </svg>
+                                <span>Comment</span>
+                            </button>
+                            <button class="post-action" onclick="sharePost(<?= $post['id'] ?>)">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <circle cx="18" cy="5" r="3"></circle>
+                                    <circle cx="6" cy="12" r="3"></circle>
+                                    <circle cx="18" cy="19" r="3"></circle>
+                                    <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line>
+                                    <line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line>
+                                </svg>
+                                <span>Share</span>
+                            </button>
+                        </div>
+
+                        <!-- Comments Section -->
+                        <div class="comments-section" id="comments-<?= $post['id'] ?>" style="display: none;">
+                            <div class="comments-list"></div>
+                            <form class="comment-form" onsubmit="submitComment(event, <?= $post['id'] ?>)">
+                                <?php if ($user['avatar']): ?>
+                                    <img src="<?= e($user['avatar']) ?>" alt="" class="comment-avatar">
+                                <?php else: ?>
+                                    <div class="comment-avatar-placeholder"><?= strtoupper(substr($user['name'], 0, 1)) ?></div>
+                                <?php endif; ?>
+                                <input type="text" placeholder="Write a comment..." class="comment-input" required>
+                                <button type="submit" class="comment-submit">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <line x1="22" y1="2" x2="11" y2="13"></line>
+                                        <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+                                    </svg>
+                                </button>
+                            </form>
+                        </div>
+                    </article>
+                <?php endforeach; ?>
+
+                <!-- Load More / Pagination -->
+                <?php if ($totalPages > 1): ?>
+                    <div class="load-more-section">
+                        <?php if ($page < $totalPages): ?>
+                            <a href="?scope=<?= $scope ?>&page=<?= $page + 1 ?>" class="load-more-btn">
+                                Load More Posts
+                            </a>
+                        <?php endif; ?>
+                        <span class="page-info">Page <?= $page ?> of <?= $totalPages ?></span>
+                    </div>
+                <?php endif; ?>
+            <?php else: ?>
+                <div class="empty-state">
+                    <div class="empty-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+                        </svg>
+                    </div>
+                    <h3>No posts yet</h3>
+                    <p>Be the first to share something with the community!</p>
+                    <button class="btn-primary" onclick="openPostModal()">Create Post</button>
                 </div>
-            </div>
+            <?php endif; ?>
         </div>
     </main>
 
-    <!-- Post Modal -->
+    <!-- Bottom Navigation (Mobile) -->
+    <nav class="bottom-nav">
+        <a href="/home/" class="bottom-nav-item">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+                <polyline points="9 22 9 12 15 12 15 22"></polyline>
+            </svg>
+            <span>Home</span>
+        </a>
+        <a href="/gospel_media/" class="bottom-nav-item active">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M4 11a9 9 0 0 1 9 9"></path>
+                <path d="M4 4a16 16 0 0 1 16 16"></path>
+                <circle cx="5" cy="19" r="1"></circle>
+            </svg>
+            <span>Feed</span>
+        </a>
+        <button class="bottom-nav-item create-btn" onclick="openPostModal()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                <line x1="12" y1="5" x2="12" y2="19"></line>
+                <line x1="5" y1="12" x2="19" y2="12"></line>
+            </svg>
+        </button>
+        <a href="/calendar/" class="bottom-nav-item">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                <line x1="16" y1="2" x2="16" y2="6"></line>
+                <line x1="8" y1="2" x2="8" y2="6"></line>
+                <line x1="3" y1="10" x2="21" y2="10"></line>
+            </svg>
+            <span>Events</span>
+        </a>
+        <a href="/profile/" class="bottom-nav-item">
+            <?php if ($user['avatar']): ?>
+                <img src="<?= e($user['avatar']) ?>" alt="" class="bottom-nav-avatar">
+            <?php else: ?>
+                <div class="bottom-nav-avatar-placeholder"><?= strtoupper(substr($user['name'], 0, 1)) ?></div>
+            <?php endif; ?>
+            <span>Me</span>
+        </a>
+    </nav>
+
+    <!-- Create Post Modal -->
     <div class="modal" id="postModal">
         <div class="modal-overlay" onclick="closePostModal()"></div>
         <div class="modal-content">
             <div class="modal-header">
+                <button class="modal-back" onclick="closePostModal()">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="15 18 9 12 15 6"></polyline>
+                    </svg>
+                </button>
                 <h2>Create Post</h2>
-                <button class="modal-close" onclick="closePostModal()">&times;</button>
+                <button type="submit" form="createPostForm" class="modal-post-btn" id="postSubmitBtn">Post</button>
             </div>
             <form id="createPostForm" onsubmit="createPost(event)">
                 <div class="modal-body">
-                    <div class="form-group">
-                        <label for="postScope">Post to</label>
-                        <select id="postScope" name="scope" required>
-                            <option value="congregation"><?= e($primaryCong['name']) ?></option>
-                            <?php if (Auth::isAdmin()): ?>
-                                <option value="global">Global (All Congregations)</option>
-                            <?php endif; ?>
-                        </select>
+                    <div class="post-author-row">
+                        <?php if ($user['avatar']): ?>
+                            <img src="<?= e($user['avatar']) ?>" alt="" class="modal-avatar">
+                        <?php else: ?>
+                            <div class="modal-avatar-placeholder"><?= strtoupper(substr($user['name'], 0, 1)) ?></div>
+                        <?php endif; ?>
+                        <div class="author-select">
+                            <strong><?= e($user['name']) ?></strong>
+                            <select id="postScope" name="scope">
+                                <option value="congregation"><?= e($primaryCong['name']) ?></option>
+                                <?php if (Auth::isAdmin()): ?>
+                                    <option value="global">Global (All)</option>
+                                <?php endif; ?>
+                            </select>
+                        </div>
                     </div>
-                    <div class="form-group">
-                        <textarea id="postContent" name="content" placeholder="What's on your heart?" rows="4" required></textarea>
-                    </div>
+                    <textarea id="postContent" name="content" placeholder="What's on your heart, <?= e(explode(' ', $user['name'])[0]) ?>?" rows="5" required></textarea>
                     <div id="mediaPreview" class="media-preview"></div>
-                    <div class="post-tools">
-                        <label class="tool-btn">
-                            <input type="file" id="postMedia" accept="image/*" multiple style="display:none" onchange="previewMedia(this)">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
-                                <circle cx="8.5" cy="8.5" r="1.5"></circle>
-                                <polyline points="21 15 16 10 5 21"></polyline>
-                            </svg>
-                            Add Photo
-                        </label>
-                    </div>
                 </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-outline" onclick="closePostModal()">Cancel</button>
-                    <button type="submit" class="btn btn-primary" id="postSubmitBtn">Post</button>
+                <div class="modal-toolbar">
+                    <label class="toolbar-btn">
+                        <input type="file" id="postMedia" accept="image/*" multiple style="display:none" onchange="previewMedia(this)">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                            <circle cx="8.5" cy="8.5" r="1.5"></circle>
+                            <polyline points="21 15 16 10 5 21"></polyline>
+                        </svg>
+                    </label>
+                    <label class="toolbar-btn">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polygon points="23 7 16 12 23 17 23 7"></polygon>
+                            <rect x="1" y="5" width="15" height="14" rx="2" ry="2"></rect>
+                        </svg>
+                    </label>
+                    <label class="toolbar-btn">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="12" cy="12" r="10"></circle>
+                            <path d="M8 14s1.5 2 4 2 4-2 4-2"></path>
+                            <line x1="9" y1="9" x2="9.01" y2="9"></line>
+                            <line x1="15" y1="9" x2="15.01" y2="9"></line>
+                        </svg>
+                    </label>
                 </div>
             </form>
         </div>
     </div>
 
+    <!-- Image Viewer Modal -->
+    <div class="image-viewer" id="imageViewer" onclick="closeImageViewer()">
+        <button class="viewer-close">&times;</button>
+        <img src="" alt="" id="viewerImage">
+    </div>
+
     <div id="toast" class="toast"></div>
 
     <script src="/gospel_media/js/gospel_media.js"></script>
+    <script>
+        function toggleUserMenu() {
+            document.getElementById('userDropdown').classList.toggle('show');
+        }
+
+        document.addEventListener('click', function(e) {
+            if (!e.target.closest('.user-menu')) {
+                document.getElementById('userDropdown')?.classList.remove('show');
+            }
+        });
+
+        function openImageViewer(src) {
+            document.getElementById('viewerImage').src = src;
+            document.getElementById('imageViewer').classList.add('show');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeImageViewer() {
+            document.getElementById('imageViewer').classList.remove('show');
+            document.body.style.overflow = '';
+        }
+    </script>
 </body>
 </html>
