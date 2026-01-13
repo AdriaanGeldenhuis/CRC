@@ -317,17 +317,24 @@
     const headerTitle = document.querySelector('.nav-logo');
     if (!headerTitle) return;
 
+    const scrollContainer = els.leftColumn;
+    if (!scrollContainer) return;
+
+    const containerRect = scrollContainer.getBoundingClientRect();
     const verses = document.querySelectorAll('.bible-verse[data-verse]');
     if (!verses.length) return;
 
-    // Find first and last visible verses in viewport
+    // Find first and last visible verses within the scroll container
     let firstVisible = null;
     let lastVisible = null;
 
     verses.forEach(v => {
       const rect = v.getBoundingClientRect();
-      // Check if verse is in viewport (between header and bottom)
-      if (rect.top > 60 && rect.bottom < window.innerHeight + 50) {
+      // Check if verse is visible within the scroll container bounds
+      const isVisible = rect.top >= containerRect.top - 10 &&
+                       rect.bottom <= containerRect.bottom + 10 &&
+                       rect.top < containerRect.bottom;
+      if (isVisible) {
         if (!firstVisible) {
           firstVisible = v;
         }
@@ -337,11 +344,19 @@
 
     if (firstVisible && lastVisible) {
       const firstBook = firstVisible.dataset.book;
-      const firstChapter = firstVisible.dataset.chapter;
+      const firstChapter = parseInt(firstVisible.dataset.chapter, 10);
       const firstVerse = firstVisible.dataset.verse;
       const lastBook = lastVisible.dataset.book;
-      const lastChapter = lastVisible.dataset.chapter;
+      const lastChapter = parseInt(lastVisible.dataset.chapter, 10);
       const lastVerse = lastVisible.dataset.verse;
+
+      // Update current position tracking for infinite scroll
+      const lastBookIdx = state.books.indexOf(lastBook);
+      if (lastBookIdx !== -1 && (lastBookIdx > state.currentBookIndex ||
+          (lastBookIdx === state.currentBookIndex && lastChapter > state.currentChapter))) {
+        state.currentBookIndex = lastBookIdx;
+        state.currentChapter = lastChapter;
+      }
 
       let headerText;
       if (firstBook === lastBook && firstChapter === lastChapter) {
@@ -359,6 +374,12 @@
         headerText = `${firstBook} ${firstChapter}:${firstVerse} - ${lastBook} ${lastChapter}:${lastVerse}`;
       }
       headerTitle.textContent = headerText;
+
+      // Update URL to reflect current position (debounced by scroll handler)
+      const newUrl = new URL(window.location);
+      newUrl.searchParams.set('book', firstBook);
+      newUrl.searchParams.set('chapter', firstChapter);
+      window.history.replaceState({}, '', newUrl);
     }
   }
 
