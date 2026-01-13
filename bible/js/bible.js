@@ -631,9 +631,6 @@
     vDiv.dataset.chapter = chapter;
     vDiv.dataset.verse = verseNum;
 
-    // Use inline onclick for WebView compatibility
-    vDiv.setAttribute('onclick', `BibleApp.verseClick('${ref}')`);
-
     if (state.highlights[ref]) {
       vDiv.classList.add(`bible-highlight-${state.highlights[ref]}`);
     }
@@ -1550,21 +1547,19 @@
 
   // ===== GLOBAL API FOR INLINE ONCLICK HANDLERS =====
   window.BibleApp = {
-    // Navigation
+    // Navigation - uses same pattern as toggleSearch/toggleNotes/toggleBookmarks
     showNav: function() {
-      const modal = document.getElementById('quickNavModal');
-      if (modal) {
-        modal.style.display = 'flex';
-        modal.classList.remove('bible-modal-hidden');
+      if (els.quickNavModal) {
+        els.quickNavModal.style.display = 'flex';
+        els.quickNavModal.classList.remove('bible-modal-hidden');
       }
       state.navState = { testament: null, book: null, chapter: null };
       showNavStep('testament');
     },
     hideNav: function() {
-      const modal = document.getElementById('quickNavModal');
-      if (modal) {
-        modal.style.display = 'none';
-        modal.classList.add('bible-modal-hidden');
+      if (els.quickNavModal) {
+        els.quickNavModal.style.display = 'none';
+        els.quickNavModal.classList.add('bible-modal-hidden');
       }
     },
     selectTestament: function(t) {
@@ -1576,23 +1571,15 @@
       showNavStep(step);
     },
 
-    // Context Menu
+    // Context Menu - uses existing functions that use els.verseContextMenu
     showMenu: function() {
-      const menu = document.getElementById('verseContextMenu');
-      if (menu) {
-        menu.style.display = 'block';
-        menu.classList.remove('bible-context-hidden');
-      }
+      showContextMenu();
     },
     hideMenu: function() {
-      const menu = document.getElementById('verseContextMenu');
-      if (menu) {
-        menu.style.display = 'none';
-        menu.classList.add('bible-context-hidden');
-      }
+      hideContextMenu();
     },
 
-    // Panels
+    // Panels - these already work
     toggleSearch: function() {
       togglePanel(els.searchPanel);
     },
@@ -1634,18 +1621,7 @@
 
     // Font size
     fontIncrease: function() { changeFontSize('increase'); },
-    fontDecrease: function() { changeFontSize('decrease'); },
-
-    // Verse click handler
-    verseClick: function(ref) {
-      document.querySelectorAll('.bible-verse').forEach(v => v.classList.remove('selected'));
-      const verse = document.querySelector(`[data-ref="${ref}"]`);
-      if (verse) {
-        verse.classList.add('selected');
-        state.selectedVerse = ref;
-        window.BibleApp.showMenu();
-      }
-    }
+    fontDecrease: function() { changeFontSize('decrease'); }
   };
 
   init();
