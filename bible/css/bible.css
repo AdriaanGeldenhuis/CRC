@@ -1053,16 +1053,9 @@ html {
   }
 
   .bible-context-menu:not(.bible-context-hidden) {
-    transform: translate(-50%, -50%) scale(1);
+    display: block;
+    transform: translate(-50%, -50%);
     opacity: 1;
-    visibility: visible;
-  }
-
-  .bible-context-hidden {
-    transform: translate(-50%, -50%) scale(0.9);
-    opacity: 0;
-    visibility: hidden;
-    pointer-events: none;
   }
 }
 
@@ -1085,20 +1078,16 @@ html {
     padding: 0;
     z-index: 9999;
     box-shadow: 0 -10px 40px rgba(0, 0, 0, 0.5);
-    transform: translateY(100%);
-    opacity: 1;
-    visibility: visible;
-    transition: transform 0.3s ease;
   }
 
   .bible-context-menu:not(.bible-context-hidden) {
-    transform: translateY(0);
+    display: block;
   }
+}
 
-  .bible-context-hidden {
-    transform: translateY(100%);
-    pointer-events: none;
-  }
+/* CRITICAL: WebView-compatible hiding - use display:none */
+.bible-context-hidden {
+  display: none !important;
 }
 
 .bible-context-header {
