@@ -254,6 +254,7 @@
     ctxCrossRef: $('ctxCrossRef'),
     ctxCopy: $('ctxCopy'),
     ctxShare: $('ctxShare'),
+    ctxClose: $('ctxClose'),
     fontSizeIncrease: $('fontSizeIncrease'),
     fontSizeDecrease: $('fontSizeDecrease')
   };
@@ -748,12 +749,8 @@
     const menu = els.verseContextMenu;
     if (!menu) return;
 
+    // Show the bottom sheet (CSS handles positioning)
     menu.classList.remove('bible-context-hidden');
-
-    // Center the menu on screen (ignore x, y coordinates)
-    menu.style.left = '50%';
-    menu.style.top = '50%';
-    menu.style.transform = 'translate(-50%, -50%)';
   }
 
   function hideContextMenu() {
@@ -1706,6 +1703,7 @@
     els.ctxCrossRef?.addEventListener('click', loadCrossReferences);
     els.ctxCopy?.addEventListener('click', copyVerse);
     els.ctxShare?.addEventListener('click', shareVerse);
+    els.ctxClose?.addEventListener('click', hideContextMenu);
 
     els.fontSizeIncrease?.addEventListener('click', () => changeFontSize('increase'));
     els.fontSizeDecrease?.addEventListener('click', () => changeFontSize('decrease'));
