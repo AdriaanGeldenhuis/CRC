@@ -378,39 +378,26 @@ if (!$aiMessage) {
                         </h2>
                     </div>
                     <?php if ($newsItems): ?>
-                        <div class="news-carousel" id="newsCarousel">
-                            <div class="news-carousel-inner">
-                                <?php foreach ($newsItems as $index => $news): ?>
-                                    <div class="news-slide <?= $index === 0 ? 'active' : '' ?>">
-                                        <?php if ($news['link_url']): ?>
-                                            <a href="<?= e($news['link_url']) ?>" class="news-slide-link" target="_blank">
-                                        <?php endif; ?>
-                                            <img src="<?= e($news['image_path']) ?>" alt="<?= e($news['title']) ?>" class="news-image">
-                                            <div class="news-overlay">
-                                                <h3 class="news-title"><?= e($news['title']) ?></h3>
-                                                <?php if ($news['description']): ?>
-                                                    <p class="news-desc"><?= e($news['description']) ?></p>
-                                                <?php endif; ?>
-                                            </div>
-                                        <?php if ($news['link_url']): ?>
-                                            </a>
-                                        <?php endif; ?>
-                                    </div>
-                                <?php endforeach; ?>
-                            </div>
-                            <?php if (count($newsItems) > 1): ?>
-                                <div class="news-dots">
-                                    <?php foreach ($newsItems as $index => $news): ?>
-                                        <button class="news-dot <?= $index === 0 ? 'active' : '' ?>" onclick="goToSlide(<?= $index ?>)"></button>
-                                    <?php endforeach; ?>
+                        <div class="news-list">
+                            <?php foreach ($newsItems as $news): ?>
+                                <div class="news-item">
+                                    <?php if ($news['link_url']): ?>
+                                        <a href="<?= e($news['link_url']) ?>" class="news-item-link" target="_blank">
+                                    <?php endif; ?>
+                                        <div class="news-item-image">
+                                            <img src="<?= e($news['image_path']) ?>" alt="<?= e($news['title']) ?>">
+                                        </div>
+                                        <div class="news-item-content">
+                                            <h3 class="news-item-title"><?= e($news['title']) ?></h3>
+                                            <?php if ($news['description']): ?>
+                                                <p class="news-item-desc"><?= e($news['description']) ?></p>
+                                            <?php endif; ?>
+                                        </div>
+                                    <?php if ($news['link_url']): ?>
+                                        </a>
+                                    <?php endif; ?>
                                 </div>
-                                <button class="news-nav news-prev" onclick="prevSlide()">
-                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"></polyline></svg>
-                                </button>
-                                <button class="news-nav news-next" onclick="nextSlide()">
-                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"></polyline></svg>
-                                </button>
-                            <?php endif; ?>
+                            <?php endforeach; ?>
                         </div>
                     <?php else: ?>
                         <div class="no-content news-empty">
@@ -530,42 +517,6 @@ if (!$aiMessage) {
             }
         });
 
-        // News Carousel
-        let currentSlide = 0;
-        const slides = document.querySelectorAll('.news-slide');
-        const dots = document.querySelectorAll('.news-dot');
-        const totalSlides = slides.length;
-
-        function showSlide(index) {
-            if (totalSlides === 0) return;
-
-            currentSlide = (index + totalSlides) % totalSlides;
-
-            slides.forEach((slide, i) => {
-                slide.classList.toggle('active', i === currentSlide);
-            });
-
-            dots.forEach((dot, i) => {
-                dot.classList.toggle('active', i === currentSlide);
-            });
-        }
-
-        function nextSlide() {
-            showSlide(currentSlide + 1);
-        }
-
-        function prevSlide() {
-            showSlide(currentSlide - 1);
-        }
-
-        function goToSlide(index) {
-            showSlide(index);
-        }
-
-        // Auto-advance slides every 5 seconds
-        if (totalSlides > 1) {
-            setInterval(nextSlide, 5000);
-        }
     </script>
 </body>
 </html>
