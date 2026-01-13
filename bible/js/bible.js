@@ -686,10 +686,15 @@
     const menu = els.verseContextMenu;
     if (!menu) return;
 
+    // Move to body (WebView fix for fixed positioning)
+    if (menu.parentElement !== document.body) {
+      document.body.appendChild(menu);
+    }
+
     // Remove hidden class
     menu.classList.remove('bible-context-hidden');
 
-    // Force visibility with inline styles (overrides CSS)
+    // Force visibility with inline styles
     menu.style.cssText = `
       display: block !important;
       visibility: visible !important;
@@ -698,6 +703,13 @@
       left: ${x}px !important;
       top: ${y}px !important;
       z-index: 99999 !important;
+      background: #1A1A2E !important;
+      border: 1px solid rgba(139, 92, 246, 0.3) !important;
+      border-radius: 12px !important;
+      width: 280px !important;
+      max-height: 80vh !important;
+      overflow-y: auto !important;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.5) !important;
     `;
 
     // Adjust if off-screen
