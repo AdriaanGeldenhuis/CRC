@@ -15,10 +15,10 @@
   --primary-glow: rgba(139, 92, 246, 0.6);
   --primary-intense: rgba(139, 92, 246, 0.9);
 
-  /* Accent - Electric Cyan */
-  --accent: #22D3EE;
-  --accent-light: #67E8F9;
-  --accent-glow: rgba(34, 211, 238, 0.6);
+  /* Accent - Purple */
+  --accent: #A855F7;
+  --accent-light: #C084FC;
+  --accent-glow: rgba(168, 85, 247, 0.6);
 
   /* Secondary - Hot Pink */
   --secondary: #F472B6;

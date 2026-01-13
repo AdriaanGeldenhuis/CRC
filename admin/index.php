@@ -116,106 +116,22 @@ function timeAgoAdmin($datetime) {
     <?= CSRF::meta() ?>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: 'Inter', sans-serif; background: #0F172A; color: #E2E8F0; min-height: 100vh; }
-
-        .admin-layout { display: flex; min-height: 100vh; }
-
-        /* Sidebar */
-        .admin-sidebar { width: 260px; background: #1E293B; border-right: 1px solid #334155; display: flex; flex-direction: column; position: fixed; height: 100vh; }
-        .sidebar-header { padding: 1.5rem; border-bottom: 1px solid #334155; }
-        .admin-logo { color: #F59E0B; font-size: 1.25rem; font-weight: 700; text-decoration: none; display: flex; align-items: center; gap: 0.5rem; }
-        .admin-logo::before { content: ''; font-size: 1.5rem; }
-        .sidebar-nav { flex: 1; padding: 1rem 0; overflow-y: auto; }
-        .nav-item { display: flex; align-items: center; gap: 0.75rem; padding: 0.75rem 1.5rem; color: #94A3B8; text-decoration: none; transition: all 0.2s; }
-        .nav-item:hover { background: #334155; color: #E2E8F0; }
-        .nav-item.active { background: #334155; color: #F59E0B; border-left: 3px solid #F59E0B; }
-        .nav-icon { width: 20px; text-align: center; }
-        .sidebar-footer { padding: 1rem; border-top: 1px solid #334155; }
-
-        /* Main Content */
-        .admin-main { flex: 1; margin-left: 260px; }
-        .admin-header { background: #1E293B; border-bottom: 1px solid #334155; padding: 1rem 2rem; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 10; }
-        .admin-header h1 { font-size: 1.5rem; font-weight: 600; }
-        .admin-user { display: flex; align-items: center; gap: 0.5rem; color: #94A3B8; font-size: 0.9rem; }
-        .admin-user .badge { background: #F59E0B; color: #0F172A; padding: 0.25rem 0.5rem; border-radius: 4px; font-size: 0.75rem; font-weight: 600; }
-
-        .admin-content { padding: 2rem; }
-
-        /* Stats Grid */
-        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 1.5rem; margin-bottom: 2rem; }
-        .stat-card { background: #1E293B; border-radius: 12px; padding: 1.5rem; border: 1px solid #334155; }
-        .stat-card:hover { border-color: #475569; }
-        .stat-icon { font-size: 2rem; margin-bottom: 0.75rem; display: block; }
-        .stat-value { font-size: 2rem; font-weight: 700; color: white; display: block; }
-        .stat-label { font-size: 0.85rem; color: #94A3B8; }
-
-        /* Cards */
-        .dashboard-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1.5rem; }
-        .card { background: #1E293B; border-radius: 12px; border: 1px solid #334155; overflow: hidden; }
-        .card.full-width { grid-column: 1 / -1; }
-        .card-header { padding: 1rem 1.5rem; border-bottom: 1px solid #334155; display: flex; justify-content: space-between; align-items: center; }
-        .card-header h2 { font-size: 1rem; font-weight: 600; }
-        .view-all { color: #F59E0B; text-decoration: none; font-size: 0.85rem; }
-        .view-all:hover { text-decoration: underline; }
-        .card-body { padding: 1.5rem; }
-
-        /* Tables */
-        .data-table { width: 100%; border-collapse: collapse; }
-        .data-table th, .data-table td { padding: 0.75rem; text-align: left; border-bottom: 1px solid #334155; }
-        .data-table th { color: #94A3B8; font-weight: 500; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em; }
-        .data-table td { font-size: 0.9rem; }
-        .data-table tr:last-child td { border-bottom: none; }
-        .data-table tr:hover td { background: rgba(51, 65, 85, 0.5); }
-
-        /* Badges */
-        .role-badge { padding: 0.25rem 0.5rem; border-radius: 4px; font-size: 0.75rem; font-weight: 500; }
-        .role-badge.super_admin { background: #F59E0B; color: #0F172A; }
-        .role-badge.admin { background: #6366F1; color: white; }
-        .role-badge.moderator { background: #8B5CF6; color: white; }
-        .role-badge.user { background: #475569; color: #E2E8F0; }
-        .status-badge { padding: 0.25rem 0.5rem; border-radius: 4px; font-size: 0.75rem; font-weight: 500; }
-        .status-badge.active { background: #10B981; color: white; }
-        .status-badge.pending { background: #F59E0B; color: #0F172A; }
-        .status-badge.suspended { background: #EF4444; color: white; }
-
-        /* Health */
-        .health-item { display: flex; justify-content: space-between; align-items: center; padding: 0.75rem 0; border-bottom: 1px solid #334155; }
-        .health-item:last-child { border-bottom: none; }
-        .health-label { color: #94A3B8; font-size: 0.9rem; }
-        .health-value { color: #E2E8F0; font-weight: 500; }
-        .disk-bar { width: 100%; height: 8px; background: #334155; border-radius: 4px; margin: 0.5rem 0; overflow: hidden; }
-        .disk-used { height: 100%; background: linear-gradient(90deg, #10B981, #F59E0B); border-radius: 4px; transition: width 0.3s; }
-
-        /* Empty State */
-        .empty-text { color: #64748B; text-align: center; padding: 2rem; }
-
-        /* Quick Actions */
-        .quick-actions { display: flex; gap: 1rem; flex-wrap: wrap; }
-        .action-btn { display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.75rem 1.25rem; background: #334155; border: 1px solid #475569; border-radius: 8px; color: #E2E8F0; text-decoration: none; font-size: 0.9rem; transition: all 0.2s; }
-        .action-btn:hover { background: #475569; border-color: #64748B; }
-        .action-btn.primary { background: #F59E0B; border-color: #F59E0B; color: #0F172A; }
-        .action-btn.primary:hover { background: #D97706; }
-
-        /* Responsive */
-        @media (max-width: 1024px) {
-            .dashboard-grid { grid-template-columns: 1fr; }
-        }
-        @media (max-width: 768px) {
-            .admin-sidebar { width: 100%; height: auto; position: relative; }
-            .admin-main { margin-left: 0; }
-            .admin-layout { flex-direction: column; }
-            .stats-grid { grid-template-columns: repeat(2, 1fr); }
-        }
-    </style>
+    <link rel="stylesheet" href="/admin/css/admin.css">
+    <script>
+        (function() {
+            const saved = localStorage.getItem('theme') || 'dark';
+            document.documentElement.setAttribute('data-theme', saved);
+        })();
+    </script>
 </head>
 <body>
+    <?php include __DIR__ . '/../home/partials/navbar.php'; ?>
+
     <div class="admin-layout">
         <!-- Sidebar -->
         <aside class="admin-sidebar">
             <div class="sidebar-header">
-                <a href="/admin/" class="admin-logo">CRC Super Admin</a>
+                <a href="/admin/" class="admin-logo">Super Admin</a>
             </div>
             <nav class="sidebar-nav">
                 <a href="/admin/" class="nav-item active">

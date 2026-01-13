@@ -41,9 +41,9 @@ $isActive = function($path) use ($currentPath) {
   --nav-primary-glow: rgba(124, 58, 237, 0.5);
   --nav-primary-intense: rgba(124, 58, 237, 0.8);
 
-  /* Accent - Electric Cyan */
-  --nav-accent: #06B6D4;
-  --nav-accent-glow: rgba(6, 182, 212, 0.5);
+  /* Accent - Purple */
+  --nav-accent: #A855F7;
+  --nav-accent-glow: rgba(168, 85, 247, 0.5);
 
   /* Secondary - Hot Pink */
   --nav-secondary: #EC4899;

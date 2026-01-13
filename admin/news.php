@@ -177,7 +177,7 @@ if ($tableExists) {
             --bg-surface: #1c1c1c;
             --primary: #8B5CF6;
             --primary-light: #A78BFA;
-            --accent: #06B6D4;
+            --accent: #A855F7;
             --text-primary: #f5f5f5;
             --text-secondary: #c8c8c8;
             --text-muted: #7a7a7a;
@@ -203,12 +203,12 @@ if ($tableExists) {
             top: 0; left: 0; right: 0; bottom: 0;
             background:
                 radial-gradient(ellipse 80% 50% at 20% 20%, var(--glow-primary) 0%, transparent 50%),
-                radial-gradient(ellipse 60% 40% at 80% 80%, rgba(6, 182, 212, 0.2) 0%, transparent 50%);
+                radial-gradient(ellipse 60% 40% at 80% 80%, rgba(168, 85, 247, 0.2) 0%, transparent 50%);
             pointer-events: none;
             z-index: 0;
         }
 
-        .admin-layout { display: flex; min-height: 100vh; position: relative; z-index: 1; }
+        .admin-layout { display: flex; min-height: calc(100vh - 80px); position: relative; z-index: 1; }
 
         /* Sidebar */
         .admin-sidebar {
@@ -218,7 +218,8 @@ if ($tableExists) {
             display: flex;
             flex-direction: column;
             position: fixed;
-            height: 100vh;
+            top: 80px;
+            bottom: 0;
         }
 
         .sidebar-header {
@@ -526,8 +527,16 @@ if ($tableExists) {
             .news-grid { grid-template-columns: 1fr; }
         }
     </style>
+    <script>
+        (function() {
+            const saved = localStorage.getItem('theme') || 'dark';
+            document.documentElement.setAttribute('data-theme', saved);
+        })();
+    </script>
 </head>
 <body>
+    <?php include __DIR__ . '/../home/partials/navbar.php'; ?>
+
     <div class="admin-layout">
         <!-- Sidebar -->
         <aside class="admin-sidebar">

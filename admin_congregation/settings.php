@@ -32,6 +32,12 @@ $pageTitle = 'Settings - ' . $congregation['name'] . ' - CRC';
     <link rel="stylesheet" href="/admin_congregation/css/admin_congregation.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script>
+        (function() {
+            const saved = localStorage.getItem('theme') || 'dark';
+            document.documentElement.setAttribute('data-theme', saved);
+        })();
+    </script>
     <style>
         .settings-grid { display: grid; gap: 1.5rem; }
         .settings-section { background: white; border-radius: var(--radius-lg); box-shadow: var(--shadow); }
@@ -55,6 +61,8 @@ $pageTitle = 'Settings - ' . $congregation['name'] . ' - CRC';
     </style>
 </head>
 <body>
+    <?php include __DIR__ . '/../home/partials/navbar.php'; ?>
+
     <div class="admin-layout">
         <!-- Sidebar -->
         <aside class="sidebar">

@@ -57,7 +57,15 @@ if ($todaySession && !empty($todaySession['study_questions'])) {
     <link rel="stylesheet" href="/admin_congregation/css/admin_congregation.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script>
+        (function() {
+            const saved = localStorage.getItem('theme') || 'dark';
+            document.documentElement.setAttribute('data-theme', saved);
+        })();
+    </script>
     <style>
+        .super-admin-link { background: var(--primary); }
+        .super-admin-link:hover { background: var(--primary-dark); }
         .congregation-select { width: 100%; padding: 0.5rem; margin-top: 0.5rem; border: 1px solid rgba(255,255,255,0.2); border-radius: 6px; background: rgba(255,255,255,0.1); color: white; font-size: 0.8rem; cursor: pointer; }
         .congregation-select option { background: #1F2937; color: white; }
         .super-admin-link { display: inline-block; margin-top: 0.5rem; padding: 0.25rem 0.5rem; background: #F59E0B; color: white; border-radius: 4px; text-decoration: none; font-size: 0.75rem; }
@@ -121,6 +129,8 @@ if ($todaySession && !empty($todaySession['study_questions'])) {
     </style>
 </head>
 <body>
+    <?php include __DIR__ . '/../home/partials/navbar.php'; ?>
+
     <div class="admin-layout">
         <!-- Sidebar -->
         <aside class="sidebar">

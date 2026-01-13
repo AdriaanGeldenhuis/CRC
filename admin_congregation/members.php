@@ -100,6 +100,12 @@ $churchPositions = Database::fetchAll(
     <link rel="stylesheet" href="/admin_congregation/css/admin_congregation.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script>
+        (function() {
+            const saved = localStorage.getItem('theme') || 'dark';
+            document.documentElement.setAttribute('data-theme', saved);
+        })();
+    </script>
     <style>
         .filters { display: flex; gap: 1rem; flex-wrap: wrap; margin-bottom: 1.5rem; align-items: center; }
         .filter-tabs { display: flex; gap: 0.5rem; }
@@ -157,6 +163,8 @@ $churchPositions = Database::fetchAll(
     </style>
 </head>
 <body>
+    <?php include __DIR__ . '/../home/partials/navbar.php'; ?>
+
     <div class="admin-layout">
         <!-- Sidebar -->
         <aside class="sidebar">
