@@ -75,7 +75,7 @@ $pageTitle = 'Bible - CRC';
     </div>
 
     <!-- Verse Context Menu -->
-    <div id="verseContextMenu" class="bible-context-menu bible-context-hidden" style="display:none;">
+    <div id="verseContextMenu" class="bible-context-menu bible-context-hidden">
       <div class="bible-context-header">
         <h2 class="bible-context-title">Verse Actions</h2>
         <button class="bible-context-close" onclick="BibleApp.hideMenu()">&times;</button>

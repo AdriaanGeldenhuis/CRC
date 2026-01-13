@@ -684,8 +684,15 @@
   // ===== CONTEXT MENU =====
   function showContextMenu() {
     const menu = els.verseContextMenu;
-    if (!menu) return;
+    if (!menu) {
+      console.error('Context menu element not found');
+      return;
+    }
+    console.log('showContextMenu called', menu);
     menu.style.display = 'block';
+    menu.style.visibility = 'visible';
+    menu.style.opacity = '1';
+    menu.style.transform = 'translateY(0)';
     menu.classList.remove('bible-context-hidden');
   }
 
@@ -693,6 +700,8 @@
     const menu = els.verseContextMenu;
     if (!menu) return;
     menu.style.display = 'none';
+    menu.style.visibility = 'hidden';
+    menu.style.opacity = '0';
     menu.classList.add('bible-context-hidden');
   }
 
@@ -841,10 +850,12 @@
   }
 
   // ===== VERSE INTERACTIONS =====
-  function handleVerseInteraction(verse, e) {
+  function handleVerseInteraction(verse, targetEl) {
+    console.log('handleVerseInteraction called', verse.dataset.ref);
+
     // Click on note indicator opens note editor
-    if (e.target.classList.contains('bible-note-indicator')) {
-      const ref = e.target.dataset.ref;
+    if (targetEl && targetEl.classList && targetEl.classList.contains('bible-note-indicator')) {
+      const ref = targetEl.dataset.ref;
       showNoteEditor(ref);
       showPanel(els.notesPanel);
       return;
@@ -862,17 +873,23 @@
       verse.classList.add('bound');
 
       // Click for desktop
-      verse.addEventListener('click', (e) => handleVerseInteraction(verse, e));
+      verse.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        handleVerseInteraction(verse, e.target);
+      });
 
       // Touch for WebView - use touchend with tap detection
       let touchStartTime = 0;
       let touchStartX = 0;
       let touchStartY = 0;
+      let touchTarget = null;
 
       verse.addEventListener('touchstart', (e) => {
         touchStartTime = Date.now();
         touchStartX = e.touches[0].clientX;
         touchStartY = e.touches[0].clientY;
+        touchTarget = e.target;
       }, { passive: true });
 
       verse.addEventListener('touchend', (e) => {
@@ -881,10 +898,13 @@
         const moveX = Math.abs(touch.clientX - touchStartX);
         const moveY = Math.abs(touch.clientY - touchStartY);
 
+        console.log('touchend', { touchDuration, moveX, moveY });
+
         // Only trigger if it was a tap (short duration, minimal movement)
-        if (touchDuration < 300 && moveX < 10 && moveY < 10) {
+        if (touchDuration < 500 && moveX < 20 && moveY < 20) {
           e.preventDefault();
-          handleVerseInteraction(verse, e);
+          e.stopPropagation();
+          handleVerseInteraction(verse, touchTarget);
         }
       });
     });
