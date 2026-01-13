@@ -317,7 +317,8 @@
     const headerTitle = document.querySelector('.nav-logo');
     if (!headerTitle) return;
 
-    const scrollContainer = els.leftColumn;
+    // leftContent is the actual scroll container (leftColumn has overflow:hidden)
+    const scrollContainer = els.leftContent;
     if (!scrollContainer) return;
 
     const containerRect = scrollContainer.getBoundingClientRect();
@@ -560,8 +561,8 @@
       const key = `${book}-${chapter}`;
 
       if (!state.renderedChapters.has(key)) {
-        // Save current scroll position
-        const scrollContainer = els.leftColumn;
+        // Save current scroll position (leftContent is the scroll container)
+        const scrollContainer = els.leftContent;
         const scrollHeightBefore = scrollContainer.scrollHeight;
         const scrollTopBefore = scrollContainer.scrollTop;
 
@@ -665,18 +666,24 @@
     let scrollTimeout = null;
     let headerTimeout = null;
 
+    // leftContent is the actual scroll container (leftColumn has overflow:hidden)
+    const scrollContainer = els.leftContent;
+    if (!scrollContainer) {
+      console.error('Scroll container not found!');
+      return;
+    }
+
     const handleScroll = () => {
       // Update header immediately (with small debounce)
       clearTimeout(headerTimeout);
-      headerTimeout = setTimeout(updateHeaderRef, 50);
+      headerTimeout = setTimeout(updateHeaderRef, 30);
 
       // Load chapters with slightly longer debounce
       clearTimeout(scrollTimeout);
       scrollTimeout = setTimeout(() => {
-        const column = els.leftColumn;
-        const scrollHeight = column.scrollHeight;
-        const scrollTop = column.scrollTop;
-        const clientHeight = column.clientHeight;
+        const scrollHeight = scrollContainer.scrollHeight;
+        const scrollTop = scrollContainer.scrollTop;
+        const clientHeight = scrollContainer.clientHeight;
         const distanceFromBottom = scrollHeight - scrollTop - clientHeight;
 
         // Load more chapters when within 2000px of bottom (more aggressive)
@@ -688,10 +695,10 @@
         if (scrollTop < 800) {
           loadPreviousChapters(2);
         }
-      }, 50);
+      }, 30);
     };
 
-    els.leftColumn.addEventListener('scroll', handleScroll, { passive: true });
+    scrollContainer.addEventListener('scroll', handleScroll, { passive: true });
   }
 
   // ===== VERSE INTERACTIONS =====
