@@ -124,34 +124,39 @@ $totalPages = ceil($totalPosts / $perPage);
             </a>
             <button class="header-btn" onclick="toggleMobileMenu()" id="mobileMenuBtn">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <circle cx="12" cy="12" r="1"></circle>
-                    <circle cx="12" cy="5" r="1"></circle>
-                    <circle cx="12" cy="19" r="1"></circle>
+                    <line x1="3" y1="12" x2="21" y2="12"></line>
+                    <line x1="3" y1="6" x2="21" y2="6"></line>
+                    <line x1="3" y1="18" x2="21" y2="18"></line>
                 </svg>
             </button>
             <div class="mobile-menu" id="mobileMenu">
-                <div class="mobile-menu-header">
-                    <?php if ($user['avatar']): ?>
-                        <img src="<?= e($user['avatar']) ?>" alt="" class="mobile-menu-avatar">
-                    <?php else: ?>
-                        <div class="mobile-menu-avatar-placeholder"><?= strtoupper(substr($user['name'], 0, 1)) ?></div>
-                    <?php endif; ?>
-                    <div>
-                        <strong><?= e($user['name']) ?></strong>
-                        <span><?= e($primaryCong['name']) ?></span>
-                    </div>
-                </div>
+                <a href="/home/" class="mobile-menu-item">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
+                    Home
+                </a>
+                <a href="/gospel_media/" class="mobile-menu-item active">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 11a9 9 0 0 1 9 9"></path><path d="M4 4a16 16 0 0 1 16 16"></path><circle cx="5" cy="19" r="1"></circle></svg>
+                    Feed
+                </a>
+                <a href="/calendar/" class="mobile-menu-item">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+                    Events
+                </a>
+                <a href="/gospel_media/groups.php" class="mobile-menu-item">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+                    Groups
+                </a>
                 <div class="mobile-menu-divider"></div>
-                <a href="/profile/" class="mobile-menu-item">Profile</a>
-                <a href="/home/" class="mobile-menu-item">Home</a>
-                <?php if (Auth::isCongregationAdmin($primaryCong['id'])): ?>
-                    <a href="/admin_congregation/" class="mobile-menu-item">Manage Congregation</a>
-                <?php endif; ?>
+                <a href="/profile/" class="mobile-menu-item">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+                    Profile
+                </a>
                 <?php if (Auth::isAdmin()): ?>
-                    <a href="/admin/" class="mobile-menu-item">Admin Panel</a>
+                <a href="/admin/" class="mobile-menu-item">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+                    Admin
+                </a>
                 <?php endif; ?>
-                <div class="mobile-menu-divider"></div>
-                <a href="/auth/logout.php" class="mobile-menu-item logout">Logout</a>
             </div>
         </div>
     </header>
@@ -323,14 +328,36 @@ $totalPages = ceil($totalPosts / $perPage);
                                     </span>
                                 </div>
                             </div>
-                            <?php if ($post['is_pinned']): ?>
-                                <span class="pinned-badge">
-                                    <svg viewBox="0 0 24 24" fill="currentColor" width="14" height="14">
-                                        <path d="M16 12V4h1V2H7v2h1v8l-2 2v2h5v6l1 1 1-1v-6h5v-2l-2-2z"/>
-                                    </svg>
-                                    Pinned
-                                </span>
-                            <?php endif; ?>
+                            <div class="post-header-right">
+                                <?php if ($post['is_pinned']): ?>
+                                    <span class="pinned-badge">
+                                        <svg viewBox="0 0 24 24" fill="currentColor" width="14" height="14">
+                                            <path d="M16 12V4h1V2H7v2h1v8l-2 2v2h5v6l1 1 1-1v-6h5v-2l-2-2z"/>
+                                        </svg>
+                                    </span>
+                                <?php endif; ?>
+                                <?php if (Auth::isAdmin() || $post['user_id'] == Auth::id()): ?>
+                                    <div class="post-options">
+                                        <button class="post-options-btn" onclick="togglePostMenu(<?= $post['id'] ?>)">
+                                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                <circle cx="12" cy="12" r="1"></circle>
+                                                <circle cx="12" cy="5" r="1"></circle>
+                                                <circle cx="12" cy="19" r="1"></circle>
+                                            </svg>
+                                        </button>
+                                        <div class="post-options-menu" id="postMenu-<?= $post['id'] ?>">
+                                            <button class="post-option" onclick="editPost(<?= $post['id'] ?>)">
+                                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+                                                Edit
+                                            </button>
+                                            <button class="post-option delete" onclick="deletePost(<?= $post['id'] ?>)">
+                                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+                                                Delete
+                                            </button>
+                                        </div>
+                                    </div>
+                                <?php endif; ?>
+                            </div>
                         </div>
 
                         <div class="post-content">
@@ -532,6 +559,70 @@ $totalPages = ceil($totalPosts / $perPage);
         function closeImageViewer() {
             document.getElementById('imageViewer').classList.remove('show');
             document.body.style.overflow = '';
+        }
+
+        // Post Options Menu
+        function togglePostMenu(postId) {
+            // Close all other menus first
+            document.querySelectorAll('.post-options-menu.show').forEach(menu => {
+                menu.classList.remove('show');
+            });
+            document.getElementById('postMenu-' + postId).classList.toggle('show');
+        }
+
+        // Close post menus when clicking outside
+        document.addEventListener('click', function(e) {
+            if (!e.target.closest('.post-options')) {
+                document.querySelectorAll('.post-options-menu.show').forEach(menu => {
+                    menu.classList.remove('show');
+                });
+            }
+        });
+
+        // Edit Post - redirect to edit page
+        function editPost(postId) {
+            window.location.href = '/gospel_media/edit.php?id=' + postId;
+        }
+
+        // Delete Post
+        async function deletePost(postId) {
+            if (!confirm('Are you sure you want to delete this post? This cannot be undone.')) {
+                return;
+            }
+
+            try {
+                const formData = new FormData();
+                formData.append('action', 'delete');
+                formData.append('post_id', postId);
+                formData.append('csrf_token', document.querySelector('meta[name="csrf-token"]')?.content);
+
+                const response = await fetch('/gospel_media/api/posts.php', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    // Remove the post from DOM
+                    document.querySelector('[data-post-id="' + postId + '"]').remove();
+                    showToast('Post deleted successfully', 'success');
+                } else {
+                    showToast(data.error || 'Failed to delete post', 'error');
+                }
+            } catch (error) {
+                showToast('Error deleting post', 'error');
+            }
+        }
+
+        // Toast notification
+        function showToast(message, type = 'success') {
+            const toast = document.getElementById('toast');
+            toast.textContent = message;
+            toast.className = 'toast show ' + type;
+            setTimeout(() => {
+                toast.classList.remove('show');
+            }, 3000);
         }
     </script>
 </body>

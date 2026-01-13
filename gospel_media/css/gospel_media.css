@@ -183,12 +183,21 @@ body {
 }
 
 .mobile-menu-item {
-    display: block;
-    padding: 0.75rem 1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.875rem 1rem;
     color: var(--text-secondary);
     text-decoration: none;
-    font-size: 0.9rem;
+    font-size: 0.95rem;
+    font-weight: 500;
     transition: var(--transition);
+}
+
+.mobile-menu-item svg {
+    width: 22px;
+    height: 22px;
+    color: var(--text-muted);
 }
 
 .mobile-menu-item:hover {
@@ -196,8 +205,18 @@ body {
     color: var(--primary);
 }
 
-.mobile-menu-item.logout { color: var(--danger); }
-.mobile-menu-item.logout:hover { background: rgba(239, 68, 68, 0.1); }
+.mobile-menu-item:hover svg {
+    color: var(--primary);
+}
+
+.mobile-menu-item.active {
+    color: var(--primary);
+    background: rgba(139, 92, 246, 0.1);
+}
+
+.mobile-menu-item.active svg {
+    color: var(--primary);
+}
 
 .header-actions { position: relative; }
 
@@ -602,6 +621,97 @@ body {
 }
 
 .pinned-badge svg { width: 12px; height: 12px; }
+
+.post-header-right {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+/* Post Options Menu */
+.post-options {
+    position: relative;
+}
+
+.post-options-btn {
+    width: 36px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: none;
+    border: none;
+    border-radius: 50%;
+    color: var(--text-muted);
+    cursor: pointer;
+    transition: var(--transition);
+}
+
+.post-options-btn:hover {
+    background: var(--glass-hover);
+    color: var(--text-primary);
+}
+
+.post-options-btn svg {
+    width: 20px;
+    height: 20px;
+}
+
+.post-options-menu {
+    position: absolute;
+    top: 100%;
+    right: 0;
+    min-width: 140px;
+    background: var(--bg-elevated);
+    border: 1px solid var(--glass-border);
+    border-radius: var(--radius);
+    box-shadow: 0 10px 40px rgba(0,0,0,0.4);
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(-5px);
+    transition: var(--transition);
+    z-index: 50;
+    overflow: hidden;
+}
+
+.post-options-menu.show {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+}
+
+.post-option {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    width: 100%;
+    padding: 0.75rem 1rem;
+    background: none;
+    border: none;
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: var(--transition);
+    text-align: left;
+}
+
+.post-option svg {
+    width: 18px;
+    height: 18px;
+}
+
+.post-option:hover {
+    background: var(--glass-hover);
+    color: var(--text-primary);
+}
+
+.post-option.delete {
+    color: var(--danger);
+}
+
+.post-option.delete:hover {
+    background: rgba(239, 68, 68, 0.1);
+}
 
 .post-content {
     padding: 0 1rem 1rem;
