@@ -684,18 +684,21 @@
   // ===== CONTEXT MENU =====
   function showContextMenu(x, y) {
     const menu = els.verseContextMenu;
+    if (!menu) return;
 
-    // DEBUG with alert (shows in native app)
-    alert('Menu exists: ' + (menu ? 'YES' : 'NO') + '\nPosition: ' + x + ',' + y);
-
-    if (!menu) {
-      return;
-    }
-
+    // Remove hidden class
     menu.classList.remove('bible-context-hidden');
-    menu.style.display = 'block';
-    menu.style.left = x + 'px';
-    menu.style.top = y + 'px';
+
+    // Force visibility with inline styles (overrides CSS)
+    menu.style.cssText = `
+      display: block !important;
+      visibility: visible !important;
+      opacity: 1 !important;
+      position: fixed !important;
+      left: ${x}px !important;
+      top: ${y}px !important;
+      z-index: 99999 !important;
+    `;
 
     // Adjust if off-screen
     setTimeout(() => {
@@ -710,7 +713,10 @@
   }
 
   function hideContextMenu() {
-    els.verseContextMenu?.classList.add('bible-context-hidden');
+    const menu = els.verseContextMenu;
+    if (!menu) return;
+    menu.classList.add('bible-context-hidden');
+    menu.style.cssText = 'display: none !important;';
   }
 
   // ===== NAVIGATION =====
