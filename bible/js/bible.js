@@ -868,46 +868,10 @@
     showContextMenu();
   }
 
+  // bindVerseInteractions - now handled via event delegation in bindEvents()
   function bindVerseInteractions() {
-    document.querySelectorAll('.bible-verse:not(.bound)').forEach(verse => {
-      verse.classList.add('bound');
-
-      // Click for desktop
-      verse.addEventListener('click', (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        handleVerseInteraction(verse, e.target);
-      });
-
-      // Touch for WebView - use touchend with tap detection
-      let touchStartTime = 0;
-      let touchStartX = 0;
-      let touchStartY = 0;
-      let touchTarget = null;
-
-      verse.addEventListener('touchstart', (e) => {
-        touchStartTime = Date.now();
-        touchStartX = e.touches[0].clientX;
-        touchStartY = e.touches[0].clientY;
-        touchTarget = e.target;
-      }, { passive: true });
-
-      verse.addEventListener('touchend', (e) => {
-        const touchDuration = Date.now() - touchStartTime;
-        const touch = e.changedTouches[0];
-        const moveX = Math.abs(touch.clientX - touchStartX);
-        const moveY = Math.abs(touch.clientY - touchStartY);
-
-        console.log('touchend', { touchDuration, moveX, moveY });
-
-        // Only trigger if it was a tap (short duration, minimal movement)
-        if (touchDuration < 500 && moveX < 20 && moveY < 20) {
-          e.preventDefault();
-          e.stopPropagation();
-          handleVerseInteraction(verse, touchTarget);
-        }
-      });
-    });
+    // No-op: verse interactions are now handled via event delegation
+    // This function is kept for backwards compatibility with calls throughout the code
   }
 
   // ===== HIGHLIGHTS =====
@@ -1461,12 +1425,90 @@
     els.searchBtn?.addEventListener('click', handleSearch);
     els.searchInput?.addEventListener('keydown', (e) => { if (e.key === 'Enter') handleSearch(); });
 
-    // Close context menu when clicking outside
-    document.addEventListener('click', (e) => {
-      if (els.verseContextMenu && !els.verseContextMenu.contains(e.target) && !e.target.closest('.bible-verse')) {
+    // EVENT DELEGATION for verse interactions - more reliable in WebView
+    const contentArea = els.leftContent || document.body;
+
+    // Handle verse clicks via delegation
+    contentArea.addEventListener('click', (e) => {
+      const verse = e.target.closest('.bible-verse');
+      if (verse) {
+        console.log('Delegated click on verse:', verse.dataset.ref);
+        e.preventDefault();
+        e.stopPropagation();
+
+        // Check for note indicator click
+        if (e.target.classList.contains('bible-note-indicator')) {
+          const ref = e.target.dataset.ref;
+          showNoteEditor(ref);
+          showPanel(els.notesPanel);
+          return;
+        }
+
+        // Select verse and show context menu
+        document.querySelectorAll('.bible-verse').forEach(v => v.classList.remove('selected'));
+        verse.classList.add('selected');
+        state.selectedVerse = verse.dataset.ref;
+        showContextMenu();
+        return;
+      }
+
+      // Close context menu when clicking outside
+      if (els.verseContextMenu && !els.verseContextMenu.contains(e.target)) {
         hideContextMenu();
       }
-    });
+    }, true); // Use capture phase
+
+    // Handle verse touches via delegation for WebView
+    let touchStartData = { time: 0, x: 0, y: 0, target: null };
+
+    contentArea.addEventListener('touchstart', (e) => {
+      const verse = e.target.closest('.bible-verse');
+      if (verse) {
+        touchStartData = {
+          time: Date.now(),
+          x: e.touches[0].clientX,
+          y: e.touches[0].clientY,
+          target: e.target,
+          verse: verse
+        };
+      }
+    }, { passive: true, capture: true });
+
+    contentArea.addEventListener('touchend', (e) => {
+      if (!touchStartData.verse) return;
+
+      const touch = e.changedTouches[0];
+      const duration = Date.now() - touchStartData.time;
+      const moveX = Math.abs(touch.clientX - touchStartData.x);
+      const moveY = Math.abs(touch.clientY - touchStartData.y);
+
+      console.log('Delegated touchend:', { duration, moveX, moveY, ref: touchStartData.verse?.dataset?.ref });
+
+      // Detect tap (not scroll)
+      if (duration < 500 && moveX < 30 && moveY < 30) {
+        e.preventDefault();
+        e.stopPropagation();
+
+        const verse = touchStartData.verse;
+
+        // Check for note indicator
+        if (touchStartData.target.classList.contains('bible-note-indicator')) {
+          const ref = touchStartData.target.dataset.ref;
+          showNoteEditor(ref);
+          showPanel(els.notesPanel);
+          touchStartData = { time: 0, x: 0, y: 0, target: null };
+          return;
+        }
+
+        // Select verse and show context menu
+        document.querySelectorAll('.bible-verse').forEach(v => v.classList.remove('selected'));
+        verse.classList.add('selected');
+        state.selectedVerse = verse.dataset.ref;
+        showContextMenu();
+      }
+
+      touchStartData = { time: 0, x: 0, y: 0, target: null };
+    }, { capture: true });
 
     document.addEventListener('keydown', (e) => {
       if (e.key === 'Escape') { hideAllPanels(); hideContextMenu(); hideQuickNav(); }
