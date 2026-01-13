@@ -13,9 +13,13 @@ $pageTitle = "Settings - Admin";
 
 // Get current settings
 $settings = [];
-$settingsRows = Database::fetchAll("SELECT setting_key, setting_value FROM system_settings");
-foreach ($settingsRows as $row) {
-    $settings[$row['setting_key']] = $row['setting_value'];
+try {
+    $settingsRows = Database::fetchAll("SELECT setting_key, setting_value FROM system_settings") ?: [];
+    foreach ($settingsRows as $row) {
+        $settings[$row['setting_key']] = $row['setting_value'];
+    }
+} catch (Exception $e) {
+    // Table might not exist yet
 }
 
 // Default values
