@@ -72,48 +72,7 @@ try {
     <?php include __DIR__ . '/../home/partials/navbar.php'; ?>
 
     <div class="admin-layout">
-        <!-- Sidebar -->
-        <aside class="admin-sidebar">
-            <div class="sidebar-header">
-                <a href="/admin/" class="admin-logo">CRC Admin</a>
-            </div>
-            <nav class="sidebar-nav">
-                <a href="/admin/" class="nav-item">
-                    <span class="nav-icon">📊</span>
-                    Dashboard
-                </a>
-                <a href="/admin/users.php" class="nav-item">
-                    <span class="nav-icon">👥</span>
-                    Users
-                </a>
-                <a href="/admin/congregations.php" class="nav-item">
-                    <span class="nav-icon">⛪</span>
-                    Congregations
-                </a>
-                <a href="/admin/sermons.php" class="nav-item">
-                    <span class="nav-icon">🎤</span>
-                    Sermons
-                </a>
-                <a href="/admin/courses.php" class="nav-item active">
-                    <span class="nav-icon">📚</span>
-                    Courses
-                </a>
-                <a href="/admin/content.php" class="nav-item">
-                    <span class="nav-icon">📝</span>
-                    Content
-                </a>
-                <a href="/admin/settings.php" class="nav-item">
-                    <span class="nav-icon">⚙️</span>
-                    Settings
-                </a>
-            </nav>
-            <div class="sidebar-footer">
-                <a href="/home/" class="nav-item">
-                    <span class="nav-icon">🏠</span>
-                    Back to App
-                </a>
-            </div>
-        </aside>
+        <?php include __DIR__ . '/partials/sidebar.php'; ?>
 
         <!-- Main Content -->
         <main class="admin-main">
