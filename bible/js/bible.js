@@ -764,8 +764,11 @@
     const target = e.target;
     if (target && target.classList && target.classList.contains('bible-note-indicator')) {
       const ref = target.dataset.ref;
-      showNoteEditor(ref);
-      showPanel(els.notesPanel);
+      // Navigate to add-note page
+      const parsed = parseRef(ref);
+      window.location.href = '/bible/add-note.php?book=' + encodeURIComponent(parsed.book) +
+        '&chapter=' + parsed.chapter +
+        '&verse=' + parsed.verse;
       return;
     }
 
@@ -773,18 +776,17 @@
     const verseEl = verse || e.currentTarget;
     if (!verseEl || !verseEl.dataset) return;
 
-    // Deselect all other verses
-    document.querySelectorAll('.bible-verse.selected').forEach(v => v.classList.remove('selected'));
+    // Get verse data
+    const book = verseEl.dataset.book;
+    const chapter = verseEl.dataset.chapter;
+    const verseNum = verseEl.dataset.verse;
+    const text = verseEl.querySelector('.bible-verse-text')?.textContent || '';
 
-    // Select this verse
-    verseEl.classList.add('selected');
-    state.selectedVerse = verseEl.dataset.ref;
-
-    // Show the context menu
-    const x = e.clientX || (e.touches && e.touches[0] ? e.touches[0].clientX : window.innerWidth / 2);
-    const y = e.clientY || (e.touches && e.touches[0] ? e.touches[0].clientY : window.innerHeight / 2);
-
-    showContextMenu(x, y);
+    // Navigate to verse-actions page (full page, no overlay)
+    window.location.href = '/bible/verse-actions.php?book=' + encodeURIComponent(book) +
+      '&chapter=' + chapter +
+      '&verse=' + verseNum +
+      '&text=' + encodeURIComponent(text);
   }
 
   function showContextMenu(x, y) {
