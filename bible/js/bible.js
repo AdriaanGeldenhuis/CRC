@@ -113,6 +113,7 @@
   };
 
   // ===== ELEMENTS =====
+  console.log('Creating els object. verseContextMenu element:', $('verseContextMenu'));
   const els = {
     // Navigation modal
     quickNavModal: $('quickNavModal'),
