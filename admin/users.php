@@ -52,7 +52,7 @@ $totalCount = Database::fetchColumn(
 // Get users
 $users = Database::fetchAll(
     "SELECT u.*,
-            (SELECT COUNT(*) FROM congregation_members WHERE user_id = u.id) as congregation_count
+            (SELECT COUNT(*) FROM user_congregations WHERE user_id = u.id) as congregation_count
      FROM users u
      $whereClause
      ORDER BY u.created_at DESC
@@ -193,8 +193,8 @@ $roles = [
                                         <tr>
                                             <td>
                                                 <div class="user-cell">
-                                                    <?php if ($u['avatar_url']): ?>
-                                                        <img src="<?= e($u['avatar_url']) ?>" alt="" class="user-avatar">
+                                                    <?php if (!empty($u['avatar'])): ?>
+                                                        <img src="<?= e($u['avatar']) ?>" alt="" class="user-avatar">
                                                     <?php else: ?>
                                                         <div class="user-avatar-placeholder">
                                                             <?= strtoupper(substr($u['name'], 0, 1)) ?>
