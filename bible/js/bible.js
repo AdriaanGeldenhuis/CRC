@@ -594,6 +594,7 @@
         const chapterEl = createChapterElement(book, chapter);
         els.leftContent.appendChild(chapterEl);
         state.renderedChapters.add(key);
+        bindVerseInteractions();
       }
 
       loaded++;
@@ -955,28 +956,100 @@
     const parsed = parseRef(ref);
 
     const bookIdx = state.books.indexOf(parsed.book);
-    if (bookIdx !== -1) {
-      state.currentBookIndex = bookIdx;
-      state.currentChapter = parsed.chapter;
-
-      const key = `${parsed.book}-${parsed.chapter}`;
-
-      if (!state.renderedChapters.has(key)) {
-        const chapterEl = createChapterElement(parsed.book, parsed.chapter);
-        els.leftContent.appendChild(chapterEl);
-        state.renderedChapters.add(key);
-        bindVerseInteractions();
-      }
+    if (bookIdx === -1) {
+      debugLog('Book not found: ' + parsed.book);
+      return;
     }
 
+    // Update state
+    state.currentBookIndex = bookIdx;
+    state.currentChapter = parsed.chapter;
+
+    const key = `${parsed.book}-${parsed.chapter}`;
+
+    // Check if chapter is already rendered
+    if (!state.renderedChapters.has(key)) {
+      // Clear all existing content and render fresh from this point
+      els.leftContent.innerHTML = '';
+      state.renderedChapters.clear();
+
+      // Create and add the target chapter
+      const chapterEl = createChapterElement(parsed.book, parsed.chapter);
+      els.leftContent.appendChild(chapterEl);
+      state.renderedChapters.add(key);
+
+      applyFontSize();
+      bindVerseInteractions();
+
+      // Load a few more chapters after this one
+      requestIdleCallback(() => {
+        loadNextChapters(3);
+      });
+    }
+
+    // Scroll to the verse
     setTimeout(() => {
       const verseEl = document.querySelector(`[data-ref="${ref}"]`);
       if (verseEl) {
-        verseEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        verseEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
         verseEl.classList.add('bible-verse-flash');
         setTimeout(() => verseEl.classList.remove('bible-verse-flash'), 2000);
+      } else {
+        // If verse not found, scroll to top of content
+        els.leftContent.scrollTop = 0;
       }
-    }, 100);
+    }, 150);
+  }
+
+  // ===== GO TO BOOK/CHAPTER (for navigation) =====
+  function goToBookChapter(bookName, chapter) {
+    debugLog('goToBookChapter: ' + bookName + ' ' + chapter);
+
+    // Find the book
+    const bookIdx = state.books.indexOf(bookName);
+    if (bookIdx === -1) {
+      debugLog('Book not found: ' + bookName);
+      return;
+    }
+
+    // Update state
+    state.currentBookIndex = bookIdx;
+    state.currentChapter = chapter;
+
+    const key = `${bookName}-${chapter}`;
+
+    // Clear existing content and render fresh
+    els.leftContent.innerHTML = '';
+    state.renderedChapters.clear();
+
+    // Create and add the target chapter
+    const chapterEl = createChapterElement(bookName, chapter);
+    els.leftContent.appendChild(chapterEl);
+    state.renderedChapters.add(key);
+
+    applyFontSize();
+    bindVerseInteractions();
+
+    // Scroll to top
+    if (els.leftColumn) {
+      els.leftColumn.scrollTop = 0;
+    }
+
+    // Load more chapters after
+    requestIdleCallback(() => {
+      loadNextChapters(3);
+    });
+  }
+
+  // ===== PARSE URL PARAMETERS =====
+  function getUrlParams() {
+    const params = new URLSearchParams(window.location.search);
+    return {
+      book: params.get('book'),
+      chapter: parseInt(params.get('chapter'), 10) || 1,
+      verse: parseInt(params.get('verse'), 10) || 1,
+      ref: params.get('ref')
+    };
   }
 
   // ===== NOTES =====
@@ -1904,8 +1977,26 @@
 
       updateLoadingProgress(95, 'Building Bible...');
 
-      debugLog('Rendering chapters...');
-      renderInitialChapters();
+      // Check for URL parameters first
+      const urlParams = getUrlParams();
+      const hasUrlNav = urlParams.book || urlParams.ref;
+
+      debugLog('URL params: ' + JSON.stringify(urlParams));
+
+      if (hasUrlNav && urlParams.book) {
+        // Navigate to specific book/chapter from URL
+        debugLog('Navigating to URL book/chapter: ' + urlParams.book + ' ' + urlParams.chapter);
+        goToBookChapter(urlParams.book, urlParams.chapter);
+      } else if (hasUrlNav && urlParams.ref) {
+        // Navigate to specific reference
+        debugLog('Navigating to URL ref: ' + urlParams.ref);
+        goToReference(urlParams.ref);
+      } else {
+        // Default: render Genesis 1
+        debugLog('Rendering initial chapters...');
+        renderInitialChapters();
+      }
+
       setupInfiniteScroll();
       debugLog('Render complete');
 
