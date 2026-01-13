@@ -43,7 +43,7 @@ $totalCount = Database::fetchColumn(
 // Get congregations
 $congregations = Database::fetchAll(
     "SELECT c.*,
-            (SELECT COUNT(*) FROM congregation_members WHERE congregation_id = c.id AND status = 'active') as member_count,
+            (SELECT COUNT(*) FROM user_congregations WHERE congregation_id = c.id AND status = 'active') as member_count,
             (SELECT name FROM users WHERE id = c.created_by) as created_by_name
      FROM congregations c
      $whereClause
