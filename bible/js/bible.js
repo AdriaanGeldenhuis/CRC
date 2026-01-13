@@ -113,7 +113,6 @@
   };
 
   // ===== ELEMENTS =====
-  console.log('Creating els object. verseContextMenu element:', $('verseContextMenu'));
   const els = {
     // Navigation modal
     quickNavModal: $('quickNavModal'),
@@ -685,26 +684,27 @@
   // ===== CONTEXT MENU =====
   function showContextMenu(x, y) {
     const menu = els.verseContextMenu;
-    console.log('showContextMenu called', { menu, x, y, menuExists: !!menu });
+
+    // DEBUG with alert (shows in native app)
+    alert('Menu exists: ' + (menu ? 'YES' : 'NO') + '\nPosition: ' + x + ',' + y);
+
     if (!menu) {
-      console.error('Context menu element not found! els.verseContextMenu is null');
       return;
     }
 
     menu.classList.remove('bible-context-hidden');
-    menu.style.left = `${x}px`;
-    menu.style.top = `${y}px`;
-    console.log('Menu should now be visible at', x, y);
+    menu.style.display = 'block';
+    menu.style.left = x + 'px';
+    menu.style.top = y + 'px';
 
     // Adjust if off-screen
     setTimeout(() => {
       const rect = menu.getBoundingClientRect();
-      console.log('Menu rect:', rect);
       if (rect.right > window.innerWidth) {
-        menu.style.left = `${window.innerWidth - rect.width - 20}px`;
+        menu.style.left = (window.innerWidth - rect.width - 20) + 'px';
       }
       if (rect.bottom > window.innerHeight) {
-        menu.style.top = `${window.innerHeight - rect.height - 20}px`;
+        menu.style.top = (window.innerHeight - rect.height - 20) + 'px';
       }
     }, 0);
   }
