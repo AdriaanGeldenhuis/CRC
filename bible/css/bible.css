@@ -1470,6 +1470,25 @@ html, body {
   font-size: 0.875rem;
 }
 
+/* ===== ERROR CONTAINER ===== */
+.bible-error-container {
+  text-align: center;
+  padding: 3rem 2rem;
+  color: var(--bad);
+}
+
+.bible-error-container h2 {
+  font-size: 1.25rem;
+  font-weight: 700;
+  margin-bottom: 0.5rem;
+}
+
+.bible-error-container p {
+  font-size: 0.9375rem;
+  color: var(--muted);
+  margin-bottom: 1.5rem;
+}
+
 /* =====================================================================
    SCROLLBAR
    ===================================================================== */
