@@ -1,7 +1,7 @@
 <?php
 /**
  * CRC Home Dashboard
- * Main page after login - Redesigned with AI Message of the Day and News
+ * Main page after login - Premium Glass Morphism Design
  */
 
 require_once __DIR__ . '/../core/bootstrap.php';
@@ -140,12 +140,13 @@ if (!$aiMessage) {
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title><?= e($pageTitle) ?></title>
     <?= CSRF::meta() ?>
-    <link rel="stylesheet" href="/home/css/home.css?v=<?= filemtime(__DIR__ . '/css/home.css') ?>">
     <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/home/css/home.css?v=<?= filemtime(__DIR__ . '/css/home.css') ?>">
     <script>
         // Load saved theme before page renders to prevent flash
         (function() {
@@ -154,32 +155,38 @@ if (!$aiMessage) {
         })();
     </script>
 </head>
-<body>
-    <!-- Navigation -->
-    <nav class="navbar">
-        <div class="nav-container">
-            <a href="/" class="nav-logo">CRC</a>
+<body data-theme="dark">
+    <!-- Top Bar / Navigation -->
+    <div class="topbar">
+        <div class="inner">
+            <div class="brand">
+                <div class="logo" aria-hidden="true"></div>
+                <div>
+                    <h1>CRC App</h1>
+                    <span><?= e($primaryCong['name']) ?></span>
+                </div>
+            </div>
 
-            <div class="nav-actions">
+            <div class="actions">
+                <!-- Status Chip (hidden on mobile) -->
+                <div class="chip" title="Status">
+                    <span class="dot"></span>
+                    <?= e(explode(' ', $user['name'])[0]) ?>
+                </div>
+
                 <!-- Theme Toggle -->
-                <button class="theme-toggle" onclick="toggleTheme()" title="Toggle theme">
+                <button class="theme-toggle" onclick="toggleTheme()" title="Toggle theme" data-ripple>
                     <svg class="sun-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M12 3v2m0 14v2M3 12h2m14 0h2M5.2 5.2l1.4 1.4m10.8 10.8l1.4 1.4M18.8 5.2l-1.4 1.4M6.6 17.4l-1.4 1.4"></path>
                         <circle cx="12" cy="12" r="5"></circle>
-                        <line x1="12" y1="1" x2="12" y2="3"></line>
-                        <line x1="12" y1="21" x2="12" y2="23"></line>
-                        <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
-                        <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
-                        <line x1="1" y1="12" x2="3" y2="12"></line>
-                        <line x1="21" y1="12" x2="23" y2="12"></line>
-                        <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
-                        <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
                     </svg>
                     <svg class="moon-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
                     </svg>
                 </button>
 
-                <a href="/notifications/" class="nav-icon-btn" title="Notifications">
+                <!-- Notifications -->
+                <a href="/notifications/" class="nav-icon-btn" title="Notifications" data-ripple>
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
                         <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
@@ -191,7 +198,7 @@ if (!$aiMessage) {
 
                 <!-- 3-dot More Menu -->
                 <div class="more-menu">
-                    <button class="more-menu-btn" onclick="toggleMoreMenu()" title="More">
+                    <button class="more-menu-btn" onclick="toggleMoreMenu()" title="More" data-ripple>
                         <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor">
                             <circle cx="12" cy="5" r="2"></circle>
                             <circle cx="12" cy="12" r="2"></circle>
@@ -309,8 +316,9 @@ if (!$aiMessage) {
                 </div>
             </div>
         </div>
-    </nav>
+    </div>
 
+    <!-- Main Content -->
     <main class="main-content">
         <div class="container">
             <!-- Welcome Section -->
@@ -321,18 +329,21 @@ if (!$aiMessage) {
                 </div>
             </section>
 
+            <!-- Dashboard Grid -->
             <div class="dashboard-grid">
                 <!-- AI Message of the Day Card -->
                 <div class="dashboard-card ai-message-card">
                     <div class="card-header">
                         <h2>
-                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display:inline;vertical-align:middle;margin-right:8px;color:var(--accent);">
-                                <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"></path>
-                            </svg>
+                            <span class="icon" style="display:inline;vertical-align:middle;margin-right:8px;">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:var(--accent);">
+                                    <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"></path>
+                                </svg>
+                            </span>
                             AI Message of the Day
                         </h2>
                         <span class="ai-badge">
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                 <circle cx="12" cy="12" r="10"></circle>
                                 <path d="M12 16v-4"></path>
                                 <path d="M12 8h.01"></path>
@@ -341,17 +352,12 @@ if (!$aiMessage) {
                         </span>
                     </div>
                     <div class="ai-message-content">
-                        <div class="ai-message-icon">
-                            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-                                <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"></path>
-                            </svg>
-                        </div>
                         <blockquote class="ai-message-text">
                             "<?= e($aiMessage['message_content']) ?>"
                         </blockquote>
                         <?php if (!empty($aiMessage['scripture_ref'])): ?>
                             <p class="ai-scripture-ref">
-                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                     <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
                                     <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
                                 </svg>
@@ -359,8 +365,8 @@ if (!$aiMessage) {
                             </p>
                         <?php endif; ?>
                     </div>
-                    <a href="/ai_smartbible/" class="btn btn-ai-chat">
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <a href="/ai_smartbible/" class="btn-ai-chat" data-ripple>
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
                         </svg>
                         Chat with AI SmartBible
@@ -371,9 +377,11 @@ if (!$aiMessage) {
                 <div class="dashboard-card news-card">
                     <div class="card-header">
                         <h2>
-                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display:inline;vertical-align:middle;margin-right:8px;color:var(--secondary);">
-                                <rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18"/><path d="M9 21V9"/>
-                            </svg>
+                            <span class="icon" style="display:inline;vertical-align:middle;margin-right:8px;">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:var(--accent2);">
+                                    <rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18"/><path d="M9 21V9"/>
+                                </svg>
+                            </span>
                             NEWS
                         </h2>
                     </div>
@@ -401,7 +409,7 @@ if (!$aiMessage) {
                         </div>
                     <?php else: ?>
                         <div class="no-content news-empty">
-                            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="opacity:0.5;margin-bottom:1rem;">
+                            <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="opacity:0.4;margin-bottom:12px;">
                                 <rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m21 15-5-5L5 21"/>
                             </svg>
                             <p>No news at the moment.</p>
@@ -418,14 +426,14 @@ if (!$aiMessage) {
                     <?php if ($upcomingEvents): ?>
                         <div class="events-list">
                             <?php foreach ($upcomingEvents as $event): ?>
-                                <a href="/calendar/event.php?id=<?= $event['id'] ?>" class="event-item">
+                                <a href="/calendar/event.php?id=<?= $event['id'] ?>" class="event-item" data-ripple>
                                     <div class="event-date">
                                         <span class="event-day"><?= date('d', strtotime($event['start_datetime'])) ?></span>
                                         <span class="event-month"><?= date('M', strtotime($event['start_datetime'])) ?></span>
                                     </div>
                                     <div class="event-info">
                                         <h4><?= e($event['title']) ?></h4>
-                                        <p><?= date('H:i', strtotime($event['start_datetime'])) ?> • <?= e($event['location'] ?: 'No location') ?></p>
+                                        <p><?= date('H:i', strtotime($event['start_datetime'])) ?> &bull; <?= e($event['location'] ?: 'No location') ?></p>
                                     </div>
                                 </a>
                             <?php endforeach; ?>
@@ -446,7 +454,7 @@ if (!$aiMessage) {
                     <?php if ($recentPosts): ?>
                         <div class="posts-list">
                             <?php foreach ($recentPosts as $post): ?>
-                                <a href="/gospel_media/post.php?id=<?= $post['id'] ?>" class="post-item">
+                                <a href="/gospel_media/post.php?id=<?= $post['id'] ?>" class="post-item" data-ripple>
                                     <div class="post-author">
                                         <?php if ($post['author_avatar']): ?>
                                             <img src="<?= e($post['author_avatar']) ?>" alt="" class="author-avatar">
@@ -467,7 +475,7 @@ if (!$aiMessage) {
                     <?php else: ?>
                         <div class="no-content">
                             <p>No posts yet. Be the first to share!</p>
-                            <a href="/gospel_media/create.php" class="btn btn-outline">Create Post</a>
+                            <a href="/gospel_media/create.php" class="btn btn-outline" data-ripple>Create Post</a>
                         </div>
                     <?php endif; ?>
                 </div>
@@ -475,18 +483,55 @@ if (!$aiMessage) {
         </div>
     </main>
 
+    <!-- Bottom Navigation -->
+    <div class="bottom">
+        <nav class="nav" aria-label="Bottom navigation">
+            <a class="active" href="/" data-ripple>
+                <span class="icon" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 10.5l8-7 8 7V20a1.5 1.5 0 01-1.5 1.5h-3.5V15a1 1 0 00-1-1h-4a1 1 0 00-1 1v6.5H5.5A1.5 1.5 0 014 20v-9.5z" stroke-linejoin="round"/></svg>
+                </span>
+                Home
+            </a>
+            <a href="/morning_watch/" data-ripple>
+                <span class="icon" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 12h10M4 18h16" stroke-linecap="round"/></svg>
+                </span>
+                Study
+            </a>
+            <a href="/bible/" data-ripple>
+                <span class="icon" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 4h10a2 2 0 012 2v14l-7-3-7 3V6a2 2 0 012-2z" stroke-linejoin="round"/></svg>
+                </span>
+                Bible
+            </a>
+            <a href="/homecells/" data-ripple>
+                <span class="icon" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 21s7-4.4 7-11a7 7 0 10-14 0c0 6.6 7 11 7 11z" stroke-linejoin="round"/></svg>
+                </span>
+                Gemeente
+            </a>
+        </nav>
+    </div>
+
+    <!-- Toast Notification -->
+    <div class="toast" id="toast" role="status" aria-live="polite">
+        <span class="mini" aria-hidden="true"></span>
+        <p id="toastText">Notification</p>
+    </div>
+
     <script>
         // Theme toggle function
         function toggleTheme() {
             const html = document.documentElement;
+            const body = document.body;
             const currentTheme = html.getAttribute('data-theme') || 'dark';
             const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
 
             html.setAttribute('data-theme', newTheme);
+            body.setAttribute('data-theme', newTheme);
             localStorage.setItem('theme', newTheme);
 
-            // Add animation class
-            document.body.style.transition = 'background 0.5s ease, color 0.3s ease';
+            showToast('Theme: ' + newTheme);
         }
 
         function toggleUserMenu() {
@@ -509,6 +554,32 @@ if (!$aiMessage) {
             }
         });
 
+        // Ripple effect
+        document.addEventListener('click', function(e) {
+            const target = e.target.closest('[data-ripple]');
+            if (!target) return;
+
+            const rect = target.getBoundingClientRect();
+            const ripple = document.createElement('span');
+            ripple.className = 'ripple';
+            ripple.style.left = (e.clientX - rect.left) + 'px';
+            ripple.style.top = (e.clientY - rect.top) + 'px';
+            target.appendChild(ripple);
+            setTimeout(function() { ripple.remove(); }, 650);
+        });
+
+        // Toast helper
+        var toast = document.getElementById('toast');
+        var toastText = document.getElementById('toastText');
+        var toastTimer = null;
+
+        function showToast(msg) {
+            toastText.textContent = msg;
+            toast.classList.add('show');
+            clearTimeout(toastTimer);
+            toastTimer = setTimeout(function() { toast.classList.remove('show'); }, 2400);
+        }
+
         // Keyboard shortcut for theme toggle (Ctrl/Cmd + Shift + L)
         document.addEventListener('keydown', function(e) {
             if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === 'L') {
@@ -517,6 +588,12 @@ if (!$aiMessage) {
             }
         });
 
+        // Apply saved theme on load
+        (function() {
+            var saved = localStorage.getItem('theme') || 'dark';
+            document.documentElement.setAttribute('data-theme', saved);
+            document.body.setAttribute('data-theme', saved);
+        })();
     </script>
 </body>
 </html>
