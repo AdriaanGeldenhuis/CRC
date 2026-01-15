@@ -131,8 +131,8 @@ body[data-theme="light"] {
   padding: 8px 6px;
   color: var(--muted);
   text-decoration: none;
-  font-size: 11px;
-  font-weight: 600;
+  font-size: 10px;
+  font-weight: 700;
   transition: all 0.12s ease;
   border-bottom: 2px solid transparent;
 }
@@ -245,11 +245,12 @@ body[data-theme="light"] {
   border: 1px solid var(--line);
   border-radius: 999px;
   color: var(--muted);
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 500;
   text-decoration: none;
   display: block;
   transition: all 0.12s ease;
+  font-family: inherit;
 }
 
 .create-post-input:hover {
@@ -272,11 +273,12 @@ body[data-theme="light"] {
   background: none;
   border: none;
   color: var(--muted);
-  font-size: 12px;
-  font-weight: 600;
+  font-size: 11px;
+  font-weight: 700;
   text-decoration: none;
   cursor: pointer;
   transition: all 0.12s ease;
+  font-family: inherit;
 }
 
 .create-action svg {
@@ -333,18 +335,20 @@ body[data-theme="light"] {
 }
 
 .author-info strong {
-  font-size: 14px;
-  font-weight: 700;
+  font-size: 13px;
+  font-weight: 800;
   color: var(--text);
+  letter-spacing: -0.1px;
 }
 
 .post-meta {
-  font-size: 12px;
+  font-size: 11px;
   color: var(--muted);
   display: flex;
   align-items: center;
   gap: 6px;
   flex-wrap: wrap;
+  font-weight: 500;
 }
 
 .scope-badge {
@@ -450,8 +454,9 @@ body[data-theme="light"] {
   background: none;
   border: none;
   color: var(--muted);
-  font-size: 13px;
-  font-weight: 500;
+  font-size: 12px;
+  font-weight: 600;
+  font-family: inherit;
   cursor: pointer;
   transition: all 0.12s ease;
   text-align: left;
@@ -479,10 +484,11 @@ body[data-theme="light"] {
 /* Post Content */
 .post-content {
   padding: 0 14px 14px;
-  font-size: 14px;
-  line-height: 1.6;
-  color: var(--text);
+  font-size: 13px;
+  line-height: 1.55;
+  color: var(--muted);
   word-wrap: break-word;
+  font-weight: 500;
 }
 
 /* Post Media */
@@ -525,15 +531,16 @@ body[data-theme="light"] {
   display: flex;
   justify-content: space-between;
   padding: 10px 0;
-  font-size: 12px;
-  color: var(--muted);
+  font-size: 11px;
+  color: var(--muted2);
   border-bottom: 1px solid var(--line);
+  font-weight: 500;
 }
 
 .stat {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 5px;
 }
 
 .reaction-icons svg {
@@ -556,11 +563,12 @@ body[data-theme="light"] {
   background: none;
   border: none;
   color: var(--muted);
-  font-size: 13px;
-  font-weight: 600;
+  font-size: 12px;
+  font-weight: 700;
   cursor: pointer;
   border-radius: var(--radius-sm);
   transition: all 0.12s ease;
+  font-family: inherit;
 }
 
 .post-action svg {
@@ -639,8 +647,9 @@ body[data-theme="light"] {
   border: 1px solid var(--line);
   border-radius: 999px;
   color: var(--text);
-  font-size: 13px;
+  font-size: 12px;
   font-family: inherit;
+  font-weight: 500;
   transition: all 0.12s ease;
 }
 
@@ -694,7 +703,8 @@ body[data-theme="light"] {
   border-radius: var(--radius-sm);
   color: var(--accent);
   font-weight: 700;
-  font-size: 13px;
+  font-size: 12px;
+  font-family: inherit;
   text-decoration: none;
   transition: all 0.12s ease;
 }
@@ -708,8 +718,9 @@ body[data-theme="light"] {
 }
 
 .page-info {
-  font-size: 12px;
-  color: var(--muted);
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--muted2);
 }
 
 /* ===== EMPTY STATE ===== */
@@ -737,7 +748,7 @@ body[data-theme="light"] {
 }
 
 .empty-state h3 {
-  font-size: 18px;
+  font-size: 16px;
   font-weight: 800;
   margin-bottom: 8px;
   letter-spacing: -0.2px;
@@ -745,8 +756,9 @@ body[data-theme="light"] {
 
 .empty-state p {
   color: var(--muted);
-  font-size: 13px;
+  font-size: 12px;
   margin-bottom: 20px;
+  font-weight: 500;
 }
 
 .btn-primary {
@@ -757,7 +769,8 @@ body[data-theme="light"] {
   background: linear-gradient(135deg, var(--accent), var(--accent2));
   color: white;
   font-weight: 700;
-  font-size: 13px;
+  font-size: 12px;
+  font-family: inherit;
   border: 1px solid var(--btn-primary-border);
   border-radius: var(--radius-sm);
   cursor: pointer;
@@ -802,15 +815,14 @@ body[data-theme="light"] {
   flex: 1;
   text-decoration: none;
   color: var(--muted);
-  font-size: 10px;
+  font-size: 11px;
   font-weight: 700;
-  padding: 8px 6px;
+  padding: 10px 10px;
   border-radius: 16px;
   display: flex;
-  flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 4px;
+  gap: 8px;
   transition: background 0.12s ease, color 0.12s ease, transform 0.12s ease;
   user-select: none;
 }
@@ -933,7 +945,7 @@ body[data-theme="light"] {
   align-items: center;
   gap: 10px;
   color: var(--text);
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 600;
   opacity: 0;
   pointer-events: none;
