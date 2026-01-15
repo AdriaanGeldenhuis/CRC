@@ -1,56 +1,48 @@
 /* =====================================================================
-   CRC AI SmartBible - Premium Glossy Charcoal with CRC Purple & Cyan
-   Matching the CRC Diary styling
+   CRC AI SMARTBIBLE - Premium Glass Morphism Design
+   WebView Compatible - No color-mix()
    ===================================================================== */
 
-/* ===== DARK THEME (DEFAULT) ===== */
+/* ===== CSS VARIABLES - DARK THEME (DEFAULT) ===== */
 :root {
-  /* Glossy charcoal - not pure black, still looks glossy dark */
-  --bg-base: #0a0a0a;
-  --bg-elevated: #111111;
-  --bg-card: #161616;
-  --bg-surface: #1c1c1c;
+  /* Background */
+  --bg0: #070A12;
+  --bg1: #090F1F;
+  --bg-glass: rgba(9, 15, 31, 0.85);
 
-  /* CRC Purple */
-  --primary: #8B5CF6;
-  --primary-light: #A78BFA;
-  --primary-dark: #7C3AED;
-  --accent: #A855F7;
-  --accent-light: #C084FC;
-
-  /* Silver accents */
-  --silver: #b8b8b8;
-  --silver-dark: #808080;
+  /* Cards & Surfaces */
+  --card: rgba(255,255,255,0.06);
+  --card2: rgba(255,255,255,0.085);
+  --line: rgba(255,255,255,0.10);
 
   /* Text */
-  --text-primary: #f5f5f5;
-  --text-secondary: #c8c8c8;
-  --text-muted: #7a7a7a;
+  --text: #EAF0FF;
+  --muted: rgba(234,240,255,0.72);
+
+  /* Accent Colors */
+  --accent: #7C3AED;
+  --accent2: #22D3EE;
+  --accent-glow: rgba(124, 58, 237, 0.4);
 
   /* Status Colors */
-  --success: #10B981;
-  --success-glow: rgba(16, 185, 129, 0.4);
-  --danger: #EF4444;
-  --danger-glow: rgba(239, 68, 68, 0.4);
-  --warning: #F59E0B;
-  --warning-glow: rgba(245, 158, 11, 0.4);
+  --good: #22C55E;
+  --warn: #F59E0B;
+  --bad: #EF4444;
 
-  /* Borders & effects */
-  --border: rgba(139, 92, 246, 0.15);
-  --border-light: rgba(255, 255, 255, 0.06);
-  --glow-primary: rgba(139, 92, 246, 0.3);
-  --glow-accent: rgba(6, 182, 212, 0.3);
-  --shadow: 0 8px 32px rgba(0, 0, 0, 0.8);
-  --shadow-sm: 0 4px 16px rgba(0, 0, 0, 0.6);
+  /* Shadows */
+  --shadow-sm: 0 2px 8px rgba(0,0,0,0.3);
+  --shadow-md: 0 8px 24px rgba(0,0,0,0.4);
+  --shadow-lg: 0 16px 48px rgba(0,0,0,0.5);
 
-  /* Typography */
+  /* Radius */
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 24px;
+
+  /* Font */
+  --font: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   --font-display: 'Parisienne', cursive;
-  --font-body: 'Inter', system-ui, -apple-system, sans-serif;
-
-  /* Spacing */
-  --radius: 16px;
-  --radius-sm: 12px;
-  --radius-lg: 20px;
 
   /* Layout */
   --header-height: 80px;
@@ -58,35 +50,14 @@
 
 /* ===== LIGHT THEME ===== */
 [data-theme="light"] {
-  /* Warm whites */
-  --bg-base: #faf8f6;
-  --bg-elevated: #ffffff;
-  --bg-card: #ffffff;
-  --bg-surface: #f5f2ef;
-
-  /* Deeper colors for contrast */
-  --primary: #7C3AED;
-  --primary-light: #8B5CF6;
-  --primary-dark: #6D28D9;
-  --accent: #0891B2;
-  --accent-light: #06B6D4;
-
-  /* Darker silver */
-  --silver: #4a4a4a;
-  --silver-dark: #6a6a6a;
-
-  /* Text */
-  --text-primary: #1a1a1a;
-  --text-secondary: #3d3d3d;
-  --text-muted: #6a6a6a;
-
-  /* Borders & effects */
-  --border: rgba(139, 92, 246, 0.2);
-  --border-light: rgba(0, 0, 0, 0.06);
-  --glow-primary: rgba(139, 92, 246, 0.15);
-  --glow-accent: rgba(6, 182, 212, 0.15);
-  --shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
-  --shadow-sm: 0 4px 16px rgba(0, 0, 0, 0.06);
+  --bg0: #F6F7FB;
+  --bg1: #FFFFFF;
+  --bg-glass: rgba(255, 255, 255, 0.85);
+  --card: rgba(10,15,31,0.05);
+  --card2: rgba(10,15,31,0.08);
+  --line: rgba(10,15,31,0.10);
+  --text: #0A0F1F;
+  --muted: rgba(10,15,31,0.72);
 }
 
 /* ===== BASE ===== */
@@ -97,23 +68,21 @@
 }
 
 html {
-  background: var(--bg-base);
-  transition: background-color 0.5s ease;
+  background: var(--bg0);
+  -webkit-font-smoothing: antialiased;
 }
 
 body {
   min-height: 100vh;
-  background: var(--bg-base);
-  color: var(--text-primary);
-  font-family: var(--font-body);
+  background: var(--bg0);
+  color: var(--text);
+  font-family: var(--font);
   font-weight: 400;
   font-size: 16px;
   line-height: 1.7;
-  -webkit-font-smoothing: antialiased;
-  transition: background-color 0.5s ease, color 0.5s ease;
 }
 
-/* Glossy background effect with CRC colors */
+/* Background gradient effect */
 body::before {
   content: '';
   position: fixed;
@@ -122,11 +91,16 @@ body::before {
   right: 0;
   bottom: 0;
   background:
-    radial-gradient(ellipse 80% 50% at 20% 20%, var(--glow-primary) 0%, transparent 50%),
-    radial-gradient(ellipse 60% 40% at 80% 80%, var(--glow-accent) 0%, transparent 50%);
+    radial-gradient(ellipse 80% 50% at 20% 20%, rgba(124, 58, 237, 0.2) 0%, transparent 50%),
+    radial-gradient(ellipse 60% 40% at 80% 80%, rgba(34, 211, 238, 0.15) 0%, transparent 50%);
   pointer-events: none;
   z-index: 0;
-  transition: background 0.5s ease;
+}
+
+[data-theme="light"] body::before {
+  background:
+    radial-gradient(ellipse 80% 50% at 20% 20%, rgba(124, 58, 237, 0.08) 0%, transparent 50%),
+    radial-gradient(ellipse 60% 40% at 80% 80%, rgba(34, 211, 238, 0.06) 0%, transparent 50%);
 }
 
 /* ===== MAIN CONTENT ===== */
@@ -150,18 +124,20 @@ body::before {
   align-items: center;
   margin-bottom: 2rem;
   padding: 2rem;
-  background: linear-gradient(135deg, var(--bg-card) 0%, var(--bg-surface) 100%);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-lg);
-  box-shadow: var(--shadow), 0 0 40px var(--glow-primary);
+  background: var(--bg-glass);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-lg);
 }
 
 .smartbible-title h1,
 .smartbible-title h1.display-title {
   font-family: var(--font-display);
-  font-size: clamp(2.5rem, 6vw, 3.5rem);
+  font-size: clamp(2rem, 5vw, 3rem);
   font-weight: 400;
-  background: linear-gradient(135deg, var(--primary), var(--accent));
+  background: linear-gradient(135deg, var(--accent), var(--accent2));
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -169,40 +145,42 @@ body::before {
 }
 
 .smartbible-title p.subtitle {
-  color: var(--text-muted);
-  font-size: 1rem;
+  color: var(--muted);
+  font-size: 0.95rem;
 }
 
 .smartbible-icon {
-  width: 80px;
-  height: 80px;
+  width: 72px;
+  height: 72px;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: rgba(139, 92, 246, 0.1);
-  border: 1px solid rgba(139, 92, 246, 0.2);
+  background: var(--card);
+  border: 1px solid var(--line);
   border-radius: 50%;
 }
 
 .smartbible-icon svg {
-  width: 40px;
-  height: 40px;
-  color: var(--primary);
+  width: 36px;
+  height: 36px;
+  color: var(--accent);
 }
 
 /* ===== SECTIONS ===== */
 .smartbible-section {
-  background: linear-gradient(135deg, var(--bg-card) 0%, var(--bg-surface) 100%);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
+  background: var(--bg-glass);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
   padding: 1.5rem;
   margin-bottom: 1.5rem;
-  transition: all 0.3s ease;
+  transition: all 0.2s ease;
 }
 
 .smartbible-section:hover {
-  border-color: rgba(139, 92, 246, 0.3);
-  box-shadow: 0 0 30px var(--glow-primary);
+  border-color: rgba(124, 58, 237, 0.3);
+  box-shadow: 0 0 24px var(--accent-glow);
 }
 
 .section-header {
@@ -214,8 +192,8 @@ body::before {
 
 .section-header h2 {
   font-family: var(--font-display);
-  font-size: 1.5rem;
-  background: linear-gradient(135deg, var(--primary), var(--accent));
+  font-size: 1.4rem;
+  background: linear-gradient(135deg, var(--accent), var(--accent2));
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -227,14 +205,14 @@ body::before {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: rgba(139, 92, 246, 0.15);
+  background: var(--card);
   border-radius: 50%;
 }
 
 .section-icon svg {
   width: 20px;
   height: 20px;
-  color: var(--primary);
+  color: var(--accent);
 }
 
 /* ===== SEARCH FORM ===== */
@@ -250,23 +228,23 @@ body::before {
 .smartbible-input {
   flex: 1;
   padding: 1rem 1.25rem;
-  background: var(--bg-surface);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
   font-size: 1rem;
-  font-family: var(--font-body);
-  color: var(--text-primary);
-  transition: all 0.3s ease;
+  font-family: var(--font);
+  color: var(--text);
+  transition: all 0.2s ease;
 }
 
 .smartbible-input::placeholder {
-  color: var(--text-muted);
+  color: var(--muted);
 }
 
 .smartbible-input:focus {
   outline: none;
-  border-color: var(--primary);
-  box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.2), 0 0 20px var(--glow-primary);
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.2);
 }
 
 /* ===== BUTTONS ===== */
@@ -277,24 +255,25 @@ body::before {
   gap: 0.5rem;
   padding: 1rem 1.5rem;
   font-size: 1rem;
-  font-weight: 500;
-  font-family: var(--font-body);
+  font-weight: 600;
+  font-family: var(--font);
   border: none;
-  border-radius: var(--radius);
+  border-radius: var(--radius-md);
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: all 0.2s ease;
   text-decoration: none;
+  -webkit-tap-highlight-color: transparent;
 }
 
 .btn-primary {
-  background: linear-gradient(135deg, var(--primary), var(--accent));
-  color: #fff;
+  background: linear-gradient(135deg, var(--accent), var(--accent2));
+  color: white;
   box-shadow: var(--shadow-sm);
 }
 
 .btn-primary:hover {
   transform: translateY(-2px);
-  box-shadow: var(--shadow), 0 0 30px var(--glow-primary);
+  box-shadow: var(--shadow-md), 0 0 24px var(--accent-glow);
 }
 
 .btn-primary:active {
@@ -313,20 +292,20 @@ body::before {
   align-items: flex-start;
   gap: 0.75rem;
   padding: 1rem;
-  background: rgba(139, 92, 246, 0.05);
-  border: 1px solid rgba(139, 92, 246, 0.1);
+  background: var(--card);
+  border: 1px solid var(--line);
   border-radius: var(--radius-sm);
 }
 
 .help-text svg {
   flex-shrink: 0;
-  color: var(--primary);
+  color: var(--accent);
   margin-top: 0.1rem;
 }
 
 .help-text p {
   font-size: 0.9rem;
-  color: var(--text-secondary);
+  color: var(--muted);
   line-height: 1.5;
 }
 
@@ -342,8 +321,8 @@ body::before {
 .spinner {
   width: 24px;
   height: 24px;
-  border: 3px solid rgba(139, 92, 246, 0.2);
-  border-top-color: var(--primary);
+  border: 3px solid var(--line);
+  border-top-color: var(--accent);
   border-radius: 50%;
   animation: spin 1s linear infinite;
 }
@@ -353,9 +332,9 @@ body::before {
 }
 
 .answer-panel {
-  background: var(--bg-surface);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
   min-height: 200px;
   max-height: 500px;
   overflow: hidden;
@@ -366,6 +345,7 @@ body::before {
   max-height: 500px;
   overflow-y: auto;
   padding: 1.5rem;
+  -webkit-overflow-scrolling: touch;
 }
 
 .placeholder {
@@ -375,7 +355,7 @@ body::before {
   justify-content: center;
   text-align: center;
   padding: 3rem 1rem;
-  color: var(--text-muted);
+  color: var(--muted);
 }
 
 .placeholder svg {
@@ -390,7 +370,7 @@ body::before {
 .answer-content {
   font-size: 1rem;
   line-height: 1.8;
-  color: var(--text-primary);
+  color: var(--text);
 }
 
 /* Answer content formatting */
@@ -400,12 +380,12 @@ body::before {
 
 .answer-content h4,
 .answer-content strong {
-  color: var(--primary);
+  color: var(--accent);
   font-weight: 600;
 }
 
 .answer-content em {
-  color: var(--accent);
+  color: var(--accent2);
 }
 
 .answer-content ul,
@@ -420,8 +400,8 @@ body::before {
 
 /* Scripture verse styling */
 .sb-verse {
-  background: rgba(139, 92, 246, 0.1);
-  border-left: 3px solid var(--primary);
+  background: var(--card);
+  border-left: 3px solid var(--accent);
   padding: 1rem 1.25rem;
   margin: 1rem 0;
   border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
@@ -429,8 +409,8 @@ body::before {
 }
 
 .sb-heading {
-  color: var(--primary);
-  font-family: var(--font-body);
+  color: var(--accent);
+  font-family: var(--font);
   font-size: 1.1rem;
   font-weight: 600;
   text-transform: uppercase;
@@ -448,6 +428,8 @@ body::before {
   border: none;
   padding: 0;
   box-shadow: none;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
 }
 
 .examples-section:hover {
@@ -457,7 +439,7 @@ body::before {
 .examples-title {
   font-family: var(--font-display);
   font-size: 1.25rem;
-  background: linear-gradient(135deg, var(--primary), var(--accent));
+  background: linear-gradient(135deg, var(--accent), var(--accent2));
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -477,18 +459,25 @@ body::before {
   align-items: center;
   gap: 0.75rem;
   padding: 1.5rem 1rem;
-  background: linear-gradient(135deg, var(--bg-card) 0%, var(--bg-surface) 100%);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
+  background: var(--bg-glass);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
   cursor: pointer;
-  transition: all 0.3s ease;
-  font-family: var(--font-body);
+  transition: all 0.2s ease;
+  font-family: var(--font);
+  -webkit-tap-highlight-color: transparent;
 }
 
 .example-card:hover {
-  border-color: var(--primary);
+  border-color: var(--accent);
   transform: translateY(-4px);
-  box-shadow: var(--shadow), 0 0 30px var(--glow-primary);
+  box-shadow: var(--shadow-md), 0 0 24px var(--accent-glow);
+}
+
+.example-card:active {
+  transform: translateY(0);
 }
 
 .example-icon {
@@ -497,27 +486,27 @@ body::before {
 
 .example-text {
   font-size: 0.9rem;
-  color: var(--text-secondary);
+  color: var(--muted);
   text-align: center;
 }
 
 /* ===== SCROLLBAR ===== */
 .answer-scroll::-webkit-scrollbar {
-  width: 8px;
+  width: 6px;
 }
 
 .answer-scroll::-webkit-scrollbar-track {
-  background: var(--bg-surface);
-  border-radius: 4px;
+  background: var(--bg1);
+  border-radius: 3px;
 }
 
 .answer-scroll::-webkit-scrollbar-thumb {
-  background: rgba(139, 92, 246, 0.3);
-  border-radius: 4px;
+  background: var(--accent);
+  border-radius: 3px;
 }
 
 .answer-scroll::-webkit-scrollbar-thumb:hover {
-  background: rgba(139, 92, 246, 0.5);
+  background: var(--accent2);
 }
 
 /* ===== RESPONSIVE ===== */
@@ -530,10 +519,18 @@ body::before {
     flex-direction: column;
     text-align: center;
     gap: 1.5rem;
+    padding: 1.5rem;
   }
 
   .smartbible-icon {
     order: -1;
+    width: 64px;
+    height: 64px;
+  }
+
+  .smartbible-icon svg {
+    width: 32px;
+    height: 32px;
   }
 
   .input-group {
@@ -551,17 +548,11 @@ body::before {
 
 @media (max-width: 480px) {
   .smartbible-title h1 {
-    font-size: 2rem;
+    font-size: 1.75rem;
   }
 
-  .smartbible-icon {
-    width: 60px;
-    height: 60px;
-  }
-
-  .smartbible-icon svg {
-    width: 30px;
-    height: 30px;
+  .smartbible-section {
+    padding: 1.25rem;
   }
 }
 
@@ -578,9 +569,17 @@ body::before {
 }
 
 .smartbible-section {
-  animation: fade-in-up 0.6s ease-out forwards;
+  animation: fade-in-up 0.5s ease-out forwards;
 }
 
 .search-section { animation-delay: 0.1s; }
 .answer-section { animation-delay: 0.2s; }
 .examples-section { animation-delay: 0.3s; }
+
+/* ===== REDUCED MOTION ===== */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
