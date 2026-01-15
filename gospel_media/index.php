@@ -85,7 +85,7 @@ $totalPages = ceil($totalPosts / $perPage);
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><?= e($pageTitle) ?></title>
     <?= CSRF::meta() ?>
-    <link rel="stylesheet" href="/gospel_media/css/gospel_media.css?v=<?= time() ?>">
+    <link rel="stylesheet" href="/gospel_media/css/gospel_media.css?v=<?= filemtime(__DIR__ . '/css/gospel_media.css') ?>">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <script>
@@ -346,6 +346,12 @@ $totalPages = ceil($totalPosts / $perPage);
                                             </svg>
                                         </button>
                                         <div class="post-options-menu" id="postMenu-<?= $post['id'] ?>">
+                                            <?php if (Auth::isAdmin()): ?>
+                                            <button class="post-option" onclick="togglePin(<?= $post['id'] ?>, <?= $post['is_pinned'] ? 'true' : 'false' ?>)">
+                                                <svg viewBox="0 0 24 24" fill="<?= $post['is_pinned'] ? 'currentColor' : 'none' ?>" stroke="currentColor" stroke-width="2"><path d="M16 12V4h1V2H7v2h1v8l-2 2v2h5v6l1 1 1-1v-6h5v-2l-2-2z"/></svg>
+                                                <?= $post['is_pinned'] ? 'Unpin' : 'Pin' ?>
+                                            </button>
+                                            <?php endif; ?>
                                             <button class="post-option" onclick="editPost(<?= $post['id'] ?>)">
                                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
                                                 Edit
@@ -549,81 +555,6 @@ $totalPages = ceil($totalPosts / $perPage);
                 document.getElementById('mobileMenu')?.classList.remove('show');
             }
         });
-
-        function openImageViewer(src) {
-            document.getElementById('viewerImage').src = src;
-            document.getElementById('imageViewer').classList.add('show');
-            document.body.style.overflow = 'hidden';
-        }
-
-        function closeImageViewer() {
-            document.getElementById('imageViewer').classList.remove('show');
-            document.body.style.overflow = '';
-        }
-
-        // Post Options Menu
-        function togglePostMenu(postId) {
-            // Close all other menus first
-            document.querySelectorAll('.post-options-menu.show').forEach(menu => {
-                menu.classList.remove('show');
-            });
-            document.getElementById('postMenu-' + postId).classList.toggle('show');
-        }
-
-        // Close post menus when clicking outside
-        document.addEventListener('click', function(e) {
-            if (!e.target.closest('.post-options')) {
-                document.querySelectorAll('.post-options-menu.show').forEach(menu => {
-                    menu.classList.remove('show');
-                });
-            }
-        });
-
-        // Edit Post - redirect to edit page
-        function editPost(postId) {
-            window.location.href = '/gospel_media/edit.php?id=' + postId;
-        }
-
-        // Delete Post
-        async function deletePost(postId) {
-            if (!confirm('Are you sure you want to delete this post? This cannot be undone.')) {
-                return;
-            }
-
-            try {
-                const formData = new FormData();
-                formData.append('action', 'delete');
-                formData.append('post_id', postId);
-                formData.append('csrf_token', document.querySelector('meta[name="csrf-token"]')?.content);
-
-                const response = await fetch('/gospel_media/api/posts.php', {
-                    method: 'POST',
-                    body: formData
-                });
-
-                const data = await response.json();
-
-                if (data.success) {
-                    // Remove the post from DOM
-                    document.querySelector('[data-post-id="' + postId + '"]').remove();
-                    showToast('Post deleted successfully', 'success');
-                } else {
-                    showToast(data.error || 'Failed to delete post', 'error');
-                }
-            } catch (error) {
-                showToast('Error deleting post', 'error');
-            }
-        }
-
-        // Toast notification
-        function showToast(message, type = 'success') {
-            const toast = document.getElementById('toast');
-            toast.textContent = message;
-            toast.className = 'toast show ' + type;
-            setTimeout(() => {
-                toast.classList.remove('show');
-            }, 3000);
-        }
     </script>
 </body>
 </html>
