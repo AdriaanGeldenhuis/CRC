@@ -189,7 +189,7 @@ function esc($s) {
     <link rel="stylesheet" href="/ai_smartbible/css/ai_smartbible.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Parisienne&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 </head>
 <body>
     <?php include __DIR__ . '/../home/partials/navbar.php'; ?>
