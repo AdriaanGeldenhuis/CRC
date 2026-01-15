@@ -335,11 +335,9 @@ if (!$aiMessage) {
                 <div class="dashboard-card ai-message-card">
                     <div class="card-header">
                         <h2>
-                            <span class="icon" style="display:inline;vertical-align:middle;margin-right:8px;">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:var(--accent);">
-                                    <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"></path>
-                                </svg>
-                            </span>
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display:inline;vertical-align:middle;margin-right:8px;color:var(--accent);">
+                                <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"></path>
+                            </svg>
                             AI Message of the Day
                         </h2>
                         <span class="ai-badge">
@@ -377,11 +375,9 @@ if (!$aiMessage) {
                 <div class="dashboard-card news-card">
                     <div class="card-header">
                         <h2>
-                            <span class="icon" style="display:inline;vertical-align:middle;margin-right:8px;">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:var(--accent2);">
-                                    <rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18"/><path d="M9 21V9"/>
-                                </svg>
-                            </span>
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display:inline;vertical-align:middle;margin-right:8px;color:var(--accent2);">
+                                <rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18"/><path d="M9 21V9"/>
+                            </svg>
                             NEWS
                         </h2>
                     </div>
