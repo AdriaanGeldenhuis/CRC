@@ -190,9 +190,186 @@ function esc($s) {
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <script>
+        // Load saved theme before page renders to prevent flash
+        (function() {
+            const saved = localStorage.getItem('theme') || 'dark';
+            document.documentElement.setAttribute('data-theme', saved);
+        })();
+    </script>
 </head>
-<body>
-    <?php include __DIR__ . '/../home/partials/navbar.php'; ?>
+<?php
+$primaryCong = Auth::primaryCongregation();
+$unreadNotifications = 0;
+try {
+    $unreadNotifications = Database::fetchColumn(
+        "SELECT COUNT(*) FROM notifications WHERE user_id = ? AND read_at IS NULL",
+        [$user['id']]
+    ) ?: 0;
+} catch (Exception $e) {}
+?>
+<body data-theme="dark">
+    <!-- Top Bar / Navigation (matching Home page exactly) -->
+    <div class="topbar">
+        <div class="inner">
+            <div class="brand">
+                <div class="logo" aria-hidden="true"></div>
+                <div>
+                    <h1>CRC App</h1>
+                    <span><?= e($primaryCong['name'] ?? 'CRC') ?></span>
+                </div>
+            </div>
+
+            <div class="actions">
+                <!-- Status Chip (hidden on mobile) -->
+                <div class="chip" title="Status">
+                    <span class="dot"></span>
+                    <?= e(explode(' ', $user['name'])[0]) ?>
+                </div>
+
+                <!-- Theme Toggle -->
+                <button class="theme-toggle" onclick="toggleTheme()" title="Toggle theme" data-ripple>
+                    <svg class="sun-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M12 3v2m0 14v2M3 12h2m14 0h2M5.2 5.2l1.4 1.4m10.8 10.8l1.4 1.4M18.8 5.2l-1.4 1.4M6.6 17.4l-1.4 1.4"></path>
+                        <circle cx="12" cy="12" r="5"></circle>
+                    </svg>
+                    <svg class="moon-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+                    </svg>
+                </button>
+
+                <!-- Notifications -->
+                <a href="/notifications/" class="nav-icon-btn" title="Notifications" data-ripple>
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+                        <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+                    </svg>
+                    <?php if ($unreadNotifications > 0): ?>
+                        <span class="notification-badge"><?= $unreadNotifications > 9 ? '9+' : $unreadNotifications ?></span>
+                    <?php endif; ?>
+                </a>
+
+                <!-- 3-dot More Menu -->
+                <div class="more-menu">
+                    <button class="more-menu-btn" onclick="toggleMoreMenu()" title="More" data-ripple>
+                        <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor">
+                            <circle cx="12" cy="5" r="2"></circle>
+                            <circle cx="12" cy="12" r="2"></circle>
+                            <circle cx="12" cy="19" r="2"></circle>
+                        </svg>
+                    </button>
+                    <div class="more-dropdown" id="moreDropdown">
+                        <a href="/gospel_media/" class="more-dropdown-item">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M4 11a9 9 0 0 1 9 9"></path>
+                                <path d="M4 4a16 16 0 0 1 16 16"></path>
+                                <circle cx="5" cy="19" r="1"></circle>
+                            </svg>
+                            Feed
+                        </a>
+                        <a href="/bible/" class="more-dropdown-item">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
+                                <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
+                                <path d="M12 6v7"></path>
+                                <path d="M8 9h8"></path>
+                            </svg>
+                            Bible
+                        </a>
+                        <a href="/ai_smartbible/" class="more-dropdown-item">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path>
+                                <circle cx="19" cy="5" r="3" fill="currentColor"></circle>
+                            </svg>
+                            AI SmartBible
+                        </a>
+                        <a href="/morning_watch/" class="more-dropdown-item">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="12" cy="12" r="5"></circle>
+                                <line x1="12" y1="1" x2="12" y2="3"></line>
+                                <line x1="12" y1="21" x2="12" y2="23"></line>
+                                <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+                                <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+                                <line x1="1" y1="12" x2="3" y2="12"></line>
+                                <line x1="21" y1="12" x2="23" y2="12"></line>
+                                <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+                                <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+                            </svg>
+                            Morning Study
+                        </a>
+                        <a href="/calendar/" class="more-dropdown-item">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                                <line x1="16" y1="2" x2="16" y2="6"></line>
+                                <line x1="8" y1="2" x2="8" y2="6"></line>
+                                <line x1="3" y1="10" x2="21" y2="10"></line>
+                            </svg>
+                            Calendar
+                        </a>
+                        <a href="/media/" class="more-dropdown-item">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <polygon points="23 7 16 12 23 17 23 7"></polygon>
+                                <rect x="1" y="5" width="15" height="14" rx="2" ry="2"></rect>
+                            </svg>
+                            Media
+                        </a>
+                        <div class="more-dropdown-divider"></div>
+                        <a href="/diary/" class="more-dropdown-item">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
+                                <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
+                            </svg>
+                            My Diary
+                        </a>
+                        <a href="/homecells/" class="more-dropdown-item">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                                <circle cx="9" cy="7" r="4"></circle>
+                                <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                                <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                            </svg>
+                            Homecells
+                        </a>
+                        <a href="/learning/" class="more-dropdown-item">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M22 10v6M2 10l10-5 10 5-10 5z"></path>
+                                <path d="M6 12v5c3 3 9 3 12 0v-5"></path>
+                            </svg>
+                            Courses
+                        </a>
+                    </div>
+                </div>
+
+                <!-- User Profile Menu -->
+                <div class="user-menu">
+                    <button class="user-menu-btn" onclick="toggleUserMenu()">
+                        <?php if ($user['avatar']): ?>
+                            <img src="<?= e($user['avatar']) ?>" alt="" class="user-avatar">
+                        <?php else: ?>
+                            <div class="user-avatar-placeholder"><?= strtoupper(substr($user['name'], 0, 1)) ?></div>
+                        <?php endif; ?>
+                    </button>
+                    <div class="user-dropdown" id="userDropdown">
+                        <div class="user-dropdown-header">
+                            <strong><?= e($user['name']) ?></strong>
+                            <span><?= e($primaryCong['name'] ?? 'CRC') ?></span>
+                        </div>
+                        <div class="user-dropdown-divider"></div>
+                        <a href="/profile/" class="user-dropdown-item">Profile</a>
+                        <?php if ($primaryCong && Auth::isCongregationAdmin($primaryCong['id'])): ?>
+                            <div class="user-dropdown-divider"></div>
+                            <a href="/admin_congregation/" class="user-dropdown-item">Manage Congregation</a>
+                        <?php endif; ?>
+                        <?php if (Auth::isAdmin()): ?>
+                            <a href="/admin/" class="user-dropdown-item">Admin Panel</a>
+                        <?php endif; ?>
+                        <div class="user-dropdown-divider"></div>
+                        <a href="/auth/logout.php" class="user-dropdown-item logout">Logout</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 
     <main class="main-content">
         <div class="container">
@@ -302,5 +479,67 @@ function esc($s) {
     </main>
 
     <script src="/ai_smartbible/js/ai_smartbible.js"></script>
+    <script>
+        // Theme toggle function
+        function toggleTheme() {
+            const html = document.documentElement;
+            const body = document.body;
+            const currentTheme = html.getAttribute('data-theme') || 'dark';
+            const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+
+            html.setAttribute('data-theme', newTheme);
+            body.setAttribute('data-theme', newTheme);
+            localStorage.setItem('theme', newTheme);
+        }
+
+        function toggleUserMenu() {
+            document.getElementById('moreDropdown')?.classList.remove('show');
+            document.getElementById('userDropdown').classList.toggle('show');
+        }
+
+        function toggleMoreMenu() {
+            document.getElementById('userDropdown')?.classList.remove('show');
+            document.getElementById('moreDropdown').classList.toggle('show');
+        }
+
+        // Close dropdowns when clicking outside
+        document.addEventListener('click', function(e) {
+            if (!e.target.closest('.user-menu')) {
+                document.getElementById('userDropdown')?.classList.remove('show');
+            }
+            if (!e.target.closest('.more-menu')) {
+                document.getElementById('moreDropdown')?.classList.remove('show');
+            }
+        });
+
+        // Ripple effect
+        document.addEventListener('click', function(e) {
+            const target = e.target.closest('[data-ripple]');
+            if (!target) return;
+
+            const rect = target.getBoundingClientRect();
+            const ripple = document.createElement('span');
+            ripple.className = 'ripple';
+            ripple.style.left = (e.clientX - rect.left) + 'px';
+            ripple.style.top = (e.clientY - rect.top) + 'px';
+            target.appendChild(ripple);
+            setTimeout(function() { ripple.remove(); }, 650);
+        });
+
+        // Keyboard shortcut for theme toggle (Ctrl/Cmd + Shift + L)
+        document.addEventListener('keydown', function(e) {
+            if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === 'L') {
+                e.preventDefault();
+                toggleTheme();
+            }
+        });
+
+        // Apply saved theme on load
+        (function() {
+            var saved = localStorage.getItem('theme') || 'dark';
+            document.documentElement.setAttribute('data-theme', saved);
+            document.body.setAttribute('data-theme', saved);
+        })();
+    </script>
 </body>
 </html>
