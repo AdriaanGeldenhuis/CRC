@@ -151,15 +151,10 @@
   function createLoadingOverlay() {
     const overlay = document.createElement('div');
     overlay.id = 'bibleLoadingOverlay';
+    overlay.className = 'bible-loading-overlay';
     overlay.innerHTML = `
-      <div class="bible-loading-container">
-        <div class="bible-loading-spinner"></div>
-        <h2 class="bible-loading-title">Loading Bible...</h2>
-        <div class="bible-loading-bar">
-          <div class="bible-loading-progress" id="loadingProgress"></div>
-        </div>
-        <p class="bible-loading-text" id="loadingText">0%</p>
-      </div>
+      <div class="bible-loading-spinner"></div>
+      <p class="bible-loading-text" id="loadingText">Loading Bible...</p>
     `;
     document.body.appendChild(overlay);
     return overlay;
@@ -691,26 +686,12 @@
       document.body.appendChild(menu);
     }
 
-    // Remove hidden class
+    // Show menu using CSS class
     menu.classList.remove('bible-context-hidden');
-
-    // Force visibility with inline styles
-    menu.style.cssText = `
-      display: block !important;
-      visibility: visible !important;
-      opacity: 1 !important;
-      position: fixed !important;
-      left: ${x}px !important;
-      top: ${y}px !important;
-      z-index: 99999 !important;
-      background: #1A1A2E !important;
-      border: 1px solid rgba(139, 92, 246, 0.3) !important;
-      border-radius: 12px !important;
-      width: 280px !important;
-      max-height: 80vh !important;
-      overflow-y: auto !important;
-      box-shadow: 0 10px 40px rgba(0,0,0,0.5) !important;
-    `;
+    menu.style.display = 'block';
+    menu.style.position = 'fixed';
+    menu.style.left = x + 'px';
+    menu.style.top = y + 'px';
 
     // Adjust if off-screen
     setTimeout(() => {
@@ -728,7 +709,7 @@
     const menu = els.verseContextMenu;
     if (!menu) return;
     menu.classList.add('bible-context-hidden');
-    menu.style.cssText = 'display: none !important;';
+    menu.style.display = 'none';
   }
 
   // ===== NAVIGATION =====
@@ -1500,10 +1481,10 @@
       removeLoadingOverlay();
       if (els.leftContent) {
         els.leftContent.innerHTML = `
-          <div style="text-align:center;padding:2rem;color:#ef4444;">
+          <div class="bible-error-container">
             <h2>Could not load Bible</h2>
             <p>${esc(e.message)}</p>
-            <button onclick="location.reload()" style="margin-top:1rem;padding:0.75rem 1.5rem;background:#8B5CF6;color:white;border:none;border-radius:8px;cursor:pointer;">Refresh</button>
+            <button class="btn primary" onclick="location.reload()">Refresh</button>
           </div>
         `;
       }

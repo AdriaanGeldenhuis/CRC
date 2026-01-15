@@ -1,7 +1,7 @@
 <?php
 /**
  * CRC Bible - Verse Actions Page
- * Full page for verse actions (highlight, bookmark, note, etc.)
+ * Premium Glass Morphism Design - Matches Home Page
  */
 
 require_once __DIR__ . '/../core/bootstrap.php';
@@ -28,10 +28,11 @@ if ($book && $chapter && $verse) {
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=1.0, user-scalable=no">
     <title><?= e($pageTitle) ?></title>
     <?= CSRF::meta() ?>
     <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <script>
         (function() {
@@ -40,190 +41,317 @@ if ($book && $chapter && $verse) {
         })();
     </script>
     <style>
+        /* ===== CSS VARIABLES - DARK THEME (DEFAULT) ===== */
         :root {
-            --bg-primary: #0A0A0A;
-            --bg-card: #1A1A2E;
-            --text-primary: #FFFFFF;
-            --text-secondary: #A1A1C7;
-            --primary: #8B5CF6;
-            --glass-border: rgba(139, 92, 246, 0.2);
-            --highlight-1: #EC4899;
-            --highlight-2: #F97316;
-            --highlight-3: #EAB308;
-            --highlight-4: #22C55E;
-            --highlight-5: #3B82F6;
-            --highlight-6: #A855F7;
+            --bg0: #070A12;
+            --bg1: #090F1F;
+            --bg2: #0D1326;
+            --bg-glass: rgba(9, 15, 31, 0.85);
+            --card: rgba(255,255,255,0.06);
+            --card2: rgba(255,255,255,0.085);
+            --line: rgba(255,255,255,0.10);
+            --text: #EAF0FF;
+            --muted: rgba(234,240,255,0.72);
+            --accent: #7C3AED;
+            --accent2: #22D3EE;
+            --accent-glow: rgba(124, 58, 237, 0.4);
+            --good: #22C55E;
+            --bad: #EF4444;
+            --font: 'Inter', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+            --radius: 18px;
+            --radius-sm: 10px;
+            --blur: 18px;
+
+            /* Highlight Colors */
+            --highlight-1: rgba(244, 114, 182, 0.4);
+            --highlight-2: rgba(251, 146, 60, 0.4);
+            --highlight-3: rgba(250, 204, 21, 0.4);
+            --highlight-4: rgba(34, 197, 94, 0.4);
+            --highlight-5: rgba(59, 130, 246, 0.4);
+            --highlight-6: rgba(139, 92, 246, 0.4);
         }
+
+        /* ===== LIGHT THEME ===== */
         [data-theme="light"] {
-            --bg-primary: #F5F3FF;
-            --bg-card: #FFFFFF;
-            --text-primary: #1E1B4B;
-            --text-secondary: #6D5BA8;
-            --glass-border: rgba(139, 92, 246, 0.15);
+            --bg0: #F6F7FB;
+            --bg1: #FFFFFF;
+            --bg2: #F0F2F8;
+            --bg-glass: rgba(255, 255, 255, 0.85);
+            --card: rgba(10,15,31,0.05);
+            --card2: rgba(10,15,31,0.07);
+            --line: rgba(10,15,31,0.12);
+            --text: #0A0F1F;
+            --muted: rgba(10,15,31,0.72);
+            --accent-glow: rgba(124, 58, 237, 0.15);
+
+            --highlight-1: rgba(244, 114, 182, 0.35);
+            --highlight-2: rgba(251, 146, 60, 0.35);
+            --highlight-3: rgba(250, 204, 21, 0.35);
+            --highlight-4: rgba(34, 197, 94, 0.35);
+            --highlight-5: rgba(59, 130, 246, 0.35);
+            --highlight-6: rgba(139, 92, 246, 0.35);
         }
-        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        /* ===== GLOBAL RESET ===== */
+        *, *::before, *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        html {
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+
         body {
-            font-family: 'Inter', -apple-system, sans-serif;
-            background: var(--bg-primary);
-            color: var(--text-primary);
+            font-family: var(--font);
+            background: var(--bg0);
+            background-image:
+                radial-gradient(ellipse 1200px 800px at 15% -10%, rgba(124, 58, 237, 0.4), transparent 60%),
+                radial-gradient(ellipse 900px 600px at 85% 0%, rgba(34, 211, 238, 0.35), transparent 60%);
+            background-attachment: fixed;
+            color: var(--text);
             min-height: 100vh;
+            line-height: 1.5;
         }
+
+        [data-theme="light"] body {
+            background-image:
+                radial-gradient(ellipse 1200px 800px at 15% -10%, rgba(124, 58, 237, 0.15), transparent 60%),
+                radial-gradient(ellipse 900px 600px at 85% 0%, rgba(34, 211, 238, 0.12), transparent 60%);
+        }
+
+        /* ===== PAGE LAYOUT ===== */
         .actions-page {
             min-height: 100vh;
-            padding-top: 56px;
+            padding-top: 68px;
         }
+
+        /* ===== HEADER ===== */
         .actions-header {
             position: fixed;
             top: 0;
             left: 0;
             right: 0;
-            height: 56px;
-            background: var(--bg-card);
-            border-bottom: 1px solid var(--glass-border);
+            height: 68px;
+            background: var(--bg-glass);
+            backdrop-filter: blur(var(--blur));
+            -webkit-backdrop-filter: blur(var(--blur));
+            border-bottom: 1px solid var(--line);
             display: flex;
             align-items: center;
-            padding: 0 1rem;
-            gap: 1rem;
+            padding: 0 16px;
+            gap: 12px;
             z-index: 100;
         }
+
         .back-btn {
-            width: 40px;
-            height: 40px;
+            width: 44px;
+            height: 44px;
             display: flex;
             align-items: center;
             justify-content: center;
-            background: none;
-            border: none;
-            color: var(--text-primary);
+            background: var(--card);
+            border: 1px solid var(--line);
+            border-radius: 14px;
+            color: var(--muted);
             text-decoration: none;
-            border-radius: 10px;
+            transition: all 0.12s ease;
         }
+
         .back-btn:active {
-            background: rgba(139, 92, 246, 0.15);
+            background: var(--card2);
+            color: var(--text);
+            transform: scale(0.96);
         }
-        .back-btn svg { width: 24px; height: 24px; }
+
+        .back-btn svg {
+            width: 22px;
+            height: 22px;
+        }
+
         .actions-header h1 {
-            font-size: 1.1rem;
-            font-weight: 600;
-            flex: 1;
-        }
-        .actions-body {
-            padding: 1rem;
-        }
-        .verse-preview {
-            background: var(--bg-card);
-            border: 1px solid var(--glass-border);
-            border-radius: 12px;
-            padding: 1rem;
-            margin-bottom: 1.5rem;
-        }
-        .verse-ref {
-            font-size: 0.85rem;
-            font-weight: 600;
-            color: var(--primary);
-            margin-bottom: 0.5rem;
-        }
-        .verse-text {
             font-size: 1rem;
-            line-height: 1.6;
-            color: var(--text-primary);
-        }
-        .section-title {
-            font-size: 0.75rem;
             font-weight: 700;
-            color: var(--primary);
+            flex: 1;
+            color: var(--text);
+        }
+
+        /* ===== BODY ===== */
+        .actions-body {
+            padding: 20px 16px;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        /* ===== VERSE PREVIEW ===== */
+        .verse-preview {
+            background: var(--card);
+            border: 1px solid var(--line);
+            border-radius: var(--radius);
+            padding: 16px;
+            margin-bottom: 24px;
+        }
+
+        .verse-ref {
+            font-size: 0.8125rem;
+            font-weight: 700;
+            color: var(--accent);
+            margin-bottom: 8px;
+        }
+
+        .verse-text {
+            font-size: 0.9375rem;
+            line-height: 1.7;
+            color: var(--text);
+        }
+
+        /* ===== SECTION TITLE ===== */
+        .section-title {
+            font-size: 0.6875rem;
+            font-weight: 700;
+            color: var(--accent);
             text-transform: uppercase;
             letter-spacing: 0.05em;
-            margin-bottom: 0.75rem;
+            margin-bottom: 12px;
+            padding: 0 4px;
         }
+
+        /* ===== HIGHLIGHT COLORS ===== */
         .highlight-colors {
             display: flex;
-            gap: 0.75rem;
+            gap: 12px;
             flex-wrap: wrap;
             justify-content: center;
-            margin-bottom: 1.5rem;
-            padding: 0.5rem;
+            margin-bottom: 24px;
+            padding: 12px;
+            background: var(--card);
+            border: 1px solid var(--line);
+            border-radius: var(--radius);
         }
+
         .color-btn {
-            width: 48px;
-            height: 48px;
+            width: 44px;
+            height: 44px;
             border-radius: 50%;
             border: 3px solid transparent;
             cursor: pointer;
-            transition: transform 0.2s ease;
+            transition: all 0.15s ease;
         }
+
         .color-btn:active {
             transform: scale(0.9);
             border-color: white;
         }
+
         .color-1 { background: var(--highlight-1); }
         .color-2 { background: var(--highlight-2); }
         .color-3 { background: var(--highlight-3); }
         .color-4 { background: var(--highlight-4); }
         .color-5 { background: var(--highlight-5); }
         .color-6 { background: var(--highlight-6); }
+
         .color-clear {
-            background: var(--bg-card);
-            border: 2px solid var(--glass-border);
-            color: var(--text-secondary);
-            font-size: 1.5rem;
+            background: var(--card2);
+            border: 2px solid var(--line);
+            color: var(--muted);
+            font-size: 1.25rem;
+            font-weight: 700;
             display: flex;
             align-items: center;
             justify-content: center;
         }
+
+        .color-clear:active {
+            border-color: var(--bad);
+            color: var(--bad);
+        }
+
+        /* ===== ACTIONS LIST ===== */
         .actions-list {
             display: flex;
             flex-direction: column;
-            gap: 0.5rem;
+            gap: 10px;
         }
+
         .action-btn {
             display: flex;
             align-items: center;
-            gap: 0.75rem;
+            gap: 12px;
             width: 100%;
-            padding: 1rem;
-            background: var(--bg-card);
-            border: 1px solid var(--glass-border);
-            border-radius: 12px;
-            color: var(--text-primary);
+            padding: 14px 16px;
+            background: var(--card);
+            border: 1px solid var(--line);
+            border-radius: var(--radius-sm);
+            color: var(--text);
             font-family: inherit;
-            font-size: 1rem;
+            font-size: 0.9375rem;
+            font-weight: 500;
             cursor: pointer;
             text-decoration: none;
-            transition: all 0.2s ease;
+            transition: all 0.12s ease;
+            min-height: 52px;
         }
+
         .action-btn:active {
-            background: var(--primary);
-            border-color: var(--primary);
+            background: linear-gradient(135deg, var(--accent) 0%, #9333EA 100%);
+            border-color: var(--accent);
             color: white;
+            transform: scale(0.98);
         }
+
         .action-btn svg {
-            width: 22px;
-            height: 22px;
-            color: var(--primary);
+            width: 20px;
+            height: 20px;
+            color: var(--accent);
             flex-shrink: 0;
         }
+
         .action-btn:active svg {
             color: white;
         }
+
+        /* ===== TOAST ===== */
         .toast {
             position: fixed;
-            bottom: 80px;
+            bottom: 100px;
             left: 50%;
             transform: translateX(-50%) translateY(100px);
-            background: var(--bg-card);
-            border: 1px solid var(--primary);
-            color: var(--text-primary);
-            padding: 0.75rem 1.5rem;
-            border-radius: 30px;
-            font-size: 0.9rem;
+            background: var(--bg-glass);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid var(--line);
+            color: var(--text);
+            padding: 14px 24px;
+            border-radius: var(--radius);
+            font-size: 0.875rem;
+            font-weight: 500;
             opacity: 0;
             transition: all 0.3s ease;
             z-index: 1000;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.3);
         }
+
         .toast.show {
             transform: translateX(-50%) translateY(0);
             opacity: 1;
+        }
+
+        .toast.success {
+            border-color: var(--good);
+        }
+
+        .toast.error {
+            border-color: var(--bad);
+        }
+
+        /* ===== SAFE AREA ===== */
+        @supports (padding: max(0px)) {
+            .actions-body {
+                padding-bottom: max(20px, env(safe-area-inset-bottom));
+            }
         }
     </style>
 </head>
@@ -340,11 +468,11 @@ if ($book && $chapter && $verse) {
         ];
         const bookIndex = allBooks.indexOf(verseData.book) + 1;
 
-        function showToast(msg) {
+        function showToast(msg, type = '') {
             const toast = document.getElementById('toast');
             toast.textContent = msg;
-            toast.classList.add('show');
-            setTimeout(() => toast.classList.remove('show'), 2500);
+            toast.className = 'toast show' + (type ? ' ' + type : '');
+            setTimeout(() => toast.className = 'toast', 2500);
         }
 
         async function applyHighlight(color) {
@@ -364,12 +492,12 @@ if ($book && $chapter && $verse) {
 
                 const data = await res.json();
                 if (data.ok) {
-                    showToast(color === 0 ? 'Highlight removed' : 'Highlight saved');
+                    showToast(color === 0 ? 'Highlight removed' : 'Highlight saved', 'success');
                 } else {
-                    showToast('Error: ' + (data.error || 'Failed'));
+                    showToast('Error: ' + (data.error || 'Failed'), 'error');
                 }
             } catch (e) {
-                showToast('Error saving highlight');
+                showToast('Error saving highlight', 'error');
             }
         }
 
@@ -389,21 +517,21 @@ if ($book && $chapter && $verse) {
 
                 const data = await res.json();
                 if (data.ok) {
-                    showToast(data.bookmarked ? 'Bookmark added' : 'Bookmark removed');
+                    showToast(data.bookmarked ? 'Bookmark added' : 'Bookmark removed', 'success');
                 } else {
-                    showToast('Error: ' + (data.error || 'Failed'));
+                    showToast('Error: ' + (data.error || 'Failed'), 'error');
                 }
             } catch (e) {
-                showToast('Error saving bookmark');
+                showToast('Error saving bookmark', 'error');
             }
         }
 
         function copyVerse() {
             const copyText = `${verseData.ref} - ${verseData.text} (KJV)`;
             navigator.clipboard.writeText(copyText).then(() => {
-                showToast('Verse copied!');
+                showToast('Verse copied!', 'success');
             }).catch(() => {
-                showToast('Failed to copy');
+                showToast('Failed to copy', 'error');
             });
         }
 
@@ -420,7 +548,6 @@ if ($book && $chapter && $verse) {
         }
 
         async function askAI() {
-            // Navigate to AI page
             window.location.href = '/bible/ai-explain.php?book=' + encodeURIComponent(verseData.book) +
                 '&chapter=' + verseData.chapter +
                 '&verse=' + verseData.verse +
@@ -428,7 +555,6 @@ if ($book && $chapter && $verse) {
         }
 
         async function loadCrossRefs() {
-            // Navigate to cross refs page
             window.location.href = '/bible/cross-refs.php?book=' + encodeURIComponent(verseData.book) +
                 '&chapter=' + verseData.chapter +
                 '&verse=' + verseData.verse;
