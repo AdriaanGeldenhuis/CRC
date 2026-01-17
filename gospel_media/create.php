@@ -329,6 +329,7 @@ $pageTitle = 'Create Post - CRC';
 
             try {
                 const formData = new FormData();
+                formData.append('action', 'create');
                 formData.append('content', content);
                 formData.append('scope', scope);
                 formData.append('csrf_token', csrfToken);
