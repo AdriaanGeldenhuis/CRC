@@ -64,6 +64,18 @@ foreach ($notifications as $notif) {
     $grouped[$date][] = $notif;
 }
 
+// Time ago helper
+function notifTimeAgo($datetime) {
+    $time = strtotime($datetime);
+    $diff = time() - $time;
+
+    if ($diff < 60) return 'Just now';
+    if ($diff < 3600) return floor($diff / 60) . 'm ago';
+    if ($diff < 86400) return floor($diff / 3600) . 'h ago';
+    if ($diff < 604800) return floor($diff / 86400) . 'd ago';
+    return date('M j', $time);
+}
+
 // Notification type icons and colors
 function getNotifIcon($type) {
     $icons = [
@@ -567,7 +579,7 @@ function getNotifIcon($type) {
                             <div class="notif-content">
                                 <h4 class="notif-title"><?= e($notif['title']) ?></h4>
                                 <p class="notif-message"><?= e($notif['message']) ?></p>
-                                <span class="notif-time"><?= timeAgo($notif['created_at']) ?></span>
+                                <span class="notif-time"><?= notifTimeAgo($notif['created_at']) ?></span>
                             </div>
                             <div class="notif-actions">
                                 <?php if (!$notif['read_at']): ?>
