@@ -117,30 +117,23 @@ $pageTitle = 'Create Post - CRC';
             font-size: 0.95rem;
         }
         .scope-select {
-            background: #1f2937;
-            border: 1px solid #374151;
-            border-radius: 8px;
+            background-color: #1f2937;
+            border: 1px solid #6366f1;
+            border-radius: 20px;
             color: #e5e7eb;
             font-size: 0.85rem;
-            padding: 0.35rem 0.75rem;
+            padding: 0.4rem 0.9rem;
             margin-top: 0.25rem;
             cursor: pointer;
-            -webkit-appearance: none;
-            appearance: none;
-            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%239ca3af' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
-            background-repeat: no-repeat;
-            background-position: right 8px center;
-            padding-right: 28px;
         }
         .scope-select option {
             background: #1f2937;
             color: #e5e7eb;
         }
         [data-theme="light"] .scope-select {
-            background: #f3f4f6;
-            border-color: #d1d5db;
+            background-color: #f3f4f6;
+            border-color: #6366f1;
             color: #1f2937;
-            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%236b7280' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
         }
         [data-theme="light"] .scope-select option {
             background: #ffffff;
@@ -272,7 +265,7 @@ $pageTitle = 'Create Post - CRC';
                 </svg>
             </a>
             <h1>Create Post</h1>
-            <button type="submit" form="createPostForm" class="post-btn" id="postBtn">Post</button>
+            <div style="width: 40px;"></div>
         </header>
 
         <div class="create-body">
@@ -347,9 +340,7 @@ $pageTitle = 'Create Post - CRC';
 
         function updatePostButton() {
             const content = document.querySelector('.post-textarea').value.trim();
-            const isDisabled = content.length === 0;
-            document.getElementById('postBtn').disabled = isDisabled;
-            document.getElementById('postBtnBottom').disabled = isDisabled;
+            document.getElementById('postBtnBottom').disabled = content.length === 0;
         }
 
         function handleMediaSelect(input) {
