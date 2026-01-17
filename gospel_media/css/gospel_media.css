@@ -394,6 +394,7 @@ body[data-theme="light"] {
 /* Post Options Menu */
 .post-options {
   position: relative;
+  z-index: 50;
 }
 
 .post-options-btn {
@@ -493,12 +494,13 @@ body[data-theme="light"] {
 
 /* Post Media */
 .post-media {
-  width: 100%;
+  position: relative;
+  z-index: 1;
+  width: calc(100% - 28px);
   max-height: 500px;
   overflow: hidden;
   border-radius: var(--radius-sm);
   margin: 0 14px 14px;
-  width: calc(100% - 28px);
 }
 
 .media-image {
