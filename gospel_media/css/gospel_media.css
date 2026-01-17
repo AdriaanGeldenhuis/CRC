@@ -503,7 +503,11 @@ body[data-theme="light"] {
   overflow: hidden;
   border-radius: var(--radius-sm);
   margin: 0 14px 14px;
-  background: var(--bg1);
+  background: #111827;
+}
+
+[data-theme="light"] .post-media {
+  background: #f3f4f6;
 }
 
 .media-image {
@@ -514,7 +518,11 @@ body[data-theme="light"] {
   cursor: pointer;
   transition: opacity 0.12s ease;
   border-radius: var(--radius-sm);
-  background: var(--bg1);
+  background: #111827;
+}
+
+[data-theme="light"] .media-image {
+  background: #f3f4f6;
 }
 
 .media-image:hover {
