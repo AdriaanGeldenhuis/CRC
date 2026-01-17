@@ -656,9 +656,39 @@ try {
         </div>
     </div>
 
-    <script src="/home/js/home.js"></script>
     <script src="/gospel_media/js/gospel_media.js"></script>
     <script>
+        // Theme Toggle
+        function toggleTheme() {
+            const html = document.documentElement;
+            const current = html.getAttribute('data-theme') || 'dark';
+            const next = current === 'dark' ? 'light' : 'dark';
+            html.setAttribute('data-theme', next);
+            localStorage.setItem('theme', next);
+        }
+
+        // More Menu Toggle
+        function toggleMoreMenu() {
+            document.getElementById('moreDropdown').classList.toggle('show');
+            document.getElementById('userDropdown')?.classList.remove('show');
+        }
+
+        // User Menu Toggle
+        function toggleUserMenu() {
+            document.getElementById('userDropdown').classList.toggle('show');
+            document.getElementById('moreDropdown')?.classList.remove('show');
+        }
+
+        // Close menus when clicking outside
+        document.addEventListener('click', function(e) {
+            if (!e.target.closest('.user-menu')) {
+                document.getElementById('userDropdown')?.classList.remove('show');
+            }
+            if (!e.target.closest('.more-menu')) {
+                document.getElementById('moreDropdown')?.classList.remove('show');
+            }
+        });
+
         function getCSRFToken() {
             return document.querySelector('meta[name="csrf-token"]')?.content || '';
         }
