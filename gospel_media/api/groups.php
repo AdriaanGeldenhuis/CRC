@@ -36,6 +36,12 @@ switch ($action) {
             $conditions[] = "g.scope = 'global'";
         }
 
+        // Privacy enforcement: only show private groups if user is a member (unless admin)
+        if (!Auth::isAdmin()) {
+            $conditions[] = "(g.privacy = 'public' OR EXISTS (SELECT 1 FROM group_members gm2 WHERE gm2.group_id = g.id AND gm2.user_id = ? AND gm2.status = 'active'))";
+            $params[] = Auth::id();
+        }
+
         $where = implode(' AND ', $conditions);
 
         $joinClause = $filter === 'my'
@@ -93,6 +99,24 @@ switch ($action) {
             "SELECT * FROM group_members WHERE group_id = ? AND user_id = ?",
             [$groupId, Auth::id()]
         );
+
+        // Privacy enforcement: non-members can't view private group details
+        if ($group['privacy'] === 'private' && !$membership && !Auth::isAdmin()) {
+            // Return limited info for private groups
+            Response::success(['group' => [
+                'id' => $group['id'],
+                'name' => $group['name'],
+                'description' => $group['description'],
+                'group_type' => $group['group_type'],
+                'privacy' => $group['privacy'],
+                'member_count' => $group['member_count'],
+                'cover_image' => $group['cover_image'],
+                'user_role' => null,
+                'user_status' => null,
+                'is_private' => true
+            ]]);
+            break;
+        }
 
         $group['user_role'] = $membership['role'] ?? null;
         $group['user_status'] = $membership['status'] ?? null;
@@ -253,6 +277,258 @@ switch ($action) {
         Logger::audit(Auth::id(), 'created_group', ['group_id' => $groupId]);
 
         Response::success(['group_id' => $groupId], 'Group created');
+        break;
+
+    case 'update':
+        // POST - Update group
+        Response::requirePost();
+        CSRF::require();
+
+        $groupId = (int) input('group_id');
+        $name = trim(input('name'));
+        $description = trim(input('description'));
+        $privacy = input('privacy');
+        $coverImage = input('cover_image');
+
+        if (!$groupId) {
+            Response::error('Group ID required');
+        }
+
+        $group = Database::fetchOne(
+            "SELECT * FROM `groups` WHERE id = ? AND status = 'active'",
+            [$groupId]
+        );
+
+        if (!$group) {
+            Response::notFound('Group not found');
+        }
+
+        // Check if user is admin of this group
+        $membership = Database::fetchOne(
+            "SELECT * FROM group_members WHERE group_id = ? AND user_id = ? AND status = 'active'",
+            [$groupId, Auth::id()]
+        );
+
+        if (!$membership || !in_array($membership['role'], ['admin', 'moderator'])) {
+            if (!Auth::isAdmin()) {
+                Response::forbidden('Only group admins can edit this group');
+            }
+        }
+
+        $updateData = ['updated_at' => date('Y-m-d H:i:s')];
+
+        if (!empty($name)) {
+            if (strlen($name) > 255) {
+                Response::error('Name too long');
+            }
+            $updateData['name'] = $name;
+        }
+
+        if ($description !== null) {
+            $updateData['description'] = $description ?: null;
+        }
+
+        if ($privacy && in_array($privacy, ['public', 'private'])) {
+            $updateData['privacy'] = $privacy;
+        }
+
+        if ($coverImage !== null) {
+            $updateData['cover_image'] = $coverImage ?: null;
+        }
+
+        Database::update('groups', $updateData, 'id = ?', [$groupId]);
+
+        Logger::audit(Auth::id(), 'updated_group', ['group_id' => $groupId]);
+
+        Response::success(['group_id' => $groupId], 'Group updated');
+        break;
+
+    case 'delete':
+        // POST - Delete group (admin only)
+        Response::requirePost();
+        CSRF::require();
+
+        $groupId = (int) input('group_id');
+
+        if (!$groupId) {
+            Response::error('Group ID required');
+        }
+
+        $group = Database::fetchOne(
+            "SELECT * FROM `groups` WHERE id = ? AND status = 'active'",
+            [$groupId]
+        );
+
+        if (!$group) {
+            Response::notFound('Group not found');
+        }
+
+        // Check if user is admin of this group or site admin
+        $membership = Database::fetchOne(
+            "SELECT * FROM group_members WHERE group_id = ? AND user_id = ? AND role = 'admin' AND status = 'active'",
+            [$groupId, Auth::id()]
+        );
+
+        if (!$membership && !Auth::isAdmin()) {
+            Response::forbidden('Only group admins can delete this group');
+        }
+
+        // Soft delete the group (set to inactive)
+        Database::update(
+            'groups',
+            [
+                'status' => 'inactive',
+                'updated_at' => date('Y-m-d H:i:s')
+            ],
+            'id = ?',
+            [$groupId]
+        );
+
+        Logger::audit(Auth::id(), 'deleted_group', ['group_id' => $groupId]);
+
+        Response::success([], 'Group deleted');
+        break;
+
+    case 'members':
+        // GET - List group members
+        $groupId = (int)($_GET['group_id'] ?? 0);
+
+        if (!$groupId) {
+            Response::error('Group ID required');
+        }
+
+        $group = Database::fetchOne(
+            "SELECT * FROM `groups` WHERE id = ? AND status = 'active'",
+            [$groupId]
+        );
+
+        if (!$group) {
+            Response::notFound('Group not found');
+        }
+
+        $members = Database::fetchAll(
+            "SELECT gm.*, u.name, u.avatar, u.email
+             FROM group_members gm
+             JOIN users u ON gm.user_id = u.id
+             WHERE gm.group_id = ? AND gm.status = 'active'
+             ORDER BY gm.role = 'admin' DESC, gm.role = 'moderator' DESC, gm.joined_at ASC",
+            [$groupId]
+        );
+
+        Response::success(['members' => $members]);
+        break;
+
+    case 'update_member':
+        // POST - Update member role
+        Response::requirePost();
+        CSRF::require();
+
+        $groupId = (int) input('group_id');
+        $memberId = (int) input('user_id');
+        $newRole = input('role');
+        $newStatus = input('status');
+
+        if (!$groupId || !$memberId) {
+            Response::error('Group ID and User ID required');
+        }
+
+        // Check if current user is admin of this group
+        $currentMembership = Database::fetchOne(
+            "SELECT * FROM group_members WHERE group_id = ? AND user_id = ? AND status = 'active'",
+            [$groupId, Auth::id()]
+        );
+
+        if (!$currentMembership || $currentMembership['role'] !== 'admin') {
+            if (!Auth::isAdmin()) {
+                Response::forbidden('Only group admins can manage members');
+            }
+        }
+
+        $targetMembership = Database::fetchOne(
+            "SELECT * FROM group_members WHERE group_id = ? AND user_id = ?",
+            [$groupId, $memberId]
+        );
+
+        if (!$targetMembership) {
+            Response::notFound('Member not found');
+        }
+
+        $updateData = [];
+
+        if ($newRole && in_array($newRole, ['member', 'moderator', 'admin'])) {
+            $updateData['role'] = $newRole;
+        }
+
+        if ($newStatus && in_array($newStatus, ['active', 'banned'])) {
+            $updateData['status'] = $newStatus;
+        }
+
+        if (empty($updateData)) {
+            Response::error('No changes specified');
+        }
+
+        Database::update('group_members', $updateData, 'group_id = ? AND user_id = ?', [$groupId, $memberId]);
+
+        Logger::audit(Auth::id(), 'updated_group_member', [
+            'group_id' => $groupId,
+            'target_user_id' => $memberId,
+            'changes' => $updateData
+        ]);
+
+        Response::success([], 'Member updated');
+        break;
+
+    case 'remove_member':
+        // POST - Remove/kick member from group
+        Response::requirePost();
+        CSRF::require();
+
+        $groupId = (int) input('group_id');
+        $memberId = (int) input('user_id');
+
+        if (!$groupId || !$memberId) {
+            Response::error('Group ID and User ID required');
+        }
+
+        // Check if current user is admin/moderator of this group
+        $currentMembership = Database::fetchOne(
+            "SELECT * FROM group_members WHERE group_id = ? AND user_id = ? AND status = 'active'",
+            [$groupId, Auth::id()]
+        );
+
+        if (!$currentMembership || !in_array($currentMembership['role'], ['admin', 'moderator'])) {
+            if (!Auth::isAdmin()) {
+                Response::forbidden('Only group admins/moderators can remove members');
+            }
+        }
+
+        // Can't remove yourself
+        if ($memberId == Auth::id()) {
+            Response::error('Use leave action to leave the group');
+        }
+
+        $targetMembership = Database::fetchOne(
+            "SELECT * FROM group_members WHERE group_id = ? AND user_id = ?",
+            [$groupId, $memberId]
+        );
+
+        if (!$targetMembership) {
+            Response::notFound('Member not found');
+        }
+
+        // Moderators can't remove admins
+        if ($currentMembership && $currentMembership['role'] === 'moderator' && $targetMembership['role'] === 'admin') {
+            Response::forbidden('Moderators cannot remove admins');
+        }
+
+        Database::delete('group_members', 'group_id = ? AND user_id = ?', [$groupId, $memberId]);
+
+        Logger::audit(Auth::id(), 'removed_group_member', [
+            'group_id' => $groupId,
+            'removed_user_id' => $memberId
+        ]);
+
+        Response::success([], 'Member removed');
         break;
 
     default:

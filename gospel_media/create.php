@@ -344,7 +344,7 @@ $pageTitle = 'Create Post - CRC';
 
                 const data = await response.json();
 
-                if (data.success) {
+                if (data.ok) {
                     window.location.href = '/gospel_media/';
                 } else {
                     alert(data.error || 'Failed to create post');
