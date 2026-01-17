@@ -377,14 +377,15 @@ $pageTitle = 'Create Post - CRC';
             e.preventDefault();
 
             const form = e.target;
-            const btn = document.getElementById('postBtn');
+            const btn = document.getElementById('postBtnBottom');
             const content = form.content.value.trim();
             const scope = form.scope.value;
+            const originalHTML = btn.innerHTML;
 
             if (!content) return;
 
             btn.disabled = true;
-            btn.textContent = 'Posting...';
+            btn.innerHTML = '<span>Posting...</span>';
 
             try {
                 const formData = new FormData();
@@ -409,12 +410,12 @@ $pageTitle = 'Create Post - CRC';
                 } else {
                     alert(data.error || 'Failed to create post');
                     btn.disabled = false;
-                    btn.textContent = 'Post';
+                    btn.innerHTML = originalHTML;
                 }
             } catch (error) {
                 alert('Error creating post');
                 btn.disabled = false;
-                btn.textContent = 'Post';
+                btn.innerHTML = originalHTML;
             }
         }
 
