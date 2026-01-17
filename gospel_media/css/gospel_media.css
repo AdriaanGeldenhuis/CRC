@@ -298,6 +298,8 @@ body[data-theme="light"] {
   justify-content: space-between;
   align-items: flex-start;
   padding: 14px;
+  position: relative;
+  z-index: 10;
 }
 
 .post-author {
@@ -501,16 +503,18 @@ body[data-theme="light"] {
   overflow: hidden;
   border-radius: var(--radius-sm);
   margin: 0 14px 14px;
+  background: var(--bg1);
 }
 
 .media-image {
   width: 100%;
   max-height: 500px;
-  object-fit: cover;
+  object-fit: contain;
   display: block;
   cursor: pointer;
   transition: opacity 0.12s ease;
   border-radius: var(--radius-sm);
+  background: var(--bg1);
 }
 
 .media-image:hover {
