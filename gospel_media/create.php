@@ -70,16 +70,19 @@ $pageTitle = 'Create Post - CRC';
         }
         .post-btn {
             padding: 0.5rem 1.25rem;
-            background: var(--gradient-primary);
+            background: linear-gradient(135deg, #7C3AED, #22D3EE);
             color: white;
             font-weight: 600;
             font-size: 0.9rem;
             border: none;
-            border-radius: var(--radius);
+            border-radius: 12px;
             cursor: pointer;
+            opacity: 0.5;
+        }
+        .post-btn:not(:disabled) {
+            opacity: 1;
         }
         .post-btn:disabled {
-            opacity: 0.5;
             cursor: not-allowed;
         }
         .create-body {
@@ -114,18 +117,34 @@ $pageTitle = 'Create Post - CRC';
             font-size: 0.95rem;
         }
         .scope-select {
-            background: var(--glass-bg);
-            border: 1px solid var(--glass-border);
-            border-radius: var(--radius);
-            color: var(--text-secondary);
+            background: #1f2937;
+            border: 1px solid #374151;
+            border-radius: 8px;
+            color: #e5e7eb;
             font-size: 0.85rem;
             padding: 0.35rem 0.75rem;
             margin-top: 0.25rem;
             cursor: pointer;
+            -webkit-appearance: none;
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%239ca3af' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 8px center;
+            padding-right: 28px;
         }
         .scope-select option {
-            background: var(--bg-card);
-            color: var(--text-primary);
+            background: #1f2937;
+            color: #e5e7eb;
+        }
+        [data-theme="light"] .scope-select {
+            background: #f3f4f6;
+            border-color: #d1d5db;
+            color: #1f2937;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%236b7280' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+        }
+        [data-theme="light"] .scope-select option {
+            background: #ffffff;
+            color: #1f2937;
         }
         .post-textarea {
             width: 100%;
@@ -146,11 +165,49 @@ $pageTitle = 'Create Post - CRC';
             bottom: 0;
             left: 0;
             right: 0;
-            background: var(--bg-card);
-            border-top: 1px solid var(--glass-border);
+            background: rgba(17, 24, 39, 0.95);
+            backdrop-filter: blur(10px);
+            border-top: 1px solid #374151;
             padding: 1rem;
             display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        [data-theme="light"] .media-toolbar {
+            background: rgba(255, 255, 255, 0.95);
+            border-top-color: #e5e7eb;
+        }
+        .toolbar-left {
+            display: flex;
             gap: 0.75rem;
+        }
+        .post-btn-bottom {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.75rem 1.5rem;
+            background: linear-gradient(135deg, #7C3AED, #22D3EE);
+            color: white;
+            font-weight: 600;
+            font-size: 1rem;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            box-shadow: 0 4px 15px rgba(124, 58, 237, 0.4);
+            transition: all 0.2s ease;
+        }
+        .post-btn-bottom:not(:disabled):hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(124, 58, 237, 0.5);
+        }
+        .post-btn-bottom:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+            box-shadow: none;
+        }
+        .post-btn-bottom svg {
+            width: 18px;
+            height: 18px;
         }
         .toolbar-btn {
             width: 48px;
@@ -250,28 +307,37 @@ $pageTitle = 'Create Post - CRC';
         </div>
 
         <div class="media-toolbar">
-            <label class="toolbar-btn">
-                <input type="file" id="mediaInput" accept="image/*" multiple style="display:none" onchange="handleMediaSelect(this)">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
-                    <circle cx="8.5" cy="8.5" r="1.5"></circle>
-                    <polyline points="21 15 16 10 5 21"></polyline>
+            <div class="toolbar-left">
+                <label class="toolbar-btn">
+                    <input type="file" id="mediaInput" accept="image/*" multiple style="display:none" onchange="handleMediaSelect(this)">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                        <circle cx="8.5" cy="8.5" r="1.5"></circle>
+                        <polyline points="21 15 16 10 5 21"></polyline>
+                    </svg>
+                </label>
+                <label class="toolbar-btn">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polygon points="23 7 16 12 23 17 23 7"></polygon>
+                        <rect x="1" y="5" width="15" height="14" rx="2" ry="2"></rect>
+                    </svg>
+                </label>
+                <label class="toolbar-btn">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <path d="M8 14s1.5 2 4 2 4-2 4-2"></path>
+                        <line x1="9" y1="9" x2="9.01" y2="9"></line>
+                        <line x1="15" y1="9" x2="15.01" y2="9"></line>
+                    </svg>
+                </label>
+            </div>
+            <button type="submit" form="createPostForm" class="post-btn-bottom" id="postBtnBottom" disabled>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20">
+                    <line x1="22" y1="2" x2="11" y2="13"></line>
+                    <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
                 </svg>
-            </label>
-            <label class="toolbar-btn">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <polygon points="23 7 16 12 23 17 23 7"></polygon>
-                    <rect x="1" y="5" width="15" height="14" rx="2" ry="2"></rect>
-                </svg>
-            </label>
-            <label class="toolbar-btn">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <circle cx="12" cy="12" r="10"></circle>
-                    <path d="M8 14s1.5 2 4 2 4-2 4-2"></path>
-                    <line x1="9" y1="9" x2="9.01" y2="9"></line>
-                    <line x1="15" y1="9" x2="15.01" y2="9"></line>
-                </svg>
-            </label>
+                Post
+            </button>
         </div>
     </div>
 
@@ -281,7 +347,9 @@ $pageTitle = 'Create Post - CRC';
 
         function updatePostButton() {
             const content = document.querySelector('.post-textarea').value.trim();
-            document.getElementById('postBtn').disabled = content.length === 0;
+            const isDisabled = content.length === 0;
+            document.getElementById('postBtn').disabled = isDisabled;
+            document.getElementById('postBtnBottom').disabled = isDisabled;
         }
 
         function handleMediaSelect(input) {
