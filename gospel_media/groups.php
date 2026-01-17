@@ -608,8 +608,8 @@ try {
     <div id="toast" class="toast"></div>
 
     <!-- Create Group Modal -->
-    <div class="modal-overlay" id="createGroupModal" style="display: none;">
-        <div class="modal-content" style="max-width: 500px;">
+    <div class="modal-overlay" id="createGroupModal">
+        <div class="modal-content">
             <div class="modal-header">
                 <h2>Create New Group</h2>
                 <button class="modal-close" onclick="closeCreateGroupModal()">&times;</button>
@@ -655,111 +655,6 @@ try {
             </form>
         </div>
     </div>
-
-    <style>
-        .modal-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: rgba(0, 0, 0, 0.7);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            z-index: 1000;
-            padding: 1rem;
-        }
-        .modal-content {
-            background: var(--card-bg);
-            border-radius: 12px;
-            width: 100%;
-            max-height: 90vh;
-            overflow-y: auto;
-        }
-        .modal-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 1rem 1.5rem;
-            border-bottom: 1px solid var(--border-color);
-        }
-        .modal-header h2 {
-            margin: 0;
-            font-size: 1.25rem;
-        }
-        .modal-close {
-            background: none;
-            border: none;
-            font-size: 1.5rem;
-            color: var(--text-secondary);
-            cursor: pointer;
-            padding: 0;
-            line-height: 1;
-        }
-        .modal-close:hover { color: var(--text-primary); }
-        #createGroupForm {
-            padding: 1.5rem;
-        }
-        .form-group {
-            margin-bottom: 1rem;
-        }
-        .form-group label {
-            display: block;
-            margin-bottom: 0.5rem;
-            font-weight: 500;
-            color: var(--text-secondary);
-            font-size: 0.875rem;
-        }
-        .form-input {
-            width: 100%;
-            padding: 0.75rem 1rem;
-            border: 1px solid var(--border-color);
-            border-radius: 8px;
-            background: var(--bg-primary);
-            color: var(--text-primary);
-            font-size: 1rem;
-            font-family: inherit;
-        }
-        .form-input:focus {
-            outline: none;
-            border-color: var(--primary);
-        }
-        textarea.form-input {
-            resize: vertical;
-            min-height: 80px;
-        }
-        .modal-actions {
-            display: flex;
-            gap: 0.75rem;
-            justify-content: flex-end;
-            margin-top: 1.5rem;
-        }
-        .btn-secondary {
-            padding: 0.75rem 1.5rem;
-            background: transparent;
-            border: 1px solid var(--border-color);
-            border-radius: 8px;
-            color: var(--text-primary);
-            font-weight: 500;
-            cursor: pointer;
-        }
-        .btn-secondary:hover { background: var(--hover-bg); }
-        .btn-primary {
-            padding: 0.75rem 1.5rem;
-            background: var(--primary);
-            border: none;
-            border-radius: 8px;
-            color: white;
-            font-weight: 500;
-            cursor: pointer;
-        }
-        .btn-primary:hover { background: var(--primary-dark); }
-        .btn-primary:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-        }
-    </style>
 
     <script src="/home/js/home.js"></script>
     <script src="/gospel_media/js/gospel_media.js"></script>
@@ -819,12 +714,12 @@ try {
         }
 
         function openCreateGroupModal() {
-            document.getElementById('createGroupModal').style.display = 'flex';
-            document.getElementById('groupName').focus();
+            document.getElementById('createGroupModal').classList.add('show');
+            setTimeout(() => document.getElementById('groupName').focus(), 100);
         }
 
         function closeCreateGroupModal() {
-            document.getElementById('createGroupModal').style.display = 'none';
+            document.getElementById('createGroupModal').classList.remove('show');
             document.getElementById('createGroupForm').reset();
         }
 
