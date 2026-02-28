@@ -698,7 +698,8 @@ $isActive = function($path) use ($currentPath) {
             <div class="user-menu">
                 <button class="user-menu-btn" onclick="toggleUserMenu()">
                     <?php if (!empty($navUser['avatar'])): ?>
-                        <img src="<?= e($navUser['avatar']) ?>" alt="" class="user-avatar">
+                        <img src="<?= e($navUser['avatar']) ?>" alt="" class="user-avatar" onerror="this.style.display='none';this.nextElementSibling.style.display='flex';">
+                        <div class="user-avatar-placeholder" style="display:none;"><?= strtoupper(substr($navUser['name'] ?? 'U', 0, 1)) ?></div>
                     <?php else: ?>
                         <div class="user-avatar-placeholder"><?= strtoupper(substr($navUser['name'] ?? 'U', 0, 1)) ?></div>
                     <?php endif; ?>

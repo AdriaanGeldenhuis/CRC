@@ -1042,7 +1042,8 @@ $hours = range(0, 23);
                 <div class="user-menu">
                     <button class="user-menu-btn" onclick="toggleUserMenu()">
                         <?php if ($user['avatar']): ?>
-                            <img src="<?= e($user['avatar']) ?>" alt="" class="user-avatar">
+                            <img src="<?= e($user['avatar']) ?>" alt="" class="user-avatar" onerror="this.style.display='none';this.nextElementSibling.style.display='flex';">
+                            <div class="user-avatar-placeholder" style="display:none;"><?= strtoupper(substr($user['name'], 0, 1)) ?></div>
                         <?php else: ?>
                             <div class="user-avatar-placeholder"><?= strtoupper(substr($user['name'], 0, 1)) ?></div>
                         <?php endif; ?>

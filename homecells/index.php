@@ -477,7 +477,7 @@ $days = ['monday' => 'Monday', 'tuesday' => 'Tuesday', 'wednesday' => 'Wednesday
             </div>
             <div class="dropdown">
                 <div class="user-avatar" onclick="toggleUserMenu()">
-                    <?= strtoupper(substr($user['first_name'] ?? 'U', 0, 1)) ?>
+                    <?= strtoupper(substr($user['name'] ?? 'U', 0, 1)) ?>
                 </div>
                 <div class="dropdown-menu" id="userMenu">
                     <a href="/profile/">
@@ -623,7 +623,7 @@ $days = ['monday' => 'Monday', 'tuesday' => 'Tuesday', 'wednesday' => 'Wednesday
         </a>
         <a href="/homecells/" class="active">
             <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></svg>
-            Cells
+            Homecells
         </a>
         <a href="/profile/">
             <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>

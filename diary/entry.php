@@ -585,7 +585,7 @@ function getMoodColor($mood) {
             </div>
             <div class="dropdown">
                 <div class="user-avatar" onclick="toggleUserMenu()">
-                    <?= strtoupper(substr($user['first_name'] ?? 'U', 0, 1)) ?>
+                    <?= strtoupper(substr($user['name'] ?? 'U', 0, 1)) ?>
                 </div>
                 <div class="dropdown-menu" id="userMenu">
                     <a href="/profile/">

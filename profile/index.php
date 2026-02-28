@@ -133,7 +133,10 @@ $showPhone = $isOwnProfile || (!empty($user['show_phone']) && $user['show_phone'
             <div class="profile-header-content">
                 <div class="profile-avatar-container">
                     <?php if (!empty($user['avatar'])): ?>
-                        <img src="<?= e($user['avatar']) ?>" alt="<?= e($user['name']) ?>" class="profile-avatar">
+                        <img src="<?= e($user['avatar']) ?>" alt="<?= e($user['name']) ?>" class="profile-avatar" onerror="this.style.display='none';this.nextElementSibling.style.display='flex';">
+                        <div class="profile-avatar-placeholder" style="display:none;">
+                            <?= strtoupper(substr($user['name'], 0, 1)) ?>
+                        </div>
                     <?php else: ?>
                         <div class="profile-avatar-placeholder">
                             <?= strtoupper(substr($user['name'], 0, 1)) ?>
