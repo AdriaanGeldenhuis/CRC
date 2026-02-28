@@ -93,7 +93,7 @@ try {
             </svg>
           </button>
           <div class="more-dropdown" id="moreDropdown">
-            <a href="/" class="more-dropdown-item">
+            <a href="/home/" class="more-dropdown-item">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
                 <polyline points="9 22 9 12 15 12 15 22"></polyline>
@@ -107,6 +107,15 @@ try {
                 <circle cx="5" cy="19" r="1"></circle>
               </svg>
               Feed
+            </a>
+            <a href="/bible/" class="more-dropdown-item">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
+                <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
+                <path d="M12 6v7"></path>
+                <path d="M8 9h8"></path>
+              </svg>
+              Bible
             </a>
             <a href="/ai_smartbible/" class="more-dropdown-item">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">

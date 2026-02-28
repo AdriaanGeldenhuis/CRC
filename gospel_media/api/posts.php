@@ -14,6 +14,7 @@ switch ($action) {
     case 'list':
         // GET - List posts
         $scope = $_GET['scope'] ?? 'all';
+        $groupId = (int)($_GET['group_id'] ?? 0);
         $page = max(1, (int)($_GET['page'] ?? 1));
         $perPage = min(50, (int)($_GET['per_page'] ?? DEFAULT_PAGE_SIZE));
         $offset = ($page - 1) * $perPage;
@@ -22,20 +23,53 @@ switch ($action) {
         $userId = Auth::id();
 
         $params = [$userId];
-        $conditions = ["p.status = 'active'", "p.group_id IS NULL"];
+        $countParams = [];
+        $conditions = ["p.status = 'active'"];
 
-        if ($scope === 'global') {
-            $conditions[] = "p.scope = 'global'";
-        } elseif ($scope === 'congregation' && $primaryCong) {
-            $conditions[] = "p.congregation_id = ?";
-            $params[] = $primaryCong['id'];
+        // Handle group posts
+        if ($groupId) {
+            // Check group exists and user has access
+            $group = Database::fetchOne(
+                "SELECT * FROM `groups` WHERE id = ? AND status = 'active'",
+                [$groupId]
+            );
+
+            if (!$group) {
+                Response::notFound('Group not found');
+            }
+
+            // Check membership for private groups
+            if ($group['privacy'] === 'private' && !Auth::isAdmin()) {
+                $membership = Database::fetchOne(
+                    "SELECT * FROM group_members WHERE group_id = ? AND user_id = ? AND status = 'active'",
+                    [$groupId, Auth::id()]
+                );
+                if (!$membership) {
+                    Response::forbidden('You must be a member to view this group\'s posts');
+                }
+            }
+
+            $conditions[] = "p.group_id = ?";
+            $params[] = $groupId;
+            $countParams[] = $groupId;
         } else {
-            // All - show global and user's congregation
-            if ($primaryCong) {
-                $conditions[] = "(p.scope = 'global' OR p.congregation_id = ?)";
-                $params[] = $primaryCong['id'];
-            } else {
+            $conditions[] = "p.group_id IS NULL";
+
+            if ($scope === 'global') {
                 $conditions[] = "p.scope = 'global'";
+            } elseif ($scope === 'congregation' && $primaryCong) {
+                $conditions[] = "p.congregation_id = ?";
+                $params[] = $primaryCong['id'];
+                $countParams[] = $primaryCong['id'];
+            } else {
+                // All - show global and user's congregation
+                if ($primaryCong) {
+                    $conditions[] = "(p.scope = 'global' OR p.congregation_id = ?)";
+                    $params[] = $primaryCong['id'];
+                    $countParams[] = $primaryCong['id'];
+                } else {
+                    $conditions[] = "p.scope = 'global'";
+                }
             }
         }
 
@@ -57,12 +91,28 @@ switch ($action) {
             array_merge($params, [$perPage, $offset])
         );
 
-        // Add time_ago
+        // Get total count for pagination
+        $totalPosts = Database::fetchColumn(
+            "SELECT COUNT(*) FROM posts p WHERE {$where}",
+            $countParams
+        );
+
+        // Add time_ago and ownership info
         foreach ($posts as &$post) {
             $post['time_ago'] = time_ago($post['created_at']);
+            $post['is_owner'] = ($post['user_id'] == Auth::id());
+            $post['can_edit'] = ($post['user_id'] == Auth::id() || Auth::isAdmin());
         }
 
-        Response::success(['posts' => $posts]);
+        Response::success([
+            'posts' => $posts,
+            'pagination' => [
+                'page' => $page,
+                'per_page' => $perPage,
+                'total' => (int)$totalPosts,
+                'total_pages' => ceil($totalPosts / $perPage)
+            ]
+        ]);
         break;
 
     case 'create':
@@ -95,6 +145,32 @@ switch ($action) {
                 Response::error('No congregation');
             }
             $congregationId = $primaryCong['id'];
+        }
+
+        // Validate group membership if posting to a group
+        if ($groupId) {
+            $group = Database::fetchOne(
+                "SELECT * FROM `groups` WHERE id = ? AND status = 'active'",
+                [$groupId]
+            );
+
+            if (!$group) {
+                Response::notFound('Group not found');
+            }
+
+            // Check if user is a member of the group
+            $membership = Database::fetchOne(
+                "SELECT * FROM group_members WHERE group_id = ? AND user_id = ? AND status = 'active'",
+                [$groupId, Auth::id()]
+            );
+
+            if (!$membership && !Auth::isAdmin()) {
+                Response::forbidden('You must be a member of this group to post');
+            }
+
+            // Set scope to group's scope and congregation if applicable
+            $scope = 'group';
+            $congregationId = $group['congregation_id'];
         }
 
         // Handle media uploads
@@ -181,6 +257,65 @@ switch ($action) {
         Logger::audit(Auth::id(), 'deleted_post', ['post_id' => $postId]);
 
         Response::success([], 'Post deleted');
+        break;
+
+    case 'update':
+        // POST - Update post
+        Response::requirePost();
+        CSRF::require();
+
+        $postId = (int) input('post_id');
+        $content = trim(input('content'));
+        $scope = input('scope');
+
+        if (!$postId) {
+            Response::error('Post ID required');
+        }
+
+        if (empty($content)) {
+            Response::error('Content is required');
+        }
+
+        if (strlen($content) > 5000) {
+            Response::error('Content too long');
+        }
+
+        $post = Database::fetchOne(
+            "SELECT * FROM posts WHERE id = ? AND status = 'active'",
+            [$postId]
+        );
+
+        if (!$post) {
+            Response::notFound('Post not found');
+        }
+
+        // Check ownership or admin
+        if ($post['user_id'] !== Auth::id() && !Auth::isAdmin()) {
+            $primaryCong = Auth::primaryCongregation();
+            if (!$primaryCong || !Auth::isCongregationAdmin($primaryCong['id'])) {
+                Response::forbidden('Cannot edit this post');
+            }
+        }
+
+        // Validate scope - only admin can set global
+        if ($scope === 'global' && !Auth::isAdmin()) {
+            $scope = $post['scope']; // Keep original scope
+        }
+
+        $updateData = [
+            'content' => $content,
+            'updated_at' => date('Y-m-d H:i:s')
+        ];
+
+        if ($scope && in_array($scope, ['global', 'congregation'])) {
+            $updateData['scope'] = $scope;
+        }
+
+        Database::update('posts', $updateData, 'id = ?', [$postId]);
+
+        Logger::audit(Auth::id(), 'updated_post', ['post_id' => $postId]);
+
+        Response::success(['post_id' => $postId], 'Post updated');
         break;
 
     case 'pin':

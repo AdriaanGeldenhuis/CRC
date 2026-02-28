@@ -289,8 +289,14 @@ async function loadComments(postId) {
                         </div>
                         <div class="comment-content">
                             <strong>${escapeHtml(comment.author_name)}</strong>
-                            <p>${escapeHtml(comment.content)}</p>
-                            <span class="comment-time">${comment.time_ago}</span>
+                            <p class="comment-text">${escapeHtml(comment.content)}</p>
+                            <div class="comment-meta">
+                                <span class="comment-time">${comment.time_ago}</span>
+                                ${comment.can_edit ? `
+                                    <button class="comment-action-btn" onclick="editComment(${comment.id}, ${postId})">Edit</button>
+                                    <button class="comment-action-btn delete" onclick="deleteComment(${comment.id}, ${postId})">Delete</button>
+                                ` : ''}
+                            </div>
                         </div>
                     </div>
                 `).join('');
@@ -300,6 +306,97 @@ async function loadComments(postId) {
         }
     } catch (error) {
         list.innerHTML = '<p style="color: #EF4444; font-size: 0.875rem;">Network error</p>';
+    }
+}
+
+// Edit comment
+async function editComment(commentId, postId) {
+    const commentItem = document.querySelector(`[data-comment-id="${commentId}"]`);
+    if (!commentItem) return;
+
+    const textEl = commentItem.querySelector('.comment-text');
+    const currentText = textEl.textContent;
+
+    // Replace text with input
+    const input = document.createElement('textarea');
+    input.className = 'comment-edit-input';
+    input.value = currentText;
+    input.style.cssText = 'width:100%;min-height:60px;padding:0.5rem;border-radius:8px;border:1px solid var(--border-color);background:var(--bg-primary);color:var(--text-primary);font-family:inherit;font-size:0.875rem;resize:vertical;';
+
+    const actions = document.createElement('div');
+    actions.className = 'comment-edit-actions';
+    actions.style.cssText = 'display:flex;gap:0.5rem;margin-top:0.5rem;';
+    actions.innerHTML = `
+        <button class="comment-save-btn" style="padding:0.35rem 0.75rem;background:var(--primary);color:white;border:none;border-radius:6px;font-size:0.8rem;cursor:pointer;">Save</button>
+        <button class="comment-cancel-btn" style="padding:0.35rem 0.75rem;background:transparent;border:1px solid var(--border-color);border-radius:6px;font-size:0.8rem;cursor:pointer;color:var(--text-secondary);">Cancel</button>
+    `;
+
+    textEl.replaceWith(input);
+    input.after(actions);
+    input.focus();
+
+    // Handle save
+    actions.querySelector('.comment-save-btn').onclick = async () => {
+        const newContent = input.value.trim();
+        if (!newContent) {
+            showToast('Comment cannot be empty', 'error');
+            return;
+        }
+
+        try {
+            const response = await fetch('/gospel_media/api/comments.php?action=update', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-Token': getCSRFToken()
+                },
+                body: JSON.stringify({ comment_id: commentId, content: newContent })
+            });
+
+            const data = await response.json();
+
+            if (data.ok) {
+                showToast('Comment updated');
+                await loadComments(postId);
+            } else {
+                showToast(data.error || 'Failed to update comment', 'error');
+            }
+        } catch (error) {
+            showToast('Network error', 'error');
+        }
+    };
+
+    // Handle cancel
+    actions.querySelector('.comment-cancel-btn').onclick = () => {
+        loadComments(postId);
+    };
+}
+
+// Delete comment
+async function deleteComment(commentId, postId) {
+    if (!confirm('Are you sure you want to delete this comment?')) return;
+
+    try {
+        const response = await fetch('/gospel_media/api/comments.php?action=delete', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-Token': getCSRFToken()
+            },
+            body: JSON.stringify({ comment_id: commentId })
+        });
+
+        const data = await response.json();
+
+        if (data.ok) {
+            showToast('Comment deleted');
+            await loadComments(postId);
+            updateCommentCount(postId, false);
+        } else {
+            showToast(data.error || 'Failed to delete comment', 'error');
+        }
+    } catch (error) {
+        showToast('Network error', 'error');
     }
 }
 
@@ -481,7 +578,93 @@ async function deletePost(postId) {
 }
 
 function editPost(postId) {
-    window.location.href = '/gospel_media/edit.php?id=' + postId;
+    const postCard = document.querySelector(`[data-post-id="${postId}"]`);
+    if (!postCard) {
+        window.location.href = '/gospel_media/edit.php?id=' + postId;
+        return;
+    }
+
+    const contentEl = postCard.querySelector('.post-content');
+    if (!contentEl) {
+        window.location.href = '/gospel_media/edit.php?id=' + postId;
+        return;
+    }
+
+    // Close options menu
+    document.querySelectorAll('.post-options-menu.show').forEach(menu => {
+        menu.classList.remove('show');
+    });
+
+    // Get current content (strip HTML tags for editing)
+    const currentContent = contentEl.innerHTML
+        .replace(/<br\s*\/?>/gi, '\n')
+        .replace(/<[^>]*>/g, '')
+        .trim();
+
+    // Create edit form
+    const editForm = document.createElement('div');
+    editForm.className = 'post-edit-form';
+    editForm.innerHTML = `
+        <textarea class="post-edit-textarea" style="width:100%;min-height:120px;padding:0.75rem;border-radius:8px;border:1px solid var(--border-color);background:var(--bg-primary);color:var(--text-primary);font-family:inherit;font-size:1rem;line-height:1.5;resize:vertical;">${escapeHtml(currentContent)}</textarea>
+        <div class="post-edit-actions" style="display:flex;gap:0.5rem;margin-top:0.75rem;justify-content:flex-end;">
+            <button class="post-edit-cancel" style="padding:0.5rem 1rem;background:transparent;border:1px solid var(--border-color);border-radius:8px;font-size:0.875rem;cursor:pointer;color:var(--text-secondary);">Cancel</button>
+            <button class="post-edit-save" style="padding:0.5rem 1rem;background:var(--primary);color:white;border:none;border-radius:8px;font-size:0.875rem;cursor:pointer;font-weight:500;">Save Changes</button>
+        </div>
+    `;
+
+    // Store original content
+    contentEl.dataset.originalContent = contentEl.innerHTML;
+    contentEl.innerHTML = '';
+    contentEl.appendChild(editForm);
+
+    const textarea = editForm.querySelector('.post-edit-textarea');
+    textarea.focus();
+    textarea.setSelectionRange(textarea.value.length, textarea.value.length);
+
+    // Handle save
+    editForm.querySelector('.post-edit-save').onclick = async () => {
+        const newContent = textarea.value.trim();
+        if (!newContent) {
+            showToast('Post content cannot be empty', 'error');
+            return;
+        }
+
+        const saveBtn = editForm.querySelector('.post-edit-save');
+        saveBtn.disabled = true;
+        saveBtn.textContent = 'Saving...';
+
+        try {
+            const response = await fetch('/gospel_media/api/posts.php?action=update', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-Token': getCSRFToken()
+                },
+                body: JSON.stringify({ post_id: postId, content: newContent })
+            });
+
+            const data = await response.json();
+
+            if (data.ok) {
+                // Update the content with new text
+                contentEl.innerHTML = newContent.replace(/\n/g, '<br>');
+                showToast('Post updated');
+            } else {
+                showToast(data.error || 'Failed to update post', 'error');
+                saveBtn.disabled = false;
+                saveBtn.textContent = 'Save Changes';
+            }
+        } catch (error) {
+            showToast('Network error', 'error');
+            saveBtn.disabled = false;
+            saveBtn.textContent = 'Save Changes';
+        }
+    };
+
+    // Handle cancel
+    editForm.querySelector('.post-edit-cancel').onclick = () => {
+        contentEl.innerHTML = contentEl.dataset.originalContent;
+    };
 }
 
 // =====================================================
