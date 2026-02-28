@@ -511,7 +511,7 @@ if (!$aiMessage) {
                 <span class="icon" aria-hidden="true">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 21s7-4.4 7-11a7 7 0 10-14 0c0 6.6 7 11 7 11z" stroke-linejoin="round"/></svg>
                 </span>
-                Gemeente
+                Homecells
             </a>
         </nav>
     </div>
