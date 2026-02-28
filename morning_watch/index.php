@@ -565,13 +565,13 @@ try {
     <!-- Top Bar / Navigation -->
     <div class="topbar">
         <div class="inner">
-            <div class="brand">
+            <a href="/home/" class="brand">
                 <div class="logo" aria-hidden="true"></div>
                 <div>
                     <h1>CRC App</h1>
                     <span><?= e($primaryCong['name'] ?? 'Morning Study') ?></span>
                 </div>
-            </div>
+            </a>
 
             <div class="actions">
                 <div class="chip" title="Status">

@@ -507,7 +507,7 @@ function getMoodColor($mood) {
 </head>
 <body>
     <div class="topbar">
-        <div class="topbar-brand">
+        <a href="/home/" class="topbar-brand" style="text-decoration:none;color:inherit;">
             <svg viewBox="0 0 32 32" fill="none">
                 <rect width="32" height="32" rx="8" fill="url(#g1)"/>
                 <path d="M16 6L22 10V22L16 26L10 22V10L16 6Z" fill="white" fill-opacity="0.9"/>
@@ -519,7 +519,7 @@ function getMoodColor($mood) {
                 </defs>
             </svg>
             CRC App
-        </div>
+        </a>
         <div class="topbar-actions">
             <button class="topbar-btn" onclick="toggleTheme()" title="Toggle theme">
                 <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">

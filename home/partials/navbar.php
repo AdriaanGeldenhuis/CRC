@@ -565,7 +565,7 @@ $isActive = function($path) use ($currentPath) {
 </style>
 <nav class="navbar">
     <div class="nav-container">
-        <a href="/" class="nav-logo">CRC</a>
+        <a href="/home/" class="nav-logo">CRC</a>
 
         <div class="nav-actions">
             <!-- Theme Toggle -->

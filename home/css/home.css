@@ -136,6 +136,8 @@ body[data-theme="light"] {
   align-items: center;
   gap: 10px;
   min-width: 180px;
+  text-decoration: none;
+  color: inherit;
 }
 
 .logo {

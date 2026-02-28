@@ -46,13 +46,13 @@ try {
   <!-- Top Bar / Navigation - Same as Home -->
   <div class="topbar">
     <div class="inner">
-      <div class="brand">
+      <a href="/home/" class="brand">
         <div class="logo" aria-hidden="true"></div>
         <div>
           <h1>CRC App</h1>
           <span><?= e($primaryCong['name'] ?? 'CRC') ?></span>
         </div>
-      </div>
+      </a>
 
       <div class="actions">
         <!-- Status Chip -->
