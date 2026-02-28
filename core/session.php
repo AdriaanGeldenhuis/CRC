@@ -26,7 +26,13 @@ class Session {
         self::$sessionToken = $_COOKIE[SESSION_NAME] ?? null;
 
         if (self::$sessionToken) {
-            self::validateSession();
+            try {
+                self::validateSession();
+            } catch (Exception $e) {
+                // Database tables may not exist yet - treat as no session
+                self::destroyCookie();
+                self::$sessionToken = null;
+            }
         }
 
         self::$started = true;

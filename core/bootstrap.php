@@ -42,16 +42,47 @@ Session::init();
 set_exception_handler(function (Throwable $e) {
     Logger::exception($e);
 
-    if (CRC_DEBUG) {
-        Response::json([
-            'ok' => false,
-            'error' => $e->getMessage(),
-            'file' => $e->getFile(),
-            'line' => $e->getLine(),
-            'trace' => $e->getTraceAsString()
-        ], 500);
+    // Determine if this is an API request
+    $uri = $_SERVER['REQUEST_URI'] ?? '';
+    $isApi = str_contains($uri, '/api/');
+    $acceptsJson = str_contains($_SERVER['HTTP_ACCEPT'] ?? '', 'application/json');
+
+    if ($isApi || $acceptsJson) {
+        // API requests get JSON error responses
+        if (CRC_DEBUG) {
+            Response::json([
+                'ok' => false,
+                'error' => $e->getMessage(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
+                'trace' => $e->getTraceAsString()
+            ], 500);
+        } else {
+            Response::serverError('An unexpected error occurred. Please try again.');
+        }
     } else {
-        Response::serverError('An unexpected error occurred. Please try again.');
+        // HTML pages get a friendly error page
+        ob_end_clean();
+        http_response_code(500);
+        header('Content-Type: text/html; charset=utf-8');
+        echo '<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8">';
+        echo '<meta name="viewport" content="width=device-width, initial-scale=1.0">';
+        echo '<title>Error - CRC</title>';
+        echo '<style>body{font-family:Inter,system-ui,sans-serif;background:#0f172a;color:#e2e8f0;display:flex;align-items:center;justify-content:center;min-height:100vh;margin:0;padding:20px;text-align:center}';
+        echo '.box{background:#1e293b;border-radius:16px;padding:40px;max-width:480px;box-shadow:0 4px 24px rgba(0,0,0,.3)}';
+        echo 'h1{color:#f87171;font-size:1.5rem;margin:0 0 12px}p{color:#94a3b8;line-height:1.6;margin:0 0 24px}';
+        echo 'a{display:inline-block;background:#3b82f6;color:#fff;text-decoration:none;padding:12px 24px;border-radius:8px;font-weight:600;transition:background .2s}a:hover{background:#2563eb}';
+        echo '.debug{margin-top:24px;text-align:left;background:#0f172a;padding:16px;border-radius:8px;font-size:0.8rem;color:#f87171;overflow-x:auto;white-space:pre-wrap;word-break:break-all}</style></head>';
+        echo '<body><div class="box"><h1>Something went wrong</h1>';
+        echo '<p>We encountered an unexpected error. Please try again or return to the home page.</p>';
+        echo '<a href="/">Go Home</a>';
+        if (CRC_DEBUG) {
+            echo '<div class="debug"><strong>' . htmlspecialchars($e->getMessage()) . '</strong><br>';
+            echo htmlspecialchars($e->getFile()) . ':' . $e->getLine() . '<br><br>';
+            echo htmlspecialchars($e->getTraceAsString()) . '</div>';
+        }
+        echo '</div></body></html>';
+        exit;
     }
 });
 

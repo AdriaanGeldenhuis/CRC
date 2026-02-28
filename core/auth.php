@@ -388,7 +388,16 @@ class Auth {
      */
     public static function requireAuth(): void {
         if (!self::check()) {
-            Response::unauthorized('Please login to continue');
+            // Redirect HTML pages to login; return JSON for API requests
+            $uri = $_SERVER['REQUEST_URI'] ?? '';
+            $isApi = str_contains($uri, '/api/');
+            $acceptsJson = str_contains($_SERVER['HTTP_ACCEPT'] ?? '', 'application/json');
+
+            if ($isApi || $acceptsJson) {
+                Response::unauthorized('Please login to continue');
+            } else {
+                Response::redirect('/auth/');
+            }
         }
     }
 
