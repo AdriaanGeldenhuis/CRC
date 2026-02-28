@@ -108,6 +108,82 @@ try {
     ) ?: [];
 } catch (Exception $e) {}
 
+// Get user stats for progress section
+$userStats = [
+    'bible_bookmarks' => 0,
+    'bible_highlights' => 0,
+    'bible_notes' => 0,
+    'diary_entries' => 0,
+    'prayers_count' => 0,
+    'courses_enrolled' => 0,
+    'courses_completed' => 0,
+    'posts_count' => 0,
+];
+
+try {
+    $userStats['bible_bookmarks'] = Database::fetchColumn(
+        "SELECT COUNT(*) FROM bible_bookmarks WHERE user_id = ?", [$user['id']]
+    ) ?: 0;
+} catch (Exception $e) {}
+
+try {
+    $userStats['bible_highlights'] = Database::fetchColumn(
+        "SELECT COUNT(*) FROM bible_highlights WHERE user_id = ?", [$user['id']]
+    ) ?: 0;
+} catch (Exception $e) {}
+
+try {
+    $userStats['bible_notes'] = Database::fetchColumn(
+        "SELECT COUNT(*) FROM bible_notes WHERE user_id = ?", [$user['id']]
+    ) ?: 0;
+} catch (Exception $e) {}
+
+try {
+    $userStats['diary_entries'] = Database::fetchColumn(
+        "SELECT COUNT(*) FROM diary_entries WHERE user_id = ?", [$user['id']]
+    ) ?: 0;
+} catch (Exception $e) {}
+
+try {
+    $userStats['prayers_count'] = Database::fetchColumn(
+        "SELECT COUNT(*) FROM prayers WHERE user_id = ?", [$user['id']]
+    ) ?: 0;
+} catch (Exception $e) {}
+
+try {
+    $userStats['courses_enrolled'] = Database::fetchColumn(
+        "SELECT COUNT(*) FROM course_enrollments WHERE user_id = ?", [$user['id']]
+    ) ?: 0;
+} catch (Exception $e) {}
+
+try {
+    $userStats['courses_completed'] = Database::fetchColumn(
+        "SELECT COUNT(*) FROM course_enrollments WHERE user_id = ? AND completed_at IS NOT NULL", [$user['id']]
+    ) ?: 0;
+} catch (Exception $e) {}
+
+try {
+    $userStats['posts_count'] = Database::fetchColumn(
+        "SELECT COUNT(*) FROM posts WHERE user_id = ? AND status = 'active'", [$user['id']]
+    ) ?: 0;
+} catch (Exception $e) {}
+
+// Time-based greeting
+$hour = (int)date('H');
+if ($hour >= 5 && $hour < 12) {
+    $greeting = 'Goeie More';
+    $greetingIcon = 'sunrise';
+} elseif ($hour >= 12 && $hour < 17) {
+    $greeting = 'Goeie Middag';
+    $greetingIcon = 'sun';
+} elseif ($hour >= 17 && $hour < 21) {
+    $greeting = 'Goeie Naand';
+    $greetingIcon = 'sunset';
+} else {
+    $greeting = 'Goeie Naand';
+    $greetingIcon = 'moon';
+}
+
 // Get or generate AI message of the day
 try {
     $aiMessage = Database::fetchOne(
@@ -329,18 +405,135 @@ if (!$aiMessage) {
     <!-- Main Content -->
     <main class="main-content">
         <div class="container">
-            <!-- Welcome Section -->
-            <section class="welcome-section">
-                <div class="welcome-content">
-                    <h1>Welkom, <?= e(explode(' ', $user['name'])[0]) ?>!</h1>
-                    <p><?= date('l, j F Y') ?></p>
+            <!-- Enhanced Welcome Section -->
+            <section class="welcome-hero fade-in">
+                <div class="welcome-hero-bg"></div>
+                <div class="welcome-hero-content">
+                    <div class="welcome-left">
+                        <div class="greeting-icon">
+                            <?php if ($greetingIcon === 'sunrise'): ?>
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 18a5 5 0 0 0-10 0"/><line x1="12" y1="9" x2="12" y2="2"/><line x1="4.22" y1="10.22" x2="5.64" y2="11.64"/><line x1="1" y1="18" x2="3" y2="18"/><line x1="21" y1="18" x2="23" y2="18"/><line x1="18.36" y1="11.64" x2="19.78" y2="10.22"/><line x1="23" y1="22" x2="1" y2="22"/><polyline points="8 6 12 2 16 6"/></svg>
+                            <?php elseif ($greetingIcon === 'sun'): ?>
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+                            <?php elseif ($greetingIcon === 'sunset'): ?>
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 18a5 5 0 0 0-10 0"/><line x1="12" y1="9" x2="12" y2="2"/><line x1="4.22" y1="10.22" x2="5.64" y2="11.64"/><line x1="1" y1="18" x2="3" y2="18"/><line x1="21" y1="18" x2="23" y2="18"/><line x1="18.36" y1="11.64" x2="19.78" y2="10.22"/><line x1="23" y1="22" x2="1" y2="22"/><polyline points="16 6 12 10 8 6"/></svg>
+                            <?php else: ?>
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+                            <?php endif; ?>
+                        </div>
+                        <div>
+                            <h1 class="welcome-title"><?= $greeting ?>, <?= e(explode(' ', $user['name'])[0]) ?>!</h1>
+                            <p class="welcome-date"><?= date('l, j F Y') ?></p>
+                        </div>
+                    </div>
+                    <?php if ($streak): ?>
+                    <div class="streak-widget">
+                        <div class="streak-flame">
+                            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 23c-3.6 0-8-3.17-8-8.71C4 9.55 7.61 4.43 11.09.89a1 1 0 0 1 1.82 0C16.39 4.43 20 9.55 20 14.29 20 19.83 15.6 23 12 23zm0-19.64C9.24 6.74 6 11.15 6 14.29 6 18.66 8.89 21 12 21s6-2.34 6-6.71c0-3.14-3.24-7.55-6-10.93z"/><path d="M12 20a4 4 0 0 1-4-4c0-2 2-4.5 3.5-6a.67.67 0 0 1 1 0C14 11.5 16 14 16 16a4 4 0 0 1-4 4z"/></svg>
+                        </div>
+                        <div class="streak-info">
+                            <span class="streak-count"><?= (int)($streak['current_streak'] ?? 0) ?></span>
+                            <span class="streak-label">dag streak</span>
+                        </div>
+                    </div>
+                    <?php endif; ?>
+                </div>
+
+                <?php if ($todaySession && !$completedToday): ?>
+                <a href="/morning_watch/" class="morning-watch-banner fade-in" data-ripple>
+                    <div class="mw-pulse"></div>
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/></svg>
+                    <span>Vandag se Oggendstudie is beskikbaar!</span>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+                </a>
+                <?php elseif ($todaySession && $completedToday): ?>
+                <div class="morning-watch-done fade-in">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+                    <span>Oggendstudie voltooi vir vandag!</span>
+                </div>
+                <?php endif; ?>
+            </section>
+
+            <!-- Quick Actions -->
+            <section class="quick-actions fade-in" style="animation-delay: 0.1s">
+                <div class="quick-actions-scroll">
+                    <a href="/bible/" class="quick-action" data-ripple>
+                        <div class="qa-icon" style="background: linear-gradient(135deg, #7C3AED, #A78BFA);">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/><path d="M12 6v7"/><path d="M8 9h8"/></svg>
+                        </div>
+                        <span>Bybel</span>
+                    </a>
+                    <a href="/ai_smartbible/" class="quick-action" data-ripple>
+                        <div class="qa-icon" style="background: linear-gradient(135deg, #06B6D4, #22D3EE);">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+                        </div>
+                        <span>AI Chat</span>
+                    </a>
+                    <a href="/gospel_media/create.php" class="quick-action" data-ripple>
+                        <div class="qa-icon" style="background: linear-gradient(135deg, #F59E0B, #FBBF24);">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                        </div>
+                        <span>Plaas</span>
+                    </a>
+                    <a href="/diary/" class="quick-action" data-ripple>
+                        <div class="qa-icon" style="background: linear-gradient(135deg, #10B981, #34D399);">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+                        </div>
+                        <span>Dagboek</span>
+                    </a>
+                    <a href="/diary/prayers.php" class="quick-action" data-ripple>
+                        <div class="qa-icon" style="background: linear-gradient(135deg, #EC4899, #F472B6);">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+                        </div>
+                        <span>Gebede</span>
+                    </a>
+                    <a href="/learning/" class="quick-action" data-ripple>
+                        <div class="qa-icon" style="background: linear-gradient(135deg, #8B5CF6, #A78BFA);">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg>
+                        </div>
+                        <span>Kursusse</span>
+                    </a>
+                    <a href="/calendar/" class="quick-action" data-ripple>
+                        <div class="qa-icon" style="background: linear-gradient(135deg, #EF4444, #F87171);">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                        </div>
+                        <span>Kalender</span>
+                    </a>
+                    <a href="/media/" class="quick-action" data-ripple>
+                        <div class="qa-icon" style="background: linear-gradient(135deg, #6366F1, #818CF8);">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>
+                        </div>
+                        <span>Media</span>
+                    </a>
+                </div>
+            </section>
+
+            <!-- User Stats Summary -->
+            <section class="stats-section fade-in" style="animation-delay: 0.15s">
+                <div class="stats-grid">
+                    <div class="stat-item">
+                        <span class="stat-number"><?= (int)($streak['current_streak'] ?? 0) ?></span>
+                        <span class="stat-label">Dag Streak</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-number"><?= $userStats['diary_entries'] ?></span>
+                        <span class="stat-label">Dagboek</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-number"><?= $userStats['bible_bookmarks'] + $userStats['bible_highlights'] ?></span>
+                        <span class="stat-label">Bybel Notas</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-number"><?= $userStats['prayers_count'] ?></span>
+                        <span class="stat-label">Gebede</span>
+                    </div>
                 </div>
             </section>
 
             <!-- Dashboard Grid -->
             <div class="dashboard-grid">
                 <!-- AI Message of the Day Card -->
-                <div class="dashboard-card ai-message-card">
+                <div class="dashboard-card ai-message-card fade-in" style="animation-delay: 0.2s">
                     <div class="card-header">
                         <h2>
                             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display:inline;vertical-align:middle;margin-right:8px;color:var(--accent);">
@@ -380,7 +573,7 @@ if (!$aiMessage) {
                 </div>
 
                 <!-- News Card -->
-                <div class="dashboard-card news-card">
+                <div class="dashboard-card news-card fade-in" style="animation-delay: 0.25s">
                     <div class="card-header">
                         <h2>
                             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display:inline;vertical-align:middle;margin-right:8px;color:var(--accent2);">
@@ -390,26 +583,35 @@ if (!$aiMessage) {
                         </h2>
                     </div>
                     <?php if ($newsItems): ?>
-                        <div class="news-list">
-                            <?php foreach ($newsItems as $news): ?>
-                                <div class="news-item">
-                                    <?php if ($news['link_url']): ?>
-                                        <a href="<?= e($news['link_url']) ?>" class="news-item-link" target="_blank">
-                                    <?php endif; ?>
-                                        <div class="news-item-image">
-                                            <img src="<?= e($news['image_path']) ?>" alt="<?= e($news['title']) ?>" onerror="this.parentElement.innerHTML='<div style=\'width:100%;height:120px;background:linear-gradient(135deg,var(--accent),var(--accent2));display:flex;align-items:center;justify-content:center;color:white;font-size:14px;font-weight:600;\'><?= e($news['title']) ?></div>';">
-                                        </div>
-                                        <div class="news-item-content">
-                                            <h3 class="news-item-title"><?= e($news['title']) ?></h3>
-                                            <?php if ($news['description']): ?>
-                                                <p class="news-item-desc"><?= e($news['description']) ?></p>
-                                            <?php endif; ?>
-                                        </div>
-                                    <?php if ($news['link_url']): ?>
-                                        </a>
-                                    <?php endif; ?>
+                        <div class="news-carousel" id="newsCarousel">
+                            <div class="news-carousel-track">
+                                <?php foreach ($newsItems as $i => $news): ?>
+                                    <div class="news-slide <?= $i === 0 ? 'active' : '' ?>">
+                                        <?php if ($news['link_url']): ?>
+                                            <a href="<?= e($news['link_url']) ?>" class="news-item-link" target="_blank">
+                                        <?php endif; ?>
+                                            <div class="news-item-image">
+                                                <img src="<?= e($news['image_path']) ?>" alt="<?= e($news['title']) ?>" onerror="this.parentElement.innerHTML='<div style=\'width:100%;height:160px;background:linear-gradient(135deg,var(--accent),var(--accent2));display:flex;align-items:center;justify-content:center;color:white;font-size:14px;font-weight:600;\'><?= e($news['title']) ?></div>';">
+                                            </div>
+                                            <div class="news-item-content">
+                                                <h3 class="news-item-title"><?= e($news['title']) ?></h3>
+                                                <?php if ($news['description']): ?>
+                                                    <p class="news-item-desc"><?= e($news['description']) ?></p>
+                                                <?php endif; ?>
+                                            </div>
+                                        <?php if ($news['link_url']): ?>
+                                            </a>
+                                        <?php endif; ?>
+                                    </div>
+                                <?php endforeach; ?>
+                            </div>
+                            <?php if (count($newsItems) > 1): ?>
+                                <div class="news-carousel-dots">
+                                    <?php foreach ($newsItems as $i => $news): ?>
+                                        <button class="carousel-dot <?= $i === 0 ? 'active' : '' ?>" onclick="goToSlide(<?= $i ?>)" aria-label="Slide <?= $i + 1 ?>"></button>
+                                    <?php endforeach; ?>
                                 </div>
-                            <?php endforeach; ?>
+                            <?php endif; ?>
                         </div>
                     <?php else: ?>
                         <div class="no-content news-empty">
@@ -422,7 +624,7 @@ if (!$aiMessage) {
                 </div>
 
                 <!-- Upcoming Events -->
-                <div class="dashboard-card events-card">
+                <div class="dashboard-card events-card fade-in" style="animation-delay: 0.3s">
                     <div class="card-header">
                         <h2>Upcoming Events</h2>
                         <a href="/calendar/" class="view-all-link">View All</a>
@@ -450,7 +652,7 @@ if (!$aiMessage) {
                 </div>
 
                 <!-- Recent Posts -->
-                <div class="dashboard-card posts-card">
+                <div class="dashboard-card posts-card fade-in" style="animation-delay: 0.35s">
                     <div class="card-header">
                         <h2>Recent Posts</h2>
                         <a href="/gospel_media/" class="view-all-link">View All</a>
@@ -598,6 +800,80 @@ if (!$aiMessage) {
             var saved = localStorage.getItem('theme') || 'dark';
             document.documentElement.setAttribute('data-theme', saved);
             document.body.setAttribute('data-theme', saved);
+        })();
+
+        // News Carousel
+        (function() {
+            var carousel = document.getElementById('newsCarousel');
+            if (!carousel) return;
+
+            var track = carousel.querySelector('.news-carousel-track');
+            var slides = carousel.querySelectorAll('.news-slide');
+            var dots = carousel.querySelectorAll('.carousel-dot');
+            if (slides.length <= 1) return;
+
+            var currentSlide = 0;
+            var autoplayTimer = null;
+            var touchStartX = 0;
+            var touchEndX = 0;
+
+            function goToSlide(index) {
+                currentSlide = index;
+                track.style.transform = 'translateX(-' + (index * 100) + '%)';
+                slides.forEach(function(s, i) { s.classList.toggle('active', i === index); });
+                dots.forEach(function(d, i) { d.classList.toggle('active', i === index); });
+            }
+
+            window.goToSlide = goToSlide;
+
+            function nextSlide() {
+                goToSlide((currentSlide + 1) % slides.length);
+            }
+
+            // Auto-play every 5 seconds
+            function startAutoplay() {
+                autoplayTimer = setInterval(nextSlide, 5000);
+            }
+
+            function stopAutoplay() {
+                clearInterval(autoplayTimer);
+            }
+
+            // Touch swipe support
+            track.addEventListener('touchstart', function(e) {
+                touchStartX = e.changedTouches[0].screenX;
+                stopAutoplay();
+            }, { passive: true });
+
+            track.addEventListener('touchend', function(e) {
+                touchEndX = e.changedTouches[0].screenX;
+                var diff = touchStartX - touchEndX;
+                if (Math.abs(diff) > 50) {
+                    if (diff > 0) {
+                        goToSlide(Math.min(currentSlide + 1, slides.length - 1));
+                    } else {
+                        goToSlide(Math.max(currentSlide - 1, 0));
+                    }
+                }
+                startAutoplay();
+            }, { passive: true });
+
+            startAutoplay();
+        })();
+
+        // Fade-in animation on scroll
+        (function() {
+            var observer = new IntersectionObserver(function(entries) {
+                entries.forEach(function(entry) {
+                    if (entry.isIntersecting) {
+                        entry.target.classList.add('visible');
+                    }
+                });
+            }, { threshold: 0.1 });
+
+            document.querySelectorAll('.fade-in').forEach(function(el) {
+                observer.observe(el);
+            });
         })();
     </script>
 </body>
