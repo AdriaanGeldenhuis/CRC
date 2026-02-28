@@ -159,7 +159,10 @@ $days = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'su
                                 <?php foreach ($members as $member): ?>
                                     <div class="member-card">
                                         <?php if ($member['avatar_url']): ?>
-                                            <img src="<?= e($member['avatar_url']) ?>" alt="" class="member-avatar">
+                                            <img src="<?= e($member['avatar_url']) ?>" alt="" class="member-avatar" onerror="this.style.display='none';this.nextElementSibling.style.display='flex';">
+                                            <div class="member-avatar placeholder" style="display:none;">
+                                                <?= strtoupper(substr($member['name'], 0, 1)) ?>
+                                            </div>
                                         <?php else: ?>
                                             <div class="member-avatar placeholder">
                                                 <?= strtoupper(substr($member['name'], 0, 1)) ?>

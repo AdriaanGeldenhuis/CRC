@@ -185,7 +185,10 @@ if ($sermon['scripture_references']) {
                     <div class="sermon-meta-bar">
                         <div class="speaker-info">
                             <?php if ($sermon['speaker_avatar']): ?>
-                                <img src="<?= e($sermon['speaker_avatar']) ?>" alt="" class="speaker-avatar">
+                                <img src="<?= e($sermon['speaker_avatar']) ?>" alt="" class="speaker-avatar" onerror="this.style.display='none';this.nextElementSibling.style.display='flex';">
+                                <div class="speaker-avatar-placeholder" style="display:none;">
+                                    <?= strtoupper(substr($sermon['speaker_name'] ?? $sermon['speaker'], 0, 1)) ?>
+                                </div>
                             <?php else: ?>
                                 <div class="speaker-avatar-placeholder">
                                     <?= strtoupper(substr($sermon['speaker_name'] ?? $sermon['speaker'], 0, 1)) ?>

@@ -110,13 +110,13 @@ try {
     <!-- Top Bar / Navigation (matching Home page exactly) -->
     <div class="topbar">
         <div class="inner">
-            <div class="brand">
+            <a href="/home/" class="brand">
                 <div class="logo" aria-hidden="true"></div>
                 <div>
                     <h1>CRC App</h1>
                     <span><?= e($primaryCong['name']) ?></span>
                 </div>
-            </div>
+            </a>
 
             <div class="actions">
                 <!-- Status Chip (hidden on mobile) -->
@@ -249,7 +249,8 @@ try {
                 <div class="user-menu">
                     <button class="user-menu-btn" onclick="toggleUserMenu()">
                         <?php if ($user['avatar']): ?>
-                            <img src="<?= e($user['avatar']) ?>" alt="" class="user-avatar">
+                            <img src="<?= e($user['avatar']) ?>" alt="" class="user-avatar" onerror="this.style.display='none';this.nextElementSibling.style.display='flex';">
+                            <div class="user-avatar-placeholder" style="display:none;"><?= strtoupper(substr($user['name'], 0, 1)) ?></div>
                         <?php else: ?>
                             <div class="user-avatar-placeholder"><?= strtoupper(substr($user['name'], 0, 1)) ?></div>
                         <?php endif; ?>
@@ -318,7 +319,8 @@ try {
         <div class="create-post-card">
             <div class="create-post-row">
                 <?php if ($user['avatar']): ?>
-                    <img src="<?= e($user['avatar']) ?>" alt="" class="create-avatar">
+                    <img src="<?= e($user['avatar']) ?>" alt="" class="create-avatar" onerror="this.style.display='none';this.nextElementSibling.style.display='flex';">
+                    <div class="create-avatar-placeholder" style="display:none;"><?= strtoupper(substr($user['name'], 0, 1)) ?></div>
                 <?php else: ?>
                     <div class="create-avatar-placeholder"><?= strtoupper(substr($user['name'], 0, 1)) ?></div>
                 <?php endif; ?>
@@ -360,7 +362,8 @@ try {
                         <div class="post-header">
                             <div class="post-author">
                                 <?php if ($post['author_avatar']): ?>
-                                    <img src="<?= e($post['author_avatar']) ?>" alt="" class="author-avatar">
+                                    <img src="<?= e($post['author_avatar']) ?>" alt="" class="author-avatar" onerror="this.style.display='none';this.nextElementSibling.style.display='flex';">
+                                    <div class="author-avatar-placeholder" style="display:none;"><?= strtoupper(substr($post['author_name'], 0, 1)) ?></div>
                                 <?php else: ?>
                                     <div class="author-avatar-placeholder"><?= strtoupper(substr($post['author_name'], 0, 1)) ?></div>
                                 <?php endif; ?>
@@ -481,7 +484,8 @@ try {
                             <div class="comments-list"></div>
                             <form class="comment-form" onsubmit="submitComment(event, <?= $post['id'] ?>)">
                                 <?php if ($user['avatar']): ?>
-                                    <img src="<?= e($user['avatar']) ?>" alt="" class="comment-avatar">
+                                    <img src="<?= e($user['avatar']) ?>" alt="" class="comment-avatar" onerror="this.style.display='none';this.nextElementSibling.style.display='flex';">
+                                    <div class="comment-avatar-placeholder" style="display:none;"><?= strtoupper(substr($user['name'], 0, 1)) ?></div>
                                 <?php else: ?>
                                     <div class="comment-avatar-placeholder"><?= strtoupper(substr($user['name'], 0, 1)) ?></div>
                                 <?php endif; ?>
@@ -557,7 +561,8 @@ try {
         </a>
         <a href="/profile/" class="bottom-nav-item">
             <?php if ($user['avatar']): ?>
-                <img src="<?= e($user['avatar']) ?>" alt="" class="bottom-nav-avatar">
+                <img src="<?= e($user['avatar']) ?>" alt="" class="bottom-nav-avatar" onerror="this.style.display='none';this.nextElementSibling.style.display='flex';">
+                <div class="bottom-nav-avatar-placeholder" style="display:none;"><?= strtoupper(substr($user['name'], 0, 1)) ?></div>
             <?php else: ?>
                 <div class="bottom-nav-avatar-placeholder"><?= strtoupper(substr($user['name'], 0, 1)) ?></div>
             <?php endif; ?>

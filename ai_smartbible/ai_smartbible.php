@@ -213,13 +213,13 @@ try {
     <!-- Top Bar / Navigation (matching Home page exactly) -->
     <div class="topbar">
         <div class="inner">
-            <div class="brand">
+            <a href="/home/" class="brand">
                 <div class="logo" aria-hidden="true"></div>
                 <div>
                     <h1>CRC App</h1>
                     <span><?= e($primaryCong['name'] ?? 'CRC') ?></span>
                 </div>
-            </div>
+            </a>
 
             <div class="actions">
                 <!-- Status Chip (hidden on mobile) -->
@@ -352,7 +352,8 @@ try {
                 <div class="user-menu">
                     <button class="user-menu-btn" onclick="toggleUserMenu()">
                         <?php if ($user['avatar']): ?>
-                            <img src="<?= e($user['avatar']) ?>" alt="" class="user-avatar">
+                            <img src="<?= e($user['avatar']) ?>" alt="" class="user-avatar" onerror="this.style.display='none';this.nextElementSibling.style.display='flex';">
+                            <div class="user-avatar-placeholder" style="display:none;"><?= strtoupper(substr($user['name'], 0, 1)) ?></div>
                         <?php else: ?>
                             <div class="user-avatar-placeholder"><?= strtoupper(substr($user['name'], 0, 1)) ?></div>
                         <?php endif; ?>

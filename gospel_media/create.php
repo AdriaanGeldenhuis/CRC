@@ -272,7 +272,8 @@ $pageTitle = 'Create Post - CRC';
             <form id="createPostForm" onsubmit="submitPost(event)">
                 <div class="author-row">
                     <?php if ($user['avatar']): ?>
-                        <img src="<?= e($user['avatar']) ?>" alt="" class="author-avatar">
+                        <img src="<?= e($user['avatar']) ?>" alt="" class="author-avatar" onerror="this.style.display='none';this.nextElementSibling.style.display='flex';">
+                        <div class="author-avatar-placeholder" style="display:none;"><?= strtoupper(substr($user['name'], 0, 1)) ?></div>
                     <?php else: ?>
                         <div class="author-avatar-placeholder"><?= strtoupper(substr($user['name'], 0, 1)) ?></div>
                     <?php endif; ?>

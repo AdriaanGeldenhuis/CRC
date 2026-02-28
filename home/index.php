@@ -159,13 +159,13 @@ if (!$aiMessage) {
     <!-- Top Bar / Navigation -->
     <div class="topbar">
         <div class="inner">
-            <div class="brand">
+            <a href="/home/" class="brand">
                 <div class="logo" aria-hidden="true"></div>
                 <div>
                     <h1>CRC App</h1>
                     <span><?= e($primaryCong['name']) ?></span>
                 </div>
-            </div>
+            </a>
 
             <div class="actions">
                 <!-- Status Chip (hidden on mobile) -->
@@ -298,7 +298,8 @@ if (!$aiMessage) {
                 <div class="user-menu">
                     <button class="user-menu-btn" onclick="toggleUserMenu()">
                         <?php if ($user['avatar']): ?>
-                            <img src="<?= e($user['avatar']) ?>" alt="" class="user-avatar">
+                            <img src="<?= e($user['avatar']) ?>" alt="" class="user-avatar" onerror="this.style.display='none';this.nextElementSibling.style.display='flex';">
+                            <div class="user-avatar-placeholder" style="display:none;"><?= strtoupper(substr($user['name'], 0, 1)) ?></div>
                         <?php else: ?>
                             <div class="user-avatar-placeholder"><?= strtoupper(substr($user['name'], 0, 1)) ?></div>
                         <?php endif; ?>
@@ -396,7 +397,7 @@ if (!$aiMessage) {
                                         <a href="<?= e($news['link_url']) ?>" class="news-item-link" target="_blank">
                                     <?php endif; ?>
                                         <div class="news-item-image">
-                                            <img src="<?= e($news['image_path']) ?>" alt="<?= e($news['title']) ?>">
+                                            <img src="<?= e($news['image_path']) ?>" alt="<?= e($news['title']) ?>" onerror="this.parentElement.innerHTML='<div style=\'width:100%;height:120px;background:linear-gradient(135deg,var(--accent),var(--accent2));display:flex;align-items:center;justify-content:center;color:white;font-size:14px;font-weight:600;\'><?= e($news['title']) ?></div>';">
                                         </div>
                                         <div class="news-item-content">
                                             <h3 class="news-item-title"><?= e($news['title']) ?></h3>
@@ -460,7 +461,8 @@ if (!$aiMessage) {
                                 <a href="/gospel_media/post.php?id=<?= $post['id'] ?>" class="post-item" data-ripple>
                                     <div class="post-author">
                                         <?php if ($post['author_avatar']): ?>
-                                            <img src="<?= e($post['author_avatar']) ?>" alt="" class="author-avatar">
+                                            <img src="<?= e($post['author_avatar']) ?>" alt="" class="author-avatar" onerror="this.style.display='none';this.nextElementSibling.style.display='flex';">
+                                            <div class="author-avatar-placeholder" style="display:none;"><?= strtoupper(substr($post['author_name'], 0, 1)) ?></div>
                                         <?php else: ?>
                                             <div class="author-avatar-placeholder"><?= strtoupper(substr($post['author_name'], 0, 1)) ?></div>
                                         <?php endif; ?>
@@ -511,7 +513,7 @@ if (!$aiMessage) {
                 <span class="icon" aria-hidden="true">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 21s7-4.4 7-11a7 7 0 10-14 0c0 6.6 7 11 7 11z" stroke-linejoin="round"/></svg>
                 </span>
-                Gemeente
+                Homecells
             </a>
         </nav>
     </div>

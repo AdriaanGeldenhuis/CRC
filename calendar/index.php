@@ -908,13 +908,13 @@ $hours = range(0, 23);
     <!-- Top Bar / Navigation -->
     <div class="topbar">
         <div class="inner">
-            <div class="brand">
+            <a href="/home/" class="brand">
                 <div class="logo" aria-hidden="true"></div>
                 <div>
                     <h1>CRC</h1>
                     <span><?= e($primaryCong['name'] ?? 'Calendar') ?></span>
                 </div>
-            </div>
+            </a>
 
             <div class="actions">
                 <div class="chip" title="Status">
@@ -1042,7 +1042,8 @@ $hours = range(0, 23);
                 <div class="user-menu">
                     <button class="user-menu-btn" onclick="toggleUserMenu()">
                         <?php if ($user['avatar']): ?>
-                            <img src="<?= e($user['avatar']) ?>" alt="" class="user-avatar">
+                            <img src="<?= e($user['avatar']) ?>" alt="" class="user-avatar" onerror="this.style.display='none';this.nextElementSibling.style.display='flex';">
+                            <div class="user-avatar-placeholder" style="display:none;"><?= strtoupper(substr($user['name'], 0, 1)) ?></div>
                         <?php else: ?>
                             <div class="user-avatar-placeholder"><?= strtoupper(substr($user['name'], 0, 1)) ?></div>
                         <?php endif; ?>
