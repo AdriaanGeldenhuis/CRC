@@ -17,7 +17,7 @@ define('CRC_DEBUG', CRC_ENV === 'development');
 define('DB_HOST', 'dedi321.cpt1.host-h.net');
 define('DB_NAME', 'crcapupvtk_db1');
 define('DB_USER', 'crcapupvtk_1');
-define('DB_PASS', '92x54KF8O959o6');
+define('DB_PASS', 'AdrianusGeldenhuis12');
 define('DB_CHARSET', 'utf8mb4');
 
 // Application Settings
