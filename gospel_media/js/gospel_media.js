@@ -272,7 +272,7 @@ async function loadComments(postId) {
     const list = section.querySelector('.comments-list');
     if (!list) return;
 
-    list.innerHTML = '<p style="color: #9CA3AF; font-size: 0.875rem;">Loading...</p>';
+    list.innerHTML = '<p style="color: var(--muted2); font-size: 0.875rem;">Loading...</p>';
 
     try {
         const response = await fetch(`/gospel_media/api/comments.php?post_id=${postId}`);
@@ -280,7 +280,7 @@ async function loadComments(postId) {
 
         if (data.ok) {
             if (data.comments.length === 0) {
-                list.innerHTML = '<p style="color: #9CA3AF; font-size: 0.875rem;">No comments yet. Be the first!</p>';
+                list.innerHTML = '<p style="color: var(--muted2); font-size: 0.875rem;">No comments yet. Be the first!</p>';
             } else {
                 list.innerHTML = data.comments.map(comment => `
                     <div class="comment-item" data-comment-id="${comment.id}">
@@ -302,10 +302,10 @@ async function loadComments(postId) {
                 `).join('');
             }
         } else {
-            list.innerHTML = '<p style="color: #EF4444; font-size: 0.875rem;">Failed to load comments</p>';
+            list.innerHTML = '<p style="color: var(--bad); font-size: 0.875rem;">Failed to load comments</p>';
         }
     } catch (error) {
-        list.innerHTML = '<p style="color: #EF4444; font-size: 0.875rem;">Network error</p>';
+        list.innerHTML = '<p style="color: var(--bad); font-size: 0.875rem;">Network error</p>';
     }
 }
 
@@ -321,14 +321,14 @@ async function editComment(commentId, postId) {
     const input = document.createElement('textarea');
     input.className = 'comment-edit-input';
     input.value = currentText;
-    input.style.cssText = 'width:100%;min-height:60px;padding:0.5rem;border-radius:8px;border:1px solid var(--border-color);background:var(--bg-primary);color:var(--text-primary);font-family:inherit;font-size:0.875rem;resize:vertical;';
+    input.style.cssText = 'width:100%;min-height:60px;padding:0.5rem;border-radius:8px;border:1px solid var(--line);background:var(--card);color:var(--text);font-family:inherit;font-size:0.875rem;resize:vertical;';
 
     const actions = document.createElement('div');
     actions.className = 'comment-edit-actions';
     actions.style.cssText = 'display:flex;gap:0.5rem;margin-top:0.5rem;';
     actions.innerHTML = `
-        <button class="comment-save-btn" style="padding:0.35rem 0.75rem;background:var(--primary);color:white;border:none;border-radius:6px;font-size:0.8rem;cursor:pointer;">Save</button>
-        <button class="comment-cancel-btn" style="padding:0.35rem 0.75rem;background:transparent;border:1px solid var(--border-color);border-radius:6px;font-size:0.8rem;cursor:pointer;color:var(--text-secondary);">Cancel</button>
+        <button class="comment-save-btn" style="padding:0.35rem 0.75rem;background:var(--accent);color:white;border:none;border-radius:6px;font-size:0.8rem;cursor:pointer;">Save</button>
+        <button class="comment-cancel-btn" style="padding:0.35rem 0.75rem;background:transparent;border:1px solid var(--line);border-radius:6px;font-size:0.8rem;cursor:pointer;color:var(--muted);">Cancel</button>
     `;
 
     textEl.replaceWith(input);
@@ -605,10 +605,10 @@ function editPost(postId) {
     const editForm = document.createElement('div');
     editForm.className = 'post-edit-form';
     editForm.innerHTML = `
-        <textarea class="post-edit-textarea" style="width:100%;min-height:120px;padding:0.75rem;border-radius:8px;border:1px solid var(--border-color);background:var(--bg-primary);color:var(--text-primary);font-family:inherit;font-size:1rem;line-height:1.5;resize:vertical;">${escapeHtml(currentContent)}</textarea>
+        <textarea class="post-edit-textarea" style="width:100%;min-height:120px;padding:0.75rem;border-radius:8px;border:1px solid var(--line);background:var(--card);color:var(--text);font-family:inherit;font-size:1rem;line-height:1.5;resize:vertical;">${escapeHtml(currentContent)}</textarea>
         <div class="post-edit-actions" style="display:flex;gap:0.5rem;margin-top:0.75rem;justify-content:flex-end;">
-            <button class="post-edit-cancel" style="padding:0.5rem 1rem;background:transparent;border:1px solid var(--border-color);border-radius:8px;font-size:0.875rem;cursor:pointer;color:var(--text-secondary);">Cancel</button>
-            <button class="post-edit-save" style="padding:0.5rem 1rem;background:var(--primary);color:white;border:none;border-radius:8px;font-size:0.875rem;cursor:pointer;font-weight:500;">Save Changes</button>
+            <button class="post-edit-cancel" style="padding:0.5rem 1rem;background:transparent;border:1px solid var(--line);border-radius:8px;font-size:0.875rem;cursor:pointer;color:var(--muted);">Cancel</button>
+            <button class="post-edit-save" style="padding:0.5rem 1rem;background:var(--accent);color:white;border:none;border-radius:8px;font-size:0.875rem;cursor:pointer;font-weight:500;">Save Changes</button>
         </div>
     `;
 
@@ -646,8 +646,8 @@ function editPost(postId) {
             const data = await response.json();
 
             if (data.ok) {
-                // Update the content with new text
-                contentEl.innerHTML = newContent.replace(/\n/g, '<br>');
+                // Update the content with new text (escape HTML to prevent XSS)
+                contentEl.innerHTML = escapeHtml(newContent).replace(/\n/g, '<br>');
                 showToast('Post updated');
             } else {
                 showToast(data.error || 'Failed to update post', 'error');
