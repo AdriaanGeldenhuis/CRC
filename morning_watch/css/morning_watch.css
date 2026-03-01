@@ -337,7 +337,7 @@ body::before {
 .content-text {
   font-size: 1rem;
   line-height: 1.9;
-  color: var(--muted);
+  color: var(--text);
 }
 
 /* ===== PRAYER SECTION ===== */
@@ -366,7 +366,7 @@ body::before {
   position: relative;
   padding-left: 2rem;
   margin-bottom: 0.75rem;
-  color: var(--muted);
+  color: var(--text);
   line-height: 1.6;
 }
 

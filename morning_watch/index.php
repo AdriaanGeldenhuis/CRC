@@ -317,7 +317,7 @@ try {
 
         .live-study-questions li {
             margin-bottom: 0.375rem;
-            color: var(--muted);
+            color: var(--text);
             font-size: 0.9rem;
         }
 
@@ -413,7 +413,7 @@ try {
         }
 
         .content-text {
-            color: var(--muted);
+            color: var(--text);
             line-height: 1.7;
         }
 
@@ -437,7 +437,7 @@ try {
 
         .prayer-list li {
             margin-bottom: 0.5rem;
-            color: var(--muted);
+            color: var(--text);
         }
 
         .devotional-author {
@@ -561,7 +561,7 @@ try {
         }
     </style>
 </head>
-<body data-theme="dark">
+<body>
     <!-- Top Bar / Navigation -->
     <div class="topbar">
         <div class="inner">
