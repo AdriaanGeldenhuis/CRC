@@ -62,6 +62,21 @@ try {
          LIMIT ? OFFSET ?",
         array_merge([Auth::id()], $params, [$perPage, $offset])
     ) ?: [];
+
+    // Get reaction breakdown for each post
+    foreach ($posts as &$post) {
+        $post['reaction_breakdown'] = [];
+        try {
+            $breakdown = Database::fetchAll(
+                "SELECT reaction_type, COUNT(*) as count FROM reactions WHERE reactable_type = 'post' AND reactable_id = ? GROUP BY reaction_type ORDER BY count DESC",
+                [$post['id']]
+            ) ?: [];
+            foreach ($breakdown as $r) {
+                $post['reaction_breakdown'][$r['reaction_type']] = (int)$r['count'];
+            }
+        } catch (Exception $e2) {}
+    }
+    unset($post);
 } catch (Exception $e) {}
 
 // Get total for pagination
@@ -77,6 +92,38 @@ try {
 } catch (Exception $e) {}
 
 $totalPages = ceil($totalPosts / $perPage);
+
+// Format post content with hashtags and links
+function formatPostContent($content) {
+    $text = e($content);
+    // Convert URLs to clickable links
+    $text = preg_replace(
+        '/(https?:\/\/[^\s<]+)/',
+        '<a href="$1" class="post-link" target="_blank" rel="noopener">$1</a>',
+        $text
+    );
+    // Convert hashtags to styled spans
+    $text = preg_replace(
+        '/#(\w+)/u',
+        '<span class="hashtag">#$1</span>',
+        $text
+    );
+    // Convert @mentions to styled spans
+    $text = preg_replace(
+        '/@(\w+)/u',
+        '<span class="mention">@$1</span>',
+        $text
+    );
+    return nl2br($text);
+}
+
+// Reaction icons map
+$reactionIcons = [
+    'like' => '<svg viewBox="0 0 24 24" fill="currentColor" width="14" height="14"><path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3zM7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3"/></svg>',
+    'love' => '<svg viewBox="0 0 24 24" fill="currentColor" width="14" height="14"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>',
+    'pray' => '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M12 22s-8-4-8-10V5l8-3 8 3v7c0 6-8 10-8 10z"/></svg>',
+    'amen' => '<svg viewBox="0 0 24 24" fill="currentColor" width="14" height="14"><path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z"/></svg>',
+];
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -315,6 +362,21 @@ try {
     </nav>
 
     <main class="feed-container">
+        <!-- Search Bar -->
+        <div class="feed-search">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="search-icon">
+                <circle cx="11" cy="11" r="8"></circle>
+                <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+            </svg>
+            <input type="text" id="feedSearch" placeholder="Search posts..." class="search-input" oninput="handleSearch(this.value)">
+            <button class="search-clear" id="searchClear" onclick="clearSearch()" style="display:none;">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+            </button>
+        </div>
+
         <!-- Create Post Card -->
         <div class="create-post-card">
             <div class="create-post-row">
@@ -418,7 +480,7 @@ try {
                         </div>
 
                         <div class="post-content">
-                            <?= nl2br(e($post['content'])) ?>
+                            <?= formatPostContent($post['content']) ?>
                         </div>
 
                         <?php if ($post['media']): ?>
@@ -438,29 +500,66 @@ try {
                             <?php if ($post['reaction_count'] > 0 || $post['comment_count'] > 0): ?>
                                 <div class="engagement-stats">
                                     <?php if ($post['reaction_count'] > 0): ?>
-                                        <span class="stat">
-                                            <span class="reaction-icons">
-                                                <svg viewBox="0 0 24 24" fill="var(--danger)" width="16" height="16">
-                                                    <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
-                                                </svg>
+                                        <span class="stat reaction-summary" data-post-id="<?= $post['id'] ?>">
+                                            <span class="reaction-icons-row">
+                                                <?php
+                                                $shown = 0;
+                                                foreach ($post['reaction_breakdown'] as $rType => $rCount):
+                                                    if ($shown >= 3) break;
+                                                    $colors = ['like' => '#3B82F6', 'love' => '#EF4444', 'pray' => '#8B5CF6', 'amen' => '#F59E0B'];
+                                                    $color = $colors[$rType] ?? '#7C3AED';
+                                                ?>
+                                                    <span class="reaction-mini" style="color: <?= $color ?>"><?= $reactionIcons[$rType] ?? '' ?></span>
+                                                <?php $shown++; endforeach; ?>
                                             </span>
                                             <?= $post['reaction_count'] ?>
                                         </span>
                                     <?php endif; ?>
                                     <?php if ($post['comment_count'] > 0): ?>
-                                        <span class="stat"><?= $post['comment_count'] ?> comments</span>
+                                        <span class="stat comment-stat" onclick="toggleComments(<?= $post['id'] ?>)"><?= $post['comment_count'] ?> comment<?= $post['comment_count'] != 1 ? 's' : '' ?></span>
                                     <?php endif; ?>
                                 </div>
                             <?php endif; ?>
                         </div>
 
                         <div class="post-actions">
-                            <button class="post-action <?= $post['user_reaction'] ? 'liked' : '' ?>" onclick="toggleReaction(<?= $post['id'] ?>)">
-                                <svg viewBox="0 0 24 24" fill="<?= $post['user_reaction'] ? 'currentColor' : 'none' ?>" stroke="currentColor" stroke-width="2">
-                                    <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
-                                </svg>
-                                <span>Like</span>
-                            </button>
+                            <?php
+                            $userReactionType = $post['user_reaction'] ?: '';
+                            $reactionLabels = ['like' => 'Like', 'love' => 'Love', 'pray' => 'Pray', 'amen' => 'Amen'];
+                            $reactionColors = ['like' => '#3B82F6', 'love' => '#EF4444', 'pray' => '#8B5CF6', 'amen' => '#F59E0B'];
+                            $activeLabel = $reactionLabels[$userReactionType] ?? 'Like';
+                            $activeColor = $reactionColors[$userReactionType] ?? '';
+                            ?>
+                            <div class="reaction-btn-wrap">
+                                <button class="post-action <?= $userReactionType ? 'reacted reaction-' . e($userReactionType) : '' ?>"
+                                        data-reaction="<?= e($userReactionType) ?>"
+                                        onclick="toggleReaction(<?= $post['id'] ?>, '<?= e($userReactionType ?: 'like') ?>')"
+                                        <?= $activeColor ? 'style="color:' . $activeColor . '"' : '' ?>>
+                                    <?php if ($userReactionType && isset($reactionIcons[$userReactionType])): ?>
+                                        <?= $reactionIcons[$userReactionType] ?>
+                                    <?php else: ?>
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3zM7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3"></path>
+                                        </svg>
+                                    <?php endif; ?>
+                                    <span><?= $activeLabel ?></span>
+                                </button>
+                                <!-- Reaction Picker Popup -->
+                                <div class="reaction-picker" id="reactionPicker-<?= $post['id'] ?>">
+                                    <button class="reaction-option" data-type="like" onclick="selectReaction(<?= $post['id'] ?>, 'like')" title="Like">
+                                        <span class="reaction-emoji">&#128077;</span>
+                                    </button>
+                                    <button class="reaction-option" data-type="love" onclick="selectReaction(<?= $post['id'] ?>, 'love')" title="Love">
+                                        <span class="reaction-emoji">&#10084;&#65039;</span>
+                                    </button>
+                                    <button class="reaction-option" data-type="pray" onclick="selectReaction(<?= $post['id'] ?>, 'pray')" title="Pray">
+                                        <span class="reaction-emoji">&#128591;</span>
+                                    </button>
+                                    <button class="reaction-option" data-type="amen" onclick="selectReaction(<?= $post['id'] ?>, 'amen')" title="Amen">
+                                        <span class="reaction-emoji">&#11088;</span>
+                                    </button>
+                                </div>
+                            </div>
                             <button class="post-action" onclick="toggleComments(<?= $post['id'] ?>)">
                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                     <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
@@ -501,15 +600,14 @@ try {
                     </article>
                 <?php endforeach; ?>
 
-                <!-- Load More / Pagination -->
-                <?php if ($totalPages > 1): ?>
-                    <div class="load-more-section">
-                        <?php if ($page < $totalPages): ?>
-                            <a href="?scope=<?= $scope ?>&page=<?= $page + 1 ?>" class="load-more-btn">
-                                Load More Posts
-                            </a>
-                        <?php endif; ?>
-                        <span class="page-info">Page <?= $page ?> of <?= $totalPages ?></span>
+                <!-- Infinite Scroll Sentinel -->
+                <?php if ($page < $totalPages): ?>
+                    <div class="infinite-scroll-sentinel" id="infiniteScrollSentinel"
+                         data-scope="<?= e($scope) ?>" data-page="<?= $page ?>" data-total="<?= $totalPages ?>">
+                        <div class="loading-spinner-wrap">
+                            <div class="loading-spinner"></div>
+                            <span>Loading more posts...</span>
+                        </div>
                     </div>
                 <?php endif; ?>
             <?php else: ?>

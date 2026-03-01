@@ -85,6 +85,45 @@ $pageTitle = 'Login - CRC';
             <div class="auth-bg-content">
                 <h2>Christian Resource Center</h2>
                 <p>Connect, Grow, and Serve together in your faith journey.</p>
+
+                <div class="auth-features">
+                    <div class="auth-feature">
+                        <div class="auth-feature-icon" style="background: linear-gradient(135deg, #7C3AED, #A78BFA);">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/><path d="M12 6v7"/><path d="M8 9h8"/></svg>
+                        </div>
+                        <div>
+                            <h3>Bible Reader</h3>
+                            <p>Read, highlight, bookmark & take notes</p>
+                        </div>
+                    </div>
+                    <div class="auth-feature">
+                        <div class="auth-feature-icon" style="background: linear-gradient(135deg, #06B6D4, #22D3EE);">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+                        </div>
+                        <div>
+                            <h3>AI SmartBible</h3>
+                            <p>Chat with AI about Scripture</p>
+                        </div>
+                    </div>
+                    <div class="auth-feature">
+                        <div class="auth-feature-icon" style="background: linear-gradient(135deg, #F59E0B, #FBBF24);">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/></svg>
+                        </div>
+                        <div>
+                            <h3>Morning Study</h3>
+                            <p>Daily devotions with streak tracking</p>
+                        </div>
+                    </div>
+                    <div class="auth-feature">
+                        <div class="auth-feature-icon" style="background: linear-gradient(135deg, #10B981, #34D399);">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                        </div>
+                        <div>
+                            <h3>Community</h3>
+                            <p>Homecells, posts & events</p>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>

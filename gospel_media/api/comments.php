@@ -13,6 +13,7 @@ $action = $_GET['action'] ?? $_POST['action'] ?? null;
 if ($_SERVER['REQUEST_METHOD'] === 'GET') {
     // Get comments for post
     $postId = (int) $_GET['post_id'];
+    $parentId = isset($_GET['parent_id']) ? (int) $_GET['parent_id'] : null;
     $page = max(1, (int)($_GET['page'] ?? 1));
     $perPage = min(50, (int)($_GET['per_page'] ?? 50));
     $offset = ($page - 1) * $perPage;
@@ -21,22 +22,40 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
         Response::error('Post ID required');
     }
 
-    $comments = Database::fetchAll(
-        "SELECT c.*, u.name as author_name, u.avatar as author_avatar,
-                (SELECT COUNT(*) FROM comments WHERE parent_id = c.id AND status = 'active') as reply_count
-         FROM comments c
-         JOIN users u ON c.user_id = u.id
-         WHERE c.post_id = ? AND c.status = 'active' AND c.parent_id IS NULL
-         ORDER BY c.created_at ASC
-         LIMIT ? OFFSET ?",
-        [$postId, $perPage, $offset]
-    );
+    if ($parentId) {
+        // Fetch replies for a specific comment
+        $comments = Database::fetchAll(
+            "SELECT c.*, u.name as author_name, u.avatar as author_avatar
+             FROM comments c
+             JOIN users u ON c.user_id = u.id
+             WHERE c.post_id = ? AND c.status = 'active' AND c.parent_id = ?
+             ORDER BY c.created_at ASC
+             LIMIT ? OFFSET ?",
+            [$postId, $parentId, $perPage, $offset]
+        );
 
-    // Get total count for pagination
-    $totalComments = Database::fetchColumn(
-        "SELECT COUNT(*) FROM comments WHERE post_id = ? AND status = 'active' AND parent_id IS NULL",
-        [$postId]
-    );
+        $totalComments = Database::fetchColumn(
+            "SELECT COUNT(*) FROM comments WHERE post_id = ? AND status = 'active' AND parent_id = ?",
+            [$postId, $parentId]
+        );
+    } else {
+        // Fetch top-level comments
+        $comments = Database::fetchAll(
+            "SELECT c.*, u.name as author_name, u.avatar as author_avatar,
+                    (SELECT COUNT(*) FROM comments WHERE parent_id = c.id AND status = 'active') as reply_count
+             FROM comments c
+             JOIN users u ON c.user_id = u.id
+             WHERE c.post_id = ? AND c.status = 'active' AND c.parent_id IS NULL
+             ORDER BY c.created_at ASC
+             LIMIT ? OFFSET ?",
+            [$postId, $perPage, $offset]
+        );
+
+        $totalComments = Database::fetchColumn(
+            "SELECT COUNT(*) FROM comments WHERE post_id = ? AND status = 'active' AND parent_id IS NULL",
+            [$postId]
+        );
+    }
 
     // Add time_ago and check if user owns each comment
     foreach ($comments as &$comment) {
