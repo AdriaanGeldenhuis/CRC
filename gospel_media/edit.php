@@ -92,9 +92,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             left: 0;
             right: 0;
             height: 56px;
-            background: var(--bg-card);
-            backdrop-filter: blur(20px);
-            border-bottom: 1px solid var(--glass-border);
+            background: var(--bg-glass);
+            backdrop-filter: blur(var(--blur));
+            -webkit-backdrop-filter: blur(var(--blur));
+            border-bottom: 1px solid var(--line);
             display: flex;
             align-items: center;
             justify-content: space-between;
@@ -109,7 +110,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             justify-content: center;
             background: none;
             border: none;
-            color: var(--text-primary);
+            color: var(--text);
             text-decoration: none;
         }
         .back-btn svg { width: 24px; height: 24px; }
@@ -119,23 +120,32 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
         .save-btn {
             padding: 0.5rem 1.25rem;
-            background: var(--gradient-primary);
+            background: linear-gradient(135deg, var(--accent), var(--accent2));
             color: white;
             font-weight: 600;
             font-size: 0.9rem;
+            font-family: inherit;
             border: none;
-            border-radius: var(--radius);
+            border-radius: var(--radius-sm);
             cursor: pointer;
+            box-shadow: 0 8px 20px var(--accent-glow);
+            transition: all 0.12s ease;
+        }
+        .save-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 25px var(--accent-glow);
         }
         .edit-body {
             padding: 1rem;
+            max-width: var(--max);
+            margin: 0 auto;
         }
         .error-msg {
             background: rgba(239, 68, 68, 0.1);
-            border: 1px solid var(--danger);
-            color: var(--danger);
+            border: 1px solid var(--bad);
+            color: var(--bad);
             padding: 0.75rem 1rem;
-            border-radius: var(--radius);
+            border-radius: var(--radius-sm);
             margin-bottom: 1rem;
             font-size: 0.9rem;
         }
@@ -145,41 +155,48 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         .form-group label {
             display: block;
             font-size: 0.85rem;
-            font-weight: 500;
-            color: var(--text-secondary);
+            font-weight: 600;
+            color: var(--muted);
             margin-bottom: 0.5rem;
         }
         .scope-select {
             width: 100%;
-            background: var(--glass-bg);
-            border: 1px solid var(--glass-border);
-            border-radius: var(--radius);
-            color: var(--text-primary);
+            background: var(--card);
+            border: 1px solid var(--line);
+            border-radius: var(--radius-sm);
+            color: var(--text);
             font-size: 0.95rem;
+            font-family: inherit;
             padding: 0.75rem 1rem;
             cursor: pointer;
+            transition: all 0.12s ease;
+        }
+        .scope-select:focus {
+            outline: none;
+            border-color: var(--accent);
         }
         .scope-select option {
-            background: var(--bg-card);
-            color: var(--text-primary);
+            background: var(--bg1);
+            color: var(--text);
         }
         .post-textarea {
             width: 100%;
             min-height: 200px;
-            background: var(--glass-bg);
-            border: 1px solid var(--glass-border);
-            border-radius: var(--radius);
-            color: var(--text-primary);
+            background: var(--card);
+            border: 1px solid var(--line);
+            border-radius: var(--radius-sm);
+            color: var(--text);
             font-size: 1rem;
             line-height: 1.6;
             resize: vertical;
             font-family: inherit;
             padding: 1rem;
+            transition: all 0.12s ease;
         }
-        .post-textarea::placeholder { color: var(--text-muted); }
+        .post-textarea::placeholder { color: var(--muted2); }
         .post-textarea:focus {
             outline: none;
-            border-color: var(--primary);
+            border-color: var(--accent);
         }
         .media-preview-grid {
             display: flex;
@@ -191,7 +208,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             width: 100px;
             height: 100px;
             object-fit: cover;
-            border-radius: var(--radius);
+            border-radius: var(--radius-sm);
         }
     </style>
 </head>

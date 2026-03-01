@@ -153,7 +153,7 @@ try {
     ) ?: 0;
 } catch (Exception $e) {}
 ?>
-<body data-theme="dark">
+<body>
     <!-- Top Bar / Navigation (matching Home page exactly) -->
     <div class="topbar">
         <div class="inner">
