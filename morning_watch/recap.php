@@ -60,49 +60,51 @@ $whatsappUrl = "https://wa.me/?text=" . $whatsappText;
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><?= e($pageTitle) ?></title>
     <?= CSRF::meta() ?>
-    <link rel="stylesheet" href="/morning_watch/css/morning_watch.css">
+    <link rel="stylesheet" href="/home/css/home.css?v=<?= filemtime(__DIR__ . '/../home/css/home.css') ?>">
+    <link rel="stylesheet" href="/morning_watch/css/morning_watch.css?v=<?= filemtime(__DIR__ . '/css/morning_watch.css') ?>">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Merriweather:wght@400;700&display=swap" rel="stylesheet">
+    <script>
+        (function() {
+            const saved = localStorage.getItem('theme') || 'dark';
+            document.documentElement.setAttribute('data-theme', saved);
+        })();
+    </script>
     <style>
-        .recap-container { max-width: 700px; margin: 0 auto; padding: 2rem 1rem; }
+        .recap-container { max-width: 700px; margin: 0 auto; padding: 2rem 1rem; padding-bottom: 100px; }
         .recap-header { margin-bottom: 2rem; }
-        .recap-back { display: inline-flex; align-items: center; gap: 0.5rem; color: var(--gray-600); text-decoration: none; font-size: 0.9rem; margin-bottom: 1rem; }
-        .recap-back:hover { color: var(--primary); }
-        .recap-badge { display: inline-block; background: #10B981; color: white; padding: 0.25rem 0.75rem; border-radius: 4px; font-size: 0.75rem; font-weight: 600; text-transform: uppercase; margin-bottom: 0.5rem; }
-        .recap-title { font-size: 1.75rem; font-weight: 700; margin: 0.5rem 0; }
-        .recap-meta { color: var(--gray-500); font-size: 0.9rem; }
+        .recap-back { display: inline-flex; align-items: center; gap: 0.5rem; color: var(--muted); text-decoration: none; font-size: 0.9rem; margin-bottom: 1rem; }
+        .recap-back:hover { color: var(--accent); }
+        .recap-badge { display: inline-block; background: var(--good); color: white; padding: 0.25rem 0.75rem; border-radius: 4px; font-size: 0.75rem; font-weight: 600; text-transform: uppercase; margin-bottom: 0.5rem; }
+        .recap-title { font-size: 1.75rem; font-weight: 700; margin: 0.5rem 0; color: var(--text); }
+        .recap-meta { color: var(--muted); font-size: 0.9rem; }
 
-        .recap-card { background: white; border-radius: 12px; box-shadow: var(--shadow); overflow: hidden; margin-bottom: 1.5rem; }
-        .recap-card-header { padding: 1rem 1.5rem; background: var(--gray-50); border-bottom: 1px solid var(--gray-100); }
-        .recap-card-header h3 { margin: 0; font-size: 1rem; font-weight: 600; }
+        .recap-card { background: var(--bg-glass); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border: 1px solid var(--line); border-radius: var(--radius-lg); overflow: hidden; margin-bottom: 1.5rem; }
+        .recap-card-header { padding: 1rem 1.5rem; background: var(--card); border-bottom: 1px solid var(--line); }
+        .recap-card-header h3 { margin: 0; font-size: 1rem; font-weight: 600; color: var(--text); }
         .recap-card-body { padding: 1.5rem; }
 
-        .recap-scripture { font-size: 1.1rem; color: var(--primary); font-weight: 500; margin-bottom: 0.5rem; }
-        .recap-key-verse { background: var(--primary-light); padding: 1rem; border-radius: 8px; border-left: 3px solid var(--primary); font-style: italic; color: var(--gray-700); margin-top: 1rem; }
+        .recap-scripture { font-size: 1.1rem; color: var(--accent); font-weight: 500; margin-bottom: 0.5rem; }
+        .recap-key-verse { background: rgba(124, 58, 237, 0.1); padding: 1rem; border-radius: 8px; border-left: 3px solid var(--accent); font-style: italic; color: var(--text); margin-top: 1rem; }
 
         .recap-points { margin: 0; padding: 0; list-style: none; }
-        .recap-points li { padding: 0.75rem 0; border-bottom: 1px solid var(--gray-100); display: flex; gap: 0.75rem; }
+        .recap-points li { padding: 0.75rem 0; border-bottom: 1px solid var(--line); display: flex; gap: 0.75rem; color: var(--text); }
         .recap-points li:last-child { border-bottom: none; }
-        .recap-points li::before { content: "•"; color: var(--primary); font-weight: bold; }
+        .recap-points li::before { content: "\2022"; color: var(--accent); font-weight: bold; }
 
-        .recap-text-box { background: var(--gray-50); border: 1px solid var(--gray-200); border-radius: 8px; padding: 1rem; font-family: monospace; font-size: 0.85rem; white-space: pre-wrap; max-height: 300px; overflow-y: auto; }
+        .recap-text-box { background: var(--card); border: 1px solid var(--line); border-radius: 8px; padding: 1rem; font-family: monospace; font-size: 0.85rem; white-space: pre-wrap; max-height: 300px; overflow-y: auto; color: var(--text); }
 
         .recap-actions { display: flex; gap: 0.75rem; flex-wrap: wrap; margin-top: 1.5rem; }
-        .btn { display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem; padding: 0.75rem 1.25rem; border-radius: 8px; font-size: 0.9rem; font-weight: 500; text-decoration: none; cursor: pointer; border: none; transition: all 0.2s; }
-        .btn-primary { background: var(--primary); color: white; }
-        .btn-primary:hover { background: var(--primary-dark); }
         .btn-success { background: #25D366; color: white; }
         .btn-success:hover { background: #128C7E; }
-        .btn-outline { background: transparent; border: 1px solid var(--gray-300); color: var(--gray-700); }
-        .btn-outline:hover { background: var(--gray-50); }
 
-        .copy-feedback { position: fixed; bottom: 2rem; right: 2rem; background: var(--gray-800); color: white; padding: 0.75rem 1.5rem; border-radius: 8px; opacity: 0; transition: opacity 0.3s; z-index: 1000; }
+        .copy-feedback { position: fixed; bottom: 5rem; right: 2rem; background: var(--card2); color: var(--text); padding: 0.75rem 1.5rem; border-radius: 8px; opacity: 0; transition: opacity 0.3s; z-index: 1100; border: 1px solid var(--line); }
         .copy-feedback.show { opacity: 1; }
 
         .stats-row { display: flex; gap: 2rem; margin-top: 1rem; }
         .stat-item { text-align: center; }
-        .stat-value { font-size: 1.5rem; font-weight: 700; color: var(--primary); }
-        .stat-label { font-size: 0.8rem; color: var(--gray-500); }
+        .stat-value { font-size: 1.5rem; font-weight: 700; color: var(--accent); }
+        .stat-label { font-size: 0.8rem; color: var(--muted); }
     </style>
 </head>
 <body>
@@ -240,6 +242,48 @@ $whatsappUrl = "https://wa.me/?text=" . $whatsappText;
     </main>
 
     <div class="copy-feedback" id="copyFeedback">Copied to clipboard!</div>
+
+    <!-- Bottom Navigation -->
+    <nav class="bottom-nav">
+        <a href="/home/" class="bottom-nav-item">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+                <polyline points="9 22 9 12 15 12 15 22"></polyline>
+            </svg>
+            <span>Home</span>
+        </a>
+        <a href="/gospel_media/" class="bottom-nav-item">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M4 11a9 9 0 0 1 9 9"></path>
+                <path d="M4 4a16 16 0 0 1 16 16"></path>
+                <circle cx="5" cy="19" r="1"></circle>
+            </svg>
+            <span>Feed</span>
+        </a>
+        <a href="/morning_watch/" class="bottom-nav-item create-btn active">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="5"></circle>
+                <line x1="12" y1="1" x2="12" y2="3"></line>
+                <line x1="12" y1="21" x2="12" y2="23"></line>
+            </svg>
+        </a>
+        <a href="/bible/" class="bottom-nav-item">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
+                <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
+            </svg>
+            <span>Bible</span>
+        </a>
+        <a href="/profile/" class="bottom-nav-item">
+            <?php if ($user['avatar']): ?>
+                <img src="<?= e($user['avatar']) ?>" alt="" class="bottom-nav-avatar" onerror="this.style.display='none';this.nextElementSibling.style.display='flex';">
+                <div class="bottom-nav-avatar-placeholder" style="display:none;"><?= strtoupper(substr($user['name'], 0, 1)) ?></div>
+            <?php else: ?>
+                <div class="bottom-nav-avatar-placeholder"><?= strtoupper(substr($user['name'], 0, 1)) ?></div>
+            <?php endif; ?>
+            <span>Me</span>
+        </a>
+    </nav>
 
     <script>
         function copyRecap() {

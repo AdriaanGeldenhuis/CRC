@@ -294,6 +294,14 @@ $isEnded = $session['live_status'] === 'ended';
             return meta ? meta.getAttribute('content') : '';
         }
 
+        // Escape HTML to prevent XSS
+        function escapeHtml(str) {
+            if (!str) return '';
+            const div = document.createElement('div');
+            div.textContent = str;
+            return div.innerHTML;
+        }
+
         // Tab switching
         document.querySelectorAll('.sidebar-tab').forEach(tab => {
             tab.addEventListener('click', () => {
@@ -353,18 +361,20 @@ $isEnded = $session['live_status'] === 'ended';
                     data.messages.forEach(msg => {
                         if (msg.id > lastMessageId) {
                             lastMessageId = msg.id;
-                            const initials = msg.user_name.split(' ').map(n => n[0]).join('').substring(0, 2);
+                            const safeName = escapeHtml(msg.user_name);
+                            const initials = escapeHtml(msg.user_name.split(' ').map(n => n[0]).join('').substring(0, 2));
                             const time = new Date(msg.created_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
                             const isQuestion = msg.message_type === 'question';
+                            const safeAvatar = msg.user_avatar ? escapeHtml(msg.user_avatar) : '';
 
                             container.innerHTML += `
                                 <div class="chat-message">
                                     <div class="chat-message-header">
-                                        <div class="chat-avatar">${msg.user_avatar ? '<img src="'+msg.user_avatar+'">' : initials}</div>
-                                        <span class="chat-name">${msg.user_name}</span>
+                                        <div class="chat-avatar">${safeAvatar ? '<img src="'+safeAvatar+'">' : initials}</div>
+                                        <span class="chat-name">${safeName}</span>
                                         <span class="chat-time">${time}</span>
                                     </div>
-                                    <div class="chat-text ${isQuestion ? 'chat-question' : ''}">${msg.message}</div>
+                                    <div class="chat-text ${isQuestion ? 'chat-question' : ''}">${escapeHtml(msg.message)}</div>
                                 </div>
                             `;
                         }
@@ -440,14 +450,14 @@ $isEnded = $session['live_status'] === 'ended';
                     container.innerHTML = data.notes.map(note => `
                         <div class="note-item ${note.is_pinned ? 'pinned' : ''}">
                             <div class="note-header">
-                                <span class="note-author">${note.user_name}</span>
+                                <span class="note-author">${escapeHtml(note.user_name)}</span>
                                 ${note.is_pinned ? '<span class="note-pin-badge">Pinned</span>' : ''}
                             </div>
-                            <div class="note-content">${note.content}</div>
+                            <div class="note-content">${escapeHtml(note.content)}</div>
                             ${IS_ADMIN ? `
                                 <div class="note-actions">
-                                    <button class="note-action" onclick="togglePin(${note.id}, ${note.is_pinned})">${note.is_pinned ? 'Unpin' : 'Pin'}</button>
-                                    <button class="note-action" onclick="hideNote(${note.id})">Hide</button>
+                                    <button class="note-action" onclick="togglePin(${parseInt(note.id)}, ${note.is_pinned ? 1 : 0})">${note.is_pinned ? 'Unpin' : 'Pin'}</button>
+                                    <button class="note-action" onclick="hideNote(${parseInt(note.id)})">Hide</button>
                                 </div>
                             ` : ''}
                         </div>
@@ -534,9 +544,9 @@ $isEnded = $session['live_status'] === 'ended';
                     container.innerHTML = data.prayers.map(p => `
                         <div class="note-item">
                             <div class="note-header">
-                                <span class="note-author">${p.user_name}${p.is_private ? ' (Private)' : ''}</span>
+                                <span class="note-author">${escapeHtml(p.user_name)}${p.is_private ? ' (Private)' : ''}</span>
                             </div>
-                            <div class="note-content">${p.prayer_request}</div>
+                            <div class="note-content">${escapeHtml(p.prayer_request)}</div>
                         </div>
                     `).join('') || '<p style="color:#64748B;text-align:center;padding:2rem;">No prayer requests yet</p>';
                 }
