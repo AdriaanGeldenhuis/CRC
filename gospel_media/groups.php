@@ -45,7 +45,10 @@ $where = implode(' AND ', $conditions);
 
 $joinClause = $filter === 'my'
     ? "JOIN group_members gm ON g.id = gm.group_id AND gm.status = 'active'"
-    : "LEFT JOIN group_members gm ON g.id = gm.group_id AND gm.user_id = " . Auth::id() . " AND gm.status = 'active'";
+    : "LEFT JOIN group_members gm ON g.id = gm.group_id AND gm.user_id = ? AND gm.status = 'active'";
+if ($filter !== 'my') {
+    $params[] = Auth::id();
+}
 
 $groups = Database::fetchAll(
     "SELECT g.*,
@@ -103,21 +106,49 @@ try {
         }
 
         .group-card {
-            background: var(--card-bg);
-            border: 1px solid var(--border-color);
-            border-radius: 12px;
+            background: var(--card);
+            border: 1px solid var(--line);
+            border-radius: var(--radius);
             overflow: hidden;
-            transition: transform 0.2s, box-shadow 0.2s;
+            transition: transform 0.12s ease, box-shadow 0.12s ease;
+            backdrop-filter: blur(var(--blur));
+            -webkit-backdrop-filter: blur(var(--blur));
+            position: relative;
+        }
+
+        .group-card::before {
+            content: "";
+            position: absolute;
+            top: -2px;
+            left: -2px;
+            right: -2px;
+            bottom: -2px;
+            background:
+                radial-gradient(ellipse 600px 200px at 10% 0%, rgba(124,58,237,0.15), transparent 60%),
+                radial-gradient(ellipse 500px 200px at 90% 10%, rgba(34,211,238,0.10), transparent 55%);
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        [data-theme="light"] .group-card::before {
+            background:
+                radial-gradient(ellipse 600px 200px at 10% 0%, rgba(124,58,237,0.06), transparent 60%),
+                radial-gradient(ellipse 500px 200px at 90% 10%, rgba(34,211,238,0.04), transparent 55%);
+        }
+
+        .group-card > * {
+            position: relative;
+            z-index: 1;
         }
 
         .group-card:hover {
             transform: translateY(-2px);
-            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+            box-shadow: var(--shadow2);
         }
 
         .group-cover {
             height: 120px;
-            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+            background: linear-gradient(135deg, var(--accent) 0%, var(--accent2) 100%);
             display: flex;
             align-items: center;
             justify-content: center;
@@ -149,8 +180,8 @@ try {
 
         .group-name {
             font-size: 1.1rem;
-            font-weight: 600;
-            color: var(--text-primary);
+            font-weight: 700;
+            color: var(--text);
             margin: 0;
         }
 
@@ -159,7 +190,8 @@ try {
             padding: 0.2rem 0.5rem;
             border-radius: 4px;
             text-transform: uppercase;
-            font-weight: 600;
+            font-weight: 700;
+            flex-shrink: 0;
         }
 
         .group-type-badge.community {
@@ -174,7 +206,7 @@ try {
 
         .group-description {
             font-size: 0.875rem;
-            color: var(--text-secondary);
+            color: var(--muted);
             margin-bottom: 0.75rem;
             display: -webkit-box;
             -webkit-line-clamp: 2;
@@ -186,7 +218,7 @@ try {
             display: flex;
             gap: 1rem;
             font-size: 0.8rem;
-            color: var(--text-muted);
+            color: var(--muted2);
             margin-bottom: 0.75rem;
         }
 
@@ -209,11 +241,12 @@ try {
         .group-btn {
             flex: 1;
             padding: 0.6rem 1rem;
-            border-radius: 8px;
+            border-radius: var(--radius-sm);
             font-size: 0.875rem;
-            font-weight: 500;
+            font-weight: 600;
+            font-family: inherit;
             cursor: pointer;
-            transition: all 0.2s;
+            transition: all 0.12s ease;
             text-align: center;
             text-decoration: none;
             display: flex;
@@ -228,28 +261,30 @@ try {
         }
 
         .group-btn-primary {
-            background: var(--primary);
+            background: linear-gradient(135deg, var(--accent), var(--accent2));
             color: white;
             border: none;
+            box-shadow: 0 8px 20px var(--accent-glow);
         }
 
         .group-btn-primary:hover {
-            background: var(--primary-dark);
+            transform: translateY(-2px);
+            box-shadow: 0 12px 25px var(--accent-glow);
         }
 
         .group-btn-secondary {
-            background: transparent;
-            color: var(--text-primary);
-            border: 1px solid var(--border-color);
+            background: var(--btn-bg);
+            color: var(--text);
+            border: 1px solid var(--line);
         }
 
         .group-btn-secondary:hover {
-            background: var(--hover-bg);
+            background: var(--btn-bg-hover);
         }
 
         .group-btn-joined {
             background: rgba(34, 197, 94, 0.15);
-            color: #22C55E;
+            color: var(--good);
             border: 1px solid rgba(34, 197, 94, 0.3);
         }
 
@@ -258,37 +293,43 @@ try {
             gap: 0.5rem;
             padding: 1rem;
             overflow-x: auto;
-            border-bottom: 1px solid var(--border-color);
+            border-bottom: 1px solid var(--line);
+            scrollbar-width: none;
+        }
+
+        .filter-tabs::-webkit-scrollbar {
+            display: none;
         }
 
         .filter-tab {
             padding: 0.5rem 1rem;
-            border-radius: 20px;
+            border-radius: 999px;
             font-size: 0.875rem;
-            font-weight: 500;
-            color: var(--text-secondary);
+            font-weight: 600;
+            color: var(--muted);
             background: transparent;
-            border: 1px solid var(--border-color);
+            border: 1px solid var(--line);
             cursor: pointer;
             white-space: nowrap;
             text-decoration: none;
-            transition: all 0.2s;
+            transition: all 0.12s ease;
         }
 
         .filter-tab:hover {
-            background: var(--hover-bg);
+            background: var(--card);
+            color: var(--text);
         }
 
         .filter-tab.active {
-            background: var(--primary);
+            background: linear-gradient(135deg, var(--accent), var(--accent2));
             color: white;
-            border-color: var(--primary);
+            border-color: var(--accent);
         }
 
         .empty-groups {
             text-align: center;
             padding: 3rem 1rem;
-            color: var(--text-muted);
+            color: var(--muted2);
         }
 
         .empty-groups svg {
@@ -296,35 +337,36 @@ try {
             height: 64px;
             margin-bottom: 1rem;
             opacity: 0.5;
+            color: var(--muted);
         }
 
         .empty-groups h3 {
-            color: var(--text-primary);
+            color: var(--text);
             margin-bottom: 0.5rem;
         }
 
         .create-group-btn {
             position: fixed;
-            bottom: 80px;
+            bottom: 90px;
             right: 1rem;
             width: 56px;
             height: 56px;
             border-radius: 50%;
-            background: linear-gradient(135deg, #7C3AED, #22D3EE);
+            background: linear-gradient(135deg, var(--accent), var(--accent2));
             color: white;
             border: none;
-            box-shadow: 0 4px 15px rgba(124, 58, 237, 0.4);
+            box-shadow: 0 4px 15px var(--accent-glow);
             cursor: pointer;
             display: flex;
             align-items: center;
             justify-content: center;
-            z-index: 100;
-            transition: all 0.2s ease;
+            z-index: 40;
+            transition: all 0.12s ease;
         }
 
         .create-group-btn:hover {
             transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(124, 58, 237, 0.5);
+            box-shadow: 0 6px 20px var(--accent-glow);
         }
 
         .create-group-btn svg {
@@ -339,7 +381,7 @@ try {
         }
     </style>
 </head>
-<body data-theme="dark">
+<body>
     <!-- Top Bar / Navigation (matching Feed page exactly) -->
     <div class="topbar">
         <div class="inner">
@@ -646,6 +688,49 @@ try {
             </div>
         <?php endif; ?>
     </main>
+
+    <!-- Bottom Navigation (Mobile) -->
+    <nav class="bottom-nav">
+        <a href="/home/" class="bottom-nav-item">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+                <polyline points="9 22 9 12 15 12 15 22"></polyline>
+            </svg>
+            <span>Home</span>
+        </a>
+        <a href="/gospel_media/" class="bottom-nav-item">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M4 11a9 9 0 0 1 9 9"></path>
+                <path d="M4 4a16 16 0 0 1 16 16"></path>
+                <circle cx="5" cy="19" r="1"></circle>
+            </svg>
+            <span>Feed</span>
+        </a>
+        <a href="/gospel_media/create.php" class="bottom-nav-item create-btn">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                <line x1="12" y1="5" x2="12" y2="19"></line>
+                <line x1="5" y1="12" x2="19" y2="12"></line>
+            </svg>
+        </a>
+        <a href="/calendar/" class="bottom-nav-item">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                <line x1="16" y1="2" x2="16" y2="6"></line>
+                <line x1="8" y1="2" x2="8" y2="6"></line>
+                <line x1="3" y1="10" x2="21" y2="10"></line>
+            </svg>
+            <span>Events</span>
+        </a>
+        <a href="/profile/" class="bottom-nav-item">
+            <?php if ($user['avatar']): ?>
+                <img src="<?= e($user['avatar']) ?>" alt="" class="bottom-nav-avatar" onerror="this.style.display='none';this.nextElementSibling.style.display='flex';">
+                <div class="bottom-nav-avatar-placeholder" style="display:none;"><?= strtoupper(substr($user['name'], 0, 1)) ?></div>
+            <?php else: ?>
+                <div class="bottom-nav-avatar-placeholder"><?= strtoupper(substr($user['name'], 0, 1)) ?></div>
+            <?php endif; ?>
+            <span>Me</span>
+        </a>
+    </nav>
 
     <!-- Create Group FAB -->
     <?php if (Auth::isAdmin()): ?>

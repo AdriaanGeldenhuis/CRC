@@ -140,7 +140,7 @@ function showToast(message) {
             padding: 0.875rem 1.5rem;
             border-radius: 8px;
             font-size: 0.875rem;
-            z-index: 300;
+            z-index: 1100;
             opacity: 0;
             transition: all 0.3s ease;
         `;

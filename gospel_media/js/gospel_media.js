@@ -782,7 +782,7 @@ function editPost(postId) {
             var data = await response.json();
 
             if (data.ok) {
-                contentEl.innerHTML = newContent.replace(/\n/g, '<br>');
+                contentEl.innerHTML = escapeHtml(newContent).replace(/\n/g, '<br>');
                 showToast('Post updated');
             } else {
                 showToast(data.error || 'Failed to update post', 'error');

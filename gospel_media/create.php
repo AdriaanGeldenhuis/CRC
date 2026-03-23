@@ -43,9 +43,10 @@ $pageTitle = 'Create Post - CRC';
             left: 0;
             right: 0;
             height: 56px;
-            background: var(--bg-card);
-            backdrop-filter: blur(20px);
-            border-bottom: 1px solid var(--glass-border);
+            background: var(--bg-glass);
+            backdrop-filter: blur(var(--blur));
+            -webkit-backdrop-filter: blur(var(--blur));
+            border-bottom: 1px solid var(--line);
             display: flex;
             align-items: center;
             justify-content: space-between;
@@ -60,7 +61,7 @@ $pageTitle = 'Create Post - CRC';
             justify-content: center;
             background: none;
             border: none;
-            color: var(--text-primary);
+            color: var(--text);
             text-decoration: none;
         }
         .back-btn svg { width: 24px; height: 24px; }
@@ -70,7 +71,7 @@ $pageTitle = 'Create Post - CRC';
         }
         .post-btn {
             padding: 0.5rem 1.25rem;
-            background: linear-gradient(135deg, #7C3AED, #22D3EE);
+            background: linear-gradient(135deg, var(--accent), var(--accent2));
             color: white;
             font-weight: 600;
             font-size: 0.9rem;
@@ -87,6 +88,8 @@ $pageTitle = 'Create Post - CRC';
         }
         .create-body {
             padding: 1rem;
+            max-width: var(--max);
+            margin: 0 auto;
         }
         .author-row {
             display: flex;
@@ -99,12 +102,13 @@ $pageTitle = 'Create Post - CRC';
             height: 48px;
             border-radius: 50%;
             object-fit: cover;
+            border: 2px solid var(--line);
         }
         .author-avatar-placeholder {
             width: 48px;
             height: 48px;
             border-radius: 50%;
-            background: var(--gradient-primary);
+            background: linear-gradient(135deg, var(--accent), var(--accent2));
             color: white;
             display: flex;
             align-items: center;
@@ -115,60 +119,51 @@ $pageTitle = 'Create Post - CRC';
         .author-details strong {
             display: block;
             font-size: 0.95rem;
+            color: var(--text);
         }
         .scope-select {
-            background-color: #1f2937;
-            border: 1px solid #6366f1;
+            background: var(--card2);
+            border: 1px solid var(--accent);
             border-radius: 20px;
-            color: #e5e7eb;
+            color: var(--text);
             font-size: 0.85rem;
             padding: 0.4rem 0.9rem;
             margin-top: 0.25rem;
             cursor: pointer;
+            font-family: inherit;
         }
         .scope-select option {
-            background: #1f2937;
-            color: #e5e7eb;
-        }
-        [data-theme="light"] .scope-select {
-            background-color: #f3f4f6;
-            border-color: #6366f1;
-            color: #1f2937;
-        }
-        [data-theme="light"] .scope-select option {
-            background: #ffffff;
-            color: #1f2937;
+            background: var(--bg1);
+            color: var(--text);
         }
         .post-textarea {
             width: 100%;
             min-height: 200px;
             background: none;
             border: none;
-            color: var(--text-primary);
+            color: var(--text);
             font-size: 1.1rem;
             line-height: 1.6;
             resize: none;
             font-family: inherit;
             padding: 0;
         }
-        .post-textarea::placeholder { color: var(--text-muted); }
+        .post-textarea::placeholder { color: var(--muted2); }
         .post-textarea:focus { outline: none; }
         .media-toolbar {
             position: fixed;
             bottom: 0;
             left: 0;
             right: 0;
-            background: rgba(17, 24, 39, 0.95);
-            backdrop-filter: blur(10px);
-            border-top: 1px solid #374151;
+            background: var(--bg-glass);
+            backdrop-filter: blur(var(--blur));
+            -webkit-backdrop-filter: blur(var(--blur));
+            border-top: 1px solid var(--line);
             padding: 1rem;
             display: flex;
             justify-content: space-between;
             align-items: center;
-        }
-        [data-theme="light"] .media-toolbar {
-            background: rgba(255, 255, 255, 0.95);
-            border-top-color: #e5e7eb;
+            z-index: 50;
         }
         .toolbar-left {
             display: flex;
@@ -179,19 +174,20 @@ $pageTitle = 'Create Post - CRC';
             align-items: center;
             gap: 0.5rem;
             padding: 0.75rem 1.5rem;
-            background: linear-gradient(135deg, #7C3AED, #22D3EE);
+            background: linear-gradient(135deg, var(--accent), var(--accent2));
             color: white;
             font-weight: 600;
             font-size: 1rem;
+            font-family: inherit;
             border: none;
             border-radius: 25px;
             cursor: pointer;
-            box-shadow: 0 4px 15px rgba(124, 58, 237, 0.4);
-            transition: all 0.2s ease;
+            box-shadow: 0 4px 15px var(--accent-glow);
+            transition: all 0.12s ease;
         }
         .post-btn-bottom:not(:disabled):hover {
             transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(124, 58, 237, 0.5);
+            box-shadow: 0 6px 20px var(--accent-glow);
         }
         .post-btn-bottom:disabled {
             opacity: 0.4;
@@ -208,16 +204,16 @@ $pageTitle = 'Create Post - CRC';
             display: flex;
             align-items: center;
             justify-content: center;
-            background: var(--glass-bg);
-            border: 1px solid var(--glass-border);
+            background: var(--card);
+            border: 1px solid var(--line);
             border-radius: 50%;
-            color: var(--primary);
+            color: var(--accent);
             cursor: pointer;
-            transition: var(--transition);
+            transition: all 0.12s ease;
         }
         .toolbar-btn:hover {
-            background: rgba(139, 92, 246, 0.15);
-            border-color: var(--primary);
+            background: var(--card-hover);
+            border-color: var(--accent);
         }
         .toolbar-btn svg { width: 24px; height: 24px; }
         .media-preview-grid {
@@ -236,7 +232,7 @@ $pageTitle = 'Create Post - CRC';
             width: 100%;
             height: 100%;
             object-fit: cover;
-            border-radius: var(--radius);
+            border-radius: var(--radius-sm);
         }
         .remove-media {
             position: absolute;
@@ -244,7 +240,7 @@ $pageTitle = 'Create Post - CRC';
             right: -8px;
             width: 24px;
             height: 24px;
-            background: var(--danger);
+            background: var(--bad);
             border: none;
             border-radius: 50%;
             color: white;

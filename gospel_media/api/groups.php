@@ -46,7 +46,10 @@ switch ($action) {
 
         $joinClause = $filter === 'my'
             ? "JOIN group_members gm ON g.id = gm.group_id AND gm.status = 'active'"
-            : "LEFT JOIN group_members gm ON g.id = gm.group_id AND gm.user_id = " . Auth::id() . " AND gm.status = 'active'";
+            : "LEFT JOIN group_members gm ON g.id = gm.group_id AND gm.user_id = ? AND gm.status = 'active'";
+        if ($filter !== 'my') {
+            $params[] = Auth::id();
+        }
 
         $groups = Database::fetchAll(
             "SELECT g.*,
@@ -220,11 +223,11 @@ switch ($action) {
             }
         }
 
-        $name = trim($_POST['name'] ?? '');
-        $description = trim($_POST['description'] ?? '');
-        $groupType = $_POST['group_type'] ?? 'community';
-        $scope = $_POST['scope'] ?? 'congregation';
-        $privacy = $_POST['privacy'] ?? 'public';
+        $name = trim(input('name'));
+        $description = trim(input('description'));
+        $groupType = input('group_type', 'community');
+        $scope = input('scope', 'congregation');
+        $privacy = input('privacy', 'public');
 
         if (empty($name)) {
             Response::error('Name is required');

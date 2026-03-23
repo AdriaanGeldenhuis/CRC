@@ -330,7 +330,7 @@ try {
         }
     </style>
 </head>
-<body data-theme="dark">
+<body>
     <!-- Top Bar / Navigation -->
     <div class="topbar">
         <div class="inner">
