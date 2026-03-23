@@ -26,6 +26,9 @@ $filter = trim((string)($_GET['filter'] ?? 'all'));
 $start = trim((string)($_GET['start'] ?? ''));
 $end = trim((string)($_GET['end'] ?? ''));
 $view = trim((string)($_GET['view'] ?? 'list'));
+$page = max(1, (int)($_GET['page'] ?? 1));
+$perPage = min(100, max(10, (int)($_GET['per_page'] ?? 50)));
+$offset = ($page - 1) * $perPage;
 
 try {
     // Build query parts
@@ -87,37 +90,53 @@ try {
 
     $whereClause = implode(' AND ', $where);
 
+    $totalCount = (int)(Database::fetchColumn(
+        "SELECT COUNT(*) FROM diary_entries WHERE {$whereClause}",
+        $params
+    ) ?: 0);
+
     $entries = Database::fetchAll(
         "SELECT id, title, content, entry_date, mood, weather, created_at, updated_at
          FROM diary_entries
          WHERE {$whereClause}
          ORDER BY {$orderBy}
-         LIMIT 500",
-        $params
+         LIMIT ? OFFSET ?",
+        array_merge($params, [$perPage, $offset])
     ) ?: [];
 
-    // Process entries and get tags
+    // Batch-load all tags in a single query (instead of N+1)
+    $tagsByEntry = [];
+    if ($entries) {
+        $entryIds = array_column($entries, 'id');
+        $placeholders = implode(',', array_fill(0, count($entryIds), '?'));
+        $allTags = Database::fetchAll(
+            "SELECT l.entry_id, t.name FROM diary_tags t
+             JOIN diary_tag_links l ON t.id = l.tag_id
+             WHERE l.entry_id IN ($placeholders)",
+            $entryIds
+        ) ?: [];
+        foreach ($allTags as $tag) {
+            $tagsByEntry[$tag['entry_id']][] = $tag['name'];
+        }
+    }
+
+    // Process entries
     foreach ($entries as &$entry) {
         // Map to expected field names for JS
         $entry['date'] = $entry['entry_date'];
         $entry['time'] = date('H:i', strtotime($entry['created_at']));
         $entry['body'] = $entry['content']; // JS expects 'body'
-
-        // Get tags for this entry
-        $tags = Database::fetchAll(
-            "SELECT t.name FROM diary_tags t
-             JOIN diary_tag_links l ON t.id = l.tag_id
-             WHERE l.entry_id = ?",
-            [$entry['id']]
-        ) ?: [];
-        $entry['tags'] = array_column($tags, 'name');
+        $entry['tags'] = $tagsByEntry[$entry['id']] ?? [];
     }
     unset($entry);
 
     echo json_encode([
         'success' => true,
         'entries' => $entries,
-        'count' => count($entries)
+        'count' => count($entries),
+        'total' => $totalCount,
+        'page' => $page,
+        'per_page' => $perPage
     ]);
 
 } catch (Throwable $e) {

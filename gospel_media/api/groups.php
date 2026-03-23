@@ -312,7 +312,7 @@ switch ($action) {
             [$groupId, Auth::id()]
         );
 
-        if (!$membership || !in_array($membership['role'], ['admin', 'moderator'])) {
+        if (!$membership || !in_array($membership['role'], ['admin', 'moderator'], true)) {
             if (!Auth::isAdmin()) {
                 Response::forbidden('Only group admins can edit this group');
             }
@@ -458,7 +458,7 @@ switch ($action) {
 
         $updateData = [];
 
-        if ($newRole && in_array($newRole, ['member', 'moderator', 'admin'])) {
+        if ($newRole && in_array($newRole, ['member', 'moderator', 'admin'], true)) {
             $updateData['role'] = $newRole;
         }
 
@@ -499,7 +499,7 @@ switch ($action) {
             [$groupId, Auth::id()]
         );
 
-        if (!$currentMembership || !in_array($currentMembership['role'], ['admin', 'moderator'])) {
+        if (!$currentMembership || !in_array($currentMembership['role'], ['admin', 'moderator'], true)) {
             if (!Auth::isAdmin()) {
                 Response::forbidden('Only group admins/moderators can remove members');
             }

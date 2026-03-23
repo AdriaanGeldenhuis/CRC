@@ -162,7 +162,7 @@ class Upload {
         // Ensure directory exists
         $fullDir = UPLOAD_PATH . '/' . trim($directory, '/');
         if (!is_dir($fullDir)) {
-            mkdir($fullDir, 0755, true);
+            mkdir($fullDir, 0750, true);
         }
 
         // Generate unique filename if not provided
@@ -247,7 +247,7 @@ class Upload {
         // Ensure directory exists
         $fullDir = UPLOAD_PATH . '/' . trim($directory, '/');
         if (!is_dir($fullDir)) {
-            mkdir($fullDir, 0755, true);
+            mkdir($fullDir, 0750, true);
         }
 
         // Generate filename

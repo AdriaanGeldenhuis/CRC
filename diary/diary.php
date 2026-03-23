@@ -54,7 +54,7 @@ function getWeatherEmoji($weather) {
     return $weathers[$weather] ?? '☀️';
 }
 ?><!doctype html>
-<html lang="en">
+<html lang="af">
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">

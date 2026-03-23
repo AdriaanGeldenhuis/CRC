@@ -109,7 +109,7 @@ switch ($action) {
         $newRole = input('role');
         $allowedRoles = ['member', 'leader', 'admin'];
 
-        if (!in_array($newRole, $allowedRoles)) {
+        if (!in_array($newRole, $allowedRoles, true)) {
             Response::error('Invalid role');
         }
 

@@ -92,7 +92,7 @@ Database::update('enrollments', [
 ], 'course_id = ? AND user_id = ?', [$lesson['course_id'], $user['id']]);
 ?>
 <!DOCTYPE html>
-<html lang="en">
+<html lang="af">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -168,7 +168,7 @@ Database::update('enrollments', [
                             <ul>
                                 <?php foreach ($resources as $resource): ?>
                                     <li>
-                                        <a href="<?= e($resource['url']) ?>" target="_blank">
+                                        <a href="<?= e($resource['url']) ?>" target="_blank" rel="noopener noreferrer">
                                             📎 <?= e($resource['title']) ?>
                                         </a>
                                     </li>

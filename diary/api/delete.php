@@ -9,12 +9,10 @@ header('Content-Type: application/json; charset=utf-8');
 
 require_once dirname(__DIR__, 2) . '/core/bootstrap.php';
 
-// Require authentication
-if (!Auth::check()) {
-    http_response_code(401);
-    echo json_encode(['error' => 'unauthorized']);
-    exit;
-}
+// Require POST, authentication, and CSRF
+Response::requirePost();
+Auth::requireAuth();
+CSRF::require();
 
 $user = Auth::user();
 $userId = (int)$user['id'];

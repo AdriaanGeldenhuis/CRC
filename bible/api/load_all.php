@@ -16,30 +16,33 @@ Auth::requireAuth();
 
 $user = Auth::user();
 
-// Get all highlights
+// Get all highlights (capped at 2000 for safety)
 $highlights = Database::fetchAll(
     "SELECT id, book_number, chapter, verse_start as verse, color
      FROM bible_highlights
      WHERE user_id = ?
-     ORDER BY book_number, chapter, verse_start",
+     ORDER BY book_number, chapter, verse_start
+     LIMIT 2000",
     [$user['id']]
 );
 
-// Get all notes
+// Get all notes (capped at 2000 for safety)
 $notes = Database::fetchAll(
     "SELECT id, book_number, chapter, verse_start as verse, content, created_at
      FROM bible_notes
      WHERE user_id = ?
-     ORDER BY created_at DESC",
+     ORDER BY created_at DESC
+     LIMIT 2000",
     [$user['id']]
 );
 
-// Get all bookmarks
+// Get all bookmarks (capped at 2000 for safety)
 $bookmarks = Database::fetchAll(
     "SELECT id, book_number, chapter, verse_start as verse, created_at
      FROM bible_bookmarks
      WHERE user_id = ?
-     ORDER BY created_at DESC",
+     ORDER BY created_at DESC
+     LIMIT 2000",
     [$user['id']]
 );
 

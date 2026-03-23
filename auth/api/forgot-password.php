@@ -29,17 +29,10 @@ if ($validator->fails()) {
 // Request password reset
 $result = Auth::requestPasswordReset($email);
 
-// Always return success to prevent enumeration
-// The actual email sending would happen here in production
-// For now, just log it
-
-if (isset($result['_token'])) {
-    // In development, log the reset link
-    Logger::info('Password reset link generated', [
-        'email' => $email,
-        'reset_url' => APP_URL . '/auth/reset-password.php?token=' . $result['_token']
-    ]);
-}
+// Log that a reset was requested (without exposing the token)
+Logger::info('Password reset requested', [
+    'email' => $email
+]);
 
 Response::success([
     'message' => 'If an account exists with that email, a reset link has been sent.'

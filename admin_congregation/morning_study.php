@@ -48,7 +48,7 @@ if ($todaySession && !empty($todaySession['study_questions'])) {
 }
 ?>
 <!DOCTYPE html>
-<html lang="en">
+<html lang="af">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -285,7 +285,7 @@ if ($todaySession && !empty($todaySession['study_questions'])) {
                                 </button>
 
                                 <?php if ($todaySession): ?>
-                                    <a href="/morning_watch/room.php?session_id=<?= $todaySession['id'] ?>" target="_blank" class="btn btn-outline">
+                                    <a href="/morning_watch/room.php?session_id=<?= $todaySession['id'] ?>" target="_blank" rel="noopener noreferrer" class="btn btn-outline">
                                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
                                         Preview Room
                                     </a>

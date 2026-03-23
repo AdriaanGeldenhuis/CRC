@@ -16,7 +16,7 @@ $membership = Database::fetchOne(
     [$user['id'], $primaryCong['id']]
 );
 
-if (!$membership || !in_array($membership['role'], ['admin', 'leader', 'pastor'])) {
+if (!$membership || !in_array($membership['role'], ['admin', 'leader', 'pastor'], true)) {
     Response::redirect('/home/');
 }
 
@@ -71,7 +71,7 @@ $upcomingEvents = Database::fetchAll(
 );
 ?>
 <!DOCTYPE html>
-<html lang="en">
+<html lang="af">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">

@@ -28,6 +28,19 @@ if ($isOwnProfile) {
     if (!$user) {
         Response::redirect('/home/');
     }
+
+    // Authorization: only allow viewing profiles of users who share a congregation
+    $sharedCong = Database::fetchOne(
+        "SELECT 1 FROM user_congregations uc1
+         JOIN user_congregations uc2 ON uc1.congregation_id = uc2.congregation_id
+         WHERE uc1.user_id = ? AND uc2.user_id = ? AND uc1.status = 'active' AND uc2.status = 'active'
+         LIMIT 1",
+        [(int)$currentUser['id'], $viewUserId]
+    );
+    if (!$sharedCong && !Auth::isAdmin()) {
+        Response::redirect('/home/');
+    }
+
     $pageTitle = e($user['name']) . ' - CRC';
 }
 
@@ -91,7 +104,7 @@ $showEmail = $isOwnProfile || (!empty($user['show_email']) && $user['show_email'
 $showPhone = $isOwnProfile || (!empty($user['show_phone']) && $user['show_phone']);
 ?>
 <!DOCTYPE html>
-<html lang="en">
+<html lang="af">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">

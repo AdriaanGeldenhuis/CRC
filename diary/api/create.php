@@ -8,13 +8,13 @@ declare(strict_types=1);
 header('Content-Type: application/json; charset=utf-8');
 
 require_once dirname(__DIR__, 2) . '/core/bootstrap.php';
+require_once dirname(__DIR__) . '/helpers.php';
 
-// Require authentication
-if (!Auth::check()) {
-    http_response_code(401);
-    echo json_encode(['error' => 'unauthorized']);
-    exit;
-}
+// Require POST, authentication, CSRF, and rate limit
+Response::requirePost();
+Auth::requireAuth();
+CSRF::require();
+Security::requireRateLimit('diary_create', 30, 60);
 
 $user = Auth::user();
 $userId = (int)$user['id'];
@@ -55,37 +55,7 @@ try {
 
     // Add tags
     if (!empty($tags) && $entryId) {
-        foreach ($tags as $tagName) {
-            $tagName = trim($tagName);
-            if (empty($tagName)) continue;
-
-            // Get or create tag
-            $tag = Database::fetchOne(
-                "SELECT id FROM diary_tags WHERE user_id = ? AND name = ?",
-                [$userId, $tagName]
-            );
-
-            if (!$tag) {
-                $tagId = Database::insert('diary_tags', [
-                    'user_id' => $userId,
-                    'name' => $tagName
-                ]);
-            } else {
-                $tagId = $tag['id'];
-            }
-
-            // Link tag to entry
-            if ($tagId) {
-                try {
-                    Database::insert('diary_tag_links', [
-                        'entry_id' => $entryId,
-                        'tag_id' => $tagId
-                    ]);
-                } catch (Throwable $e) {
-                    // Ignore duplicate tag links
-                }
-            }
-        }
+        syncEntryTags((int)$entryId, $userId, $tags);
     }
 
     echo json_encode([

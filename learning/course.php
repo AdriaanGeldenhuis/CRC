@@ -75,7 +75,7 @@ $requirements = $course['requirements'] ? json_decode($course['requirements'], t
 $outcomes = $course['learning_outcomes'] ? json_decode($course['learning_outcomes'], true) : [];
 ?>
 <!DOCTYPE html>
-<html lang="en">
+<html lang="af">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
