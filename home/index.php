@@ -108,7 +108,7 @@ try {
     ) ?: [];
 } catch (Exception $e) {}
 
-// Get user stats for progress section
+// Get user stats for progress section (single query instead of 8 separate roundtrips)
 $userStats = [
     'bible_bookmarks' => 0,
     'bible_highlights' => 0,
@@ -121,51 +121,21 @@ $userStats = [
 ];
 
 try {
-    $userStats['bible_bookmarks'] = Database::fetchColumn(
-        "SELECT COUNT(*) FROM bible_bookmarks WHERE user_id = ?", [$user['id']]
-    ) ?: 0;
-} catch (Exception $e) {}
-
-try {
-    $userStats['bible_highlights'] = Database::fetchColumn(
-        "SELECT COUNT(*) FROM bible_highlights WHERE user_id = ?", [$user['id']]
-    ) ?: 0;
-} catch (Exception $e) {}
-
-try {
-    $userStats['bible_notes'] = Database::fetchColumn(
-        "SELECT COUNT(*) FROM bible_notes WHERE user_id = ?", [$user['id']]
-    ) ?: 0;
-} catch (Exception $e) {}
-
-try {
-    $userStats['diary_entries'] = Database::fetchColumn(
-        "SELECT COUNT(*) FROM diary_entries WHERE user_id = ?", [$user['id']]
-    ) ?: 0;
-} catch (Exception $e) {}
-
-try {
-    $userStats['prayers_count'] = Database::fetchColumn(
-        "SELECT COUNT(*) FROM prayers WHERE user_id = ?", [$user['id']]
-    ) ?: 0;
-} catch (Exception $e) {}
-
-try {
-    $userStats['courses_enrolled'] = Database::fetchColumn(
-        "SELECT COUNT(*) FROM course_enrollments WHERE user_id = ?", [$user['id']]
-    ) ?: 0;
-} catch (Exception $e) {}
-
-try {
-    $userStats['courses_completed'] = Database::fetchColumn(
-        "SELECT COUNT(*) FROM course_enrollments WHERE user_id = ? AND completed_at IS NOT NULL", [$user['id']]
-    ) ?: 0;
-} catch (Exception $e) {}
-
-try {
-    $userStats['posts_count'] = Database::fetchColumn(
-        "SELECT COUNT(*) FROM posts WHERE user_id = ? AND status = 'active'", [$user['id']]
-    ) ?: 0;
+    $statsRow = Database::fetchOne(
+        "SELECT
+            (SELECT COUNT(*) FROM bible_bookmarks WHERE user_id = ?) as bible_bookmarks,
+            (SELECT COUNT(*) FROM bible_highlights WHERE user_id = ?) as bible_highlights,
+            (SELECT COUNT(*) FROM bible_notes WHERE user_id = ?) as bible_notes,
+            (SELECT COUNT(*) FROM diary_entries WHERE user_id = ?) as diary_entries,
+            (SELECT COUNT(*) FROM prayers WHERE user_id = ?) as prayers_count,
+            (SELECT COUNT(*) FROM course_enrollments WHERE user_id = ?) as courses_enrolled,
+            (SELECT COUNT(*) FROM course_enrollments WHERE user_id = ? AND completed_at IS NOT NULL) as courses_completed,
+            (SELECT COUNT(*) FROM posts WHERE user_id = ? AND status = 'active') as posts_count",
+        [$user['id'], $user['id'], $user['id'], $user['id'], $user['id'], $user['id'], $user['id'], $user['id']]
+    );
+    if ($statsRow) {
+        $userStats = array_merge($userStats, array_map('intval', $statsRow));
+    }
 } catch (Exception $e) {}
 
 // Time-based greeting
@@ -213,11 +183,12 @@ if (!$aiMessage) {
 }
 ?>
 <!DOCTYPE html>
-<html lang="en">
+<html lang="af">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title><?= e($pageTitle) ?></title>
+    <meta name="description" content="CRC App - Jou gemeente dashboard vir Bybelstudie, oggendstudie, gebede, en gemeenskapsaktiwiteite.">
     <?= CSRF::meta() ?>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -588,10 +559,10 @@ if (!$aiMessage) {
                                 <?php foreach ($newsItems as $i => $news): ?>
                                     <div class="news-slide <?= $i === 0 ? 'active' : '' ?>">
                                         <?php if ($news['link_url']): ?>
-                                            <a href="<?= e($news['link_url']) ?>" class="news-item-link" target="_blank">
+                                            <a href="<?= e($news['link_url']) ?>" class="news-item-link" target="_blank" rel="noopener noreferrer">
                                         <?php endif; ?>
                                             <div class="news-item-image">
-                                                <img src="<?= e($news['image_path']) ?>" alt="<?= e($news['title']) ?>" onerror="this.parentElement.innerHTML='<div style=\'width:100%;height:160px;background:linear-gradient(135deg,var(--accent),var(--accent2));display:flex;align-items:center;justify-content:center;color:white;font-size:14px;font-weight:600;\'><?= e($news['title']) ?></div>';">
+                                                <img src="<?= e($news['image_path']) ?>" alt="<?= e($news['title']) ?>" loading="lazy" onerror="this.parentElement.innerHTML='<div style=\'width:100%;height:160px;background:linear-gradient(135deg,var(--accent),var(--accent2));display:flex;align-items:center;justify-content:center;color:white;font-size:14px;font-weight:600;\'><?= e($news['title']) ?></div>';">
                                             </div>
                                             <div class="news-item-content">
                                                 <h3 class="news-item-title"><?= e($news['title']) ?></h3>
@@ -663,7 +634,7 @@ if (!$aiMessage) {
                                 <a href="/gospel_media/post.php?id=<?= $post['id'] ?>" class="post-item" data-ripple>
                                     <div class="post-author">
                                         <?php if ($post['author_avatar']): ?>
-                                            <img src="<?= e($post['author_avatar']) ?>" alt="" class="author-avatar" onerror="this.style.display='none';this.nextElementSibling.style.display='flex';">
+                                            <img src="<?= e($post['author_avatar']) ?>" alt="" class="author-avatar" loading="lazy" onerror="this.style.display='none';this.nextElementSibling.style.display='flex';">
                                             <div class="author-avatar-placeholder" style="display:none;"><?= strtoupper(substr($post['author_name'], 0, 1)) ?></div>
                                         <?php else: ?>
                                             <div class="author-avatar-placeholder"><?= strtoupper(substr($post['author_name'], 0, 1)) ?></div>
@@ -758,6 +729,22 @@ if (!$aiMessage) {
             }
             if (!e.target.closest('.more-menu')) {
                 document.getElementById('moreDropdown')?.classList.remove('show');
+            }
+        });
+
+        // Close dropdowns with Escape key
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                var userDropdown = document.getElementById('userDropdown');
+                var moreDropdown = document.getElementById('moreDropdown');
+                if (userDropdown?.classList.contains('show')) {
+                    userDropdown.classList.remove('show');
+                    document.querySelector('.user-menu-btn')?.focus();
+                }
+                if (moreDropdown?.classList.contains('show')) {
+                    moreDropdown.classList.remove('show');
+                    document.querySelector('.more-menu-btn')?.focus();
+                }
             }
         });
 
@@ -857,6 +844,24 @@ if (!$aiMessage) {
                 }
                 startAutoplay();
             }, { passive: true });
+
+            // Keyboard navigation for carousel (arrow keys)
+            carousel.setAttribute('tabindex', '0');
+            carousel.setAttribute('role', 'region');
+            carousel.setAttribute('aria-label', 'News carousel');
+            carousel.addEventListener('keydown', function(e) {
+                if (e.key === 'ArrowLeft') {
+                    e.preventDefault();
+                    stopAutoplay();
+                    goToSlide(Math.max(currentSlide - 1, 0));
+                    startAutoplay();
+                } else if (e.key === 'ArrowRight') {
+                    e.preventDefault();
+                    stopAutoplay();
+                    goToSlide(Math.min(currentSlide + 1, slides.length - 1));
+                    startAutoplay();
+                }
+            });
 
             startAutoplay();
         })();
