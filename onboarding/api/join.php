@@ -146,68 +146,81 @@ switch ($action) {
 
         $tokenHash = hash('sha256', $inviteToken);
 
-        // Get invite
-        $invite = Database::fetchOne(
-            "SELECT ci.*, c.id as congregation_id, c.status as cong_status
-             FROM congregation_invites ci
-             JOIN congregations c ON ci.congregation_id = c.id
-             WHERE ci.token_hash = ?
-               AND (ci.expires_at IS NULL OR ci.expires_at > NOW())
-               AND ci.revoked_at IS NULL
-               AND (ci.max_uses IS NULL OR ci.use_count < ci.max_uses)",
-            [$tokenHash]
-        );
+        // Use transaction to prevent race condition on invite use_count
+        Database::beginTransaction();
+        try {
+            // Get invite with row lock to prevent concurrent over-use
+            $invite = Database::fetchOne(
+                "SELECT ci.*, c.id as congregation_id, c.status as cong_status
+                 FROM congregation_invites ci
+                 JOIN congregations c ON ci.congregation_id = c.id
+                 WHERE ci.token_hash = ?
+                   AND (ci.expires_at IS NULL OR ci.expires_at > NOW())
+                   AND ci.revoked_at IS NULL
+                   AND (ci.max_uses IS NULL OR ci.use_count < ci.max_uses)
+                 FOR UPDATE",
+                [$tokenHash]
+            );
 
-        if (!$invite) {
-            Response::error('Invalid or expired invite');
-        }
+            if (!$invite) {
+                Database::rollback();
+                Response::error('Invalid or expired invite');
+            }
 
-        if ($invite['cong_status'] !== 'active') {
-            Response::error('This congregation is not active');
-        }
+            if ($invite['cong_status'] !== 'active') {
+                Database::rollback();
+                Response::error('This congregation is not active');
+            }
 
-        // Check if already a member
-        $existing = Database::fetchOne(
-            "SELECT id, status FROM user_congregations WHERE user_id = ? AND congregation_id = ?",
-            [$userId, $invite['congregation_id']]
-        );
+            // Check if already a member
+            $existing = Database::fetchOne(
+                "SELECT id, status FROM user_congregations WHERE user_id = ? AND congregation_id = ?",
+                [$userId, $invite['congregation_id']]
+            );
 
-        if ($existing && $existing['status'] === 'active') {
-            Response::error('You are already a member of this congregation');
-        }
+            if ($existing && $existing['status'] === 'active') {
+                Database::rollback();
+                Response::error('You are already a member of this congregation');
+            }
 
-        // Join with invite role
-        if ($existing) {
-            Database::update(
-                'user_congregations',
-                [
+            // Join with invite role
+            if ($existing) {
+                Database::update(
+                    'user_congregations',
+                    [
+                        'role' => $invite['role'],
+                        'status' => 'active',
+                        'is_primary' => 1,
+                        'joined_at' => date('Y-m-d H:i:s'),
+                        'updated_at' => date('Y-m-d H:i:s')
+                    ],
+                    'id = ?',
+                    [$existing['id']]
+                );
+            } else {
+                Database::insert('user_congregations', [
+                    'user_id' => $userId,
+                    'congregation_id' => $invite['congregation_id'],
                     'role' => $invite['role'],
                     'status' => 'active',
                     'is_primary' => 1,
                     'joined_at' => date('Y-m-d H:i:s'),
+                    'created_at' => date('Y-m-d H:i:s'),
                     'updated_at' => date('Y-m-d H:i:s')
-                ],
-                'id = ?',
-                [$existing['id']]
-            );
-        } else {
-            Database::insert('user_congregations', [
-                'user_id' => $userId,
-                'congregation_id' => $invite['congregation_id'],
-                'role' => $invite['role'],
-                'status' => 'active',
-                'is_primary' => 1,
-                'joined_at' => date('Y-m-d H:i:s'),
-                'created_at' => date('Y-m-d H:i:s'),
-                'updated_at' => date('Y-m-d H:i:s')
-            ]);
-        }
+                ]);
+            }
 
-        // Increment invite use count
-        Database::query(
-            "UPDATE congregation_invites SET use_count = use_count + 1 WHERE id = ?",
-            [$invite['id']]
-        );
+            // Increment invite use count
+            Database::query(
+                "UPDATE congregation_invites SET use_count = use_count + 1 WHERE id = ?",
+                [$invite['id']]
+            );
+
+            Database::commit();
+        } catch (Exception $e) {
+            Database::rollback();
+            throw $e;
+        }
 
         Logger::audit($userId, 'accepted_invite', [
             'congregation_id' => $invite['congregation_id'],

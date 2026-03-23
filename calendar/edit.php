@@ -35,7 +35,7 @@ if (!$event) {
     );
     $isPersonalEvent = false;
 
-    if ($event && $event['user_id'] != $user['id'] && !Auth::isCongregationAdmin($primaryCong['id'])) {
+    if ($event && (int)$event['user_id'] !== (int)$user['id'] && !Auth::isCongregationAdmin($primaryCong['id'])) {
         Response::redirect('/calendar/');
     }
 }
@@ -58,7 +58,7 @@ if ($isPersonalEvent) {
 }
 ?>
 <!DOCTYPE html>
-<html lang="en">
+<html lang="af">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">

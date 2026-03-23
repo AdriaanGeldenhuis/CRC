@@ -99,7 +99,7 @@ function formatPostContent($content) {
     // Convert URLs to clickable links
     $text = preg_replace(
         '/(https?:\/\/[^\s<]+)/',
-        '<a href="$1" class="post-link" target="_blank" rel="noopener">$1</a>',
+        '<a href="$1" class="post-link" target="_blank" rel="noopener noreferrer">$1</a>',
         $text
     );
     // Convert hashtags to styled spans
@@ -126,7 +126,7 @@ $reactionIcons = [
 ];
 ?>
 <!DOCTYPE html>
-<html lang="en">
+<html lang="af">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">

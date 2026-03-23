@@ -72,7 +72,7 @@ $isLive = $session['live_status'] === 'live';
 $isEnded = $session['live_status'] === 'ended';
 ?>
 <!DOCTYPE html>
-<html lang="en">
+<html lang="af">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -240,15 +240,15 @@ $isEnded = $session['live_status'] === 'ended';
 
         <!-- Sidebar -->
         <div class="room-sidebar">
-            <div class="sidebar-tabs">
-                <div class="sidebar-tab active" data-tab="chat">Chat</div>
-                <div class="sidebar-tab" data-tab="notes">Notes</div>
-                <div class="sidebar-tab" data-tab="prayers">Prayers</div>
+            <div class="sidebar-tabs" role="tablist" aria-label="Room panels">
+                <div class="sidebar-tab active" data-tab="chat" role="tab" aria-selected="true" aria-controls="chat-panel" tabindex="0">Chat</div>
+                <div class="sidebar-tab" data-tab="notes" role="tab" aria-selected="false" aria-controls="notes-panel" tabindex="-1">Notes</div>
+                <div class="sidebar-tab" data-tab="prayers" role="tab" aria-selected="false" aria-controls="prayers-panel" tabindex="-1">Prayers</div>
             </div>
 
             <div class="sidebar-content">
                 <!-- Chat Panel -->
-                <div class="tab-panel active" id="chat-panel">
+                <div class="tab-panel active" id="chat-panel" role="tabpanel" aria-labelledby="chat">
                     <div class="chat-messages" id="chatMessages"></div>
                     <div class="chat-input-area">
                         <div class="chat-input-row">
@@ -259,7 +259,7 @@ $isEnded = $session['live_status'] === 'ended';
                 </div>
 
                 <!-- Notes Panel -->
-                <div class="tab-panel" id="notes-panel">
+                <div class="tab-panel" id="notes-panel" role="tabpanel" aria-labelledby="notes">
                     <div class="notes-list" id="notesList"></div>
                     <div class="note-input-area">
                         <textarea class="note-input" id="noteInput" placeholder="Share an insight..." maxlength="2000"></textarea>
@@ -268,7 +268,7 @@ $isEnded = $session['live_status'] === 'ended';
                 </div>
 
                 <!-- Prayers Panel -->
-                <div class="tab-panel" id="prayers-panel">
+                <div class="tab-panel" id="prayers-panel" role="tabpanel" aria-labelledby="prayers">
                     <div class="notes-list" id="prayersList"></div>
                     <div class="note-input-area">
                         <textarea class="note-input" id="prayerInput" placeholder="Share a prayer request..." maxlength="1000"></textarea>
@@ -302,13 +302,35 @@ $isEnded = $session['live_status'] === 'ended';
             return div.innerHTML;
         }
 
-        // Tab switching
+        // Tab switching with ARIA support
         document.querySelectorAll('.sidebar-tab').forEach(tab => {
             tab.addEventListener('click', () => {
-                document.querySelectorAll('.sidebar-tab').forEach(t => t.classList.remove('active'));
+                document.querySelectorAll('.sidebar-tab').forEach(t => {
+                    t.classList.remove('active');
+                    t.setAttribute('aria-selected', 'false');
+                    t.setAttribute('tabindex', '-1');
+                });
                 document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
                 tab.classList.add('active');
+                tab.setAttribute('aria-selected', 'true');
+                tab.setAttribute('tabindex', '0');
                 document.getElementById(tab.dataset.tab + '-panel').classList.add('active');
+            });
+            // Keyboard navigation: arrow keys to switch tabs
+            tab.addEventListener('keydown', (e) => {
+                const tabs = Array.from(document.querySelectorAll('.sidebar-tab'));
+                const index = tabs.indexOf(tab);
+                if (e.key === 'ArrowRight' || e.key === 'ArrowDown') {
+                    e.preventDefault();
+                    const next = tabs[(index + 1) % tabs.length];
+                    next.click();
+                    next.focus();
+                } else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') {
+                    e.preventDefault();
+                    const prev = tabs[(index - 1 + tabs.length) % tabs.length];
+                    prev.click();
+                    prev.focus();
+                }
             });
         });
 

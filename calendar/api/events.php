@@ -226,7 +226,7 @@ switch ($action) {
             }
 
             // Check permissions
-            if ($event['user_id'] != $user['id'] && !Auth::isCongregationAdmin($event['congregation_id'])) {
+            if ((int)$event['user_id'] !== (int)$user['id'] && !Auth::isCongregationAdmin($event['congregation_id'])) {
                 Response::forbidden('Permission denied');
             }
 
@@ -277,7 +277,7 @@ switch ($action) {
                 Response::error('Event not found');
             }
 
-            if ($event['user_id'] != $user['id'] && !Auth::isCongregationAdmin($event['congregation_id'])) {
+            if ((int)$event['user_id'] !== (int)$user['id'] && !Auth::isCongregationAdmin($event['congregation_id'])) {
                 Response::forbidden('Permission denied');
             }
 
@@ -314,7 +314,8 @@ switch ($action) {
                      WHERE (e.scope = 'global' OR e.congregation_id = ?)
                      AND e.status = 'published'
                      AND DATE(e.start_datetime) BETWEEN ? AND ?
-                     ORDER BY e.start_datetime ASC",
+                     ORDER BY e.start_datetime ASC
+                     LIMIT 500",
                     [$primaryCong['id'], $startDate, $endDate]
                 ) ?: [];
 
@@ -334,7 +335,7 @@ switch ($action) {
                         'url' => '/gospel_media/event.php?id=' . $event['id']
                     ];
                 }
-            } catch (Exception $e) {}
+            } catch (Exception $e) { Logger::error('Calendar events error: ' . $e->getMessage()); }
         }
 
         // Get personal calendar events
@@ -366,7 +367,7 @@ switch ($action) {
                         'url' => '/calendar/event.php?id=' . $event['id']
                     ];
                 }
-            } catch (Exception $e) {}
+            } catch (Exception $e) { Logger::error('Calendar events error: ' . $e->getMessage()); }
         }
 
         // Get Morning Study sessions
@@ -404,7 +405,7 @@ switch ($action) {
                         'url' => '/morning_watch/'
                     ];
                 }
-            } catch (Exception $e) {}
+            } catch (Exception $e) { Logger::error('Calendar events error: ' . $e->getMessage()); }
         }
 
         // Get Homecell meetings
@@ -450,7 +451,7 @@ switch ($action) {
                         ];
                     }
                 }
-            } catch (Exception $e) {}
+            } catch (Exception $e) { Logger::error('Calendar events error: ' . $e->getMessage()); }
         }
 
         // Get Course/Learning sessions
@@ -497,7 +498,7 @@ switch ($action) {
                         ];
                     }
                 }
-            } catch (Exception $e) {}
+            } catch (Exception $e) { Logger::error('Calendar events error: ' . $e->getMessage()); }
         }
 
         // Sort all events by start time

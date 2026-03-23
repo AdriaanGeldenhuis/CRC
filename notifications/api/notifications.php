@@ -28,8 +28,8 @@ switch ($action) {
         }
 
         $notifications = Database::fetchAll(
-            "SELECT * FROM notifications $whereClause ORDER BY created_at DESC LIMIT $perPage OFFSET $offset",
-            $params
+            "SELECT * FROM notifications $whereClause ORDER BY created_at DESC LIMIT ? OFFSET ?",
+            array_merge($params, [$perPage, $offset])
         );
 
         $totalCount = Database::fetchColumn(

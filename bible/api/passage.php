@@ -12,23 +12,9 @@ CSRF::require();
 
 $action = input('action', 'get');
 
-// Bible book data
-$bibleBooks = [
-    'Genesis', 'Exodus', 'Leviticus', 'Numbers', 'Deuteronomy',
-    'Joshua', 'Judges', 'Ruth', '1 Samuel', '2 Samuel',
-    '1 Kings', '2 Kings', '1 Chronicles', '2 Chronicles', 'Ezra',
-    'Nehemiah', 'Esther', 'Job', 'Psalms', 'Proverbs',
-    'Ecclesiastes', 'Song of Solomon', 'Isaiah', 'Jeremiah', 'Lamentations',
-    'Ezekiel', 'Daniel', 'Hosea', 'Joel', 'Amos',
-    'Obadiah', 'Jonah', 'Micah', 'Nahum', 'Habakkuk',
-    'Zephaniah', 'Haggai', 'Zechariah', 'Malachi',
-    'Matthew', 'Mark', 'Luke', 'John', 'Acts',
-    'Romans', '1 Corinthians', '2 Corinthians', 'Galatians', 'Ephesians',
-    'Philippians', 'Colossians', '1 Thessalonians', '2 Thessalonians', '1 Timothy',
-    '2 Timothy', 'Titus', 'Philemon', 'Hebrews', 'James',
-    '1 Peter', '2 Peter', '1 John', '2 John', '3 John',
-    'Jude', 'Revelation'
-];
+// Bible book data (shared)
+require_once __DIR__ . '/../books.php';
+$bibleBooks = $BIBLE_ALL_BOOKS;
 
 switch ($action) {
     case 'get':
@@ -53,11 +39,6 @@ switch ($action) {
                 [$version, $bookNumber, $chapter]
             ) ?: [];
         } catch (Exception $e) {}
-
-        if (empty($verses)) {
-            // Generate sample verses if no data in DB
-            $verses = generateSampleVerses($book, $chapter, $version);
-        }
 
         Response::success(['verses' => $verses]);
         break;
@@ -130,48 +111,3 @@ switch ($action) {
         Response::error('Invalid action');
 }
 
-function generateSampleVerses($book, $chapter, $version) {
-    // Sample verses for common passages when no DB data available
-    $sampleData = [
-        'Genesis' => [
-            1 => [
-                ['verse_number' => 1, 'text' => 'In the beginning God created the heaven and the earth.'],
-                ['verse_number' => 2, 'text' => 'And the earth was without form, and void; and darkness was upon the face of the deep. And the Spirit of God moved upon the face of the waters.'],
-                ['verse_number' => 3, 'text' => 'And God said, Let there be light: and there was light.'],
-                ['verse_number' => 4, 'text' => 'And God saw the light, that it was good: and God divided the light from the darkness.'],
-                ['verse_number' => 5, 'text' => 'And God called the light Day, and the darkness he called Night. And the evening and the morning were the first day.'],
-            ]
-        ],
-        'Psalms' => [
-            23 => [
-                ['verse_number' => 1, 'text' => 'The LORD is my shepherd; I shall not want.'],
-                ['verse_number' => 2, 'text' => 'He maketh me to lie down in green pastures: he leadeth me beside the still waters.'],
-                ['verse_number' => 3, 'text' => 'He restoreth my soul: he leadeth me in the paths of righteousness for his name\'s sake.'],
-                ['verse_number' => 4, 'text' => 'Yea, though I walk through the valley of the shadow of death, I will fear no evil: for thou art with me; thy rod and thy staff they comfort me.'],
-                ['verse_number' => 5, 'text' => 'Thou preparest a table before me in the presence of mine enemies: thou anointest my head with oil; my cup runneth over.'],
-                ['verse_number' => 6, 'text' => 'Surely goodness and mercy shall follow me all the days of my life: and I will dwell in the house of the LORD for ever.'],
-            ]
-        ],
-        'John' => [
-            3 => [
-                ['verse_number' => 16, 'text' => 'For God so loved the world, that he gave his only begotten Son, that whosoever believeth in him should not perish, but have everlasting life.'],
-                ['verse_number' => 17, 'text' => 'For God sent not his Son into the world to condemn the world; but that the world through him might be saved.'],
-            ]
-        ]
-    ];
-
-    if (isset($sampleData[$book][$chapter])) {
-        return $sampleData[$book][$chapter];
-    }
-
-    // Generate placeholder verses
-    $verses = [];
-    $verseCount = rand(15, 30);
-    for ($i = 1; $i <= $verseCount; $i++) {
-        $verses[] = [
-            'verse_number' => $i,
-            'text' => "This is verse $i of $book chapter $chapter. Bible text would appear here from the $version translation."
-        ];
-    }
-    return $verses;
-}

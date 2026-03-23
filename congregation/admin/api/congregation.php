@@ -23,7 +23,7 @@ $membership = Database::fetchOne(
     [$user['id'], $primaryCong['id']]
 );
 
-if (!$membership || !in_array($membership['role'], ['admin', 'leader', 'pastor'])) {
+if (!$membership || !in_array($membership['role'], ['admin', 'leader', 'pastor'], true)) {
     Response::forbidden('Admin access required');
 }
 

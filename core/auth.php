@@ -143,6 +143,8 @@ class Auth {
     public static function logout(): void {
         $userId = self::id();
         Session::destroy();
+        self::$primaryCongCache = null;
+        self::$primaryCongCacheSet = false;
         if ($userId) {
             Logger::info('User logged out', ['user_id' => $userId]);
         }
@@ -182,11 +184,10 @@ class Auth {
 
         Logger::info('Password reset requested', ['user_id' => $user['id']]);
 
-        // Return token for email sending (in production, send email here)
+        // Return result (token stays server-side for email sending)
         return [
             'ok' => true,
             'message' => 'If the email exists, a reset link will be sent.',
-            '_token' => $token // Remove in production - only for testing
         ];
     }
 
@@ -286,18 +287,28 @@ class Auth {
     }
 
     /**
-     * Get user's primary congregation
+     * Get user's primary congregation (cached per request)
      */
+    private static ?array $primaryCongCache = null;
+    private static bool $primaryCongCacheSet = false;
+
     public static function primaryCongregation(): ?array {
         if (!self::check()) return null;
 
-        return Database::fetchOne(
+        if (self::$primaryCongCacheSet) {
+            return self::$primaryCongCache;
+        }
+
+        self::$primaryCongCache = Database::fetchOne(
             "SELECT c.*, uc.role as user_role, uc.status as membership_status
              FROM user_congregations uc
              JOIN congregations c ON uc.congregation_id = c.id
              WHERE uc.user_id = ? AND uc.is_primary = 1 AND uc.status = 'active'",
             [self::id()]
         );
+        self::$primaryCongCacheSet = true;
+
+        return self::$primaryCongCache;
     }
 
     /**

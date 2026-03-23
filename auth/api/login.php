@@ -39,9 +39,9 @@ if ($result['ok']) {
     // Determine redirect based on user state
     $redirect = '/';
 
-    // Check for intended URL
+    // Check for intended URL (validate it's a local path to prevent open redirect)
     $intended = Session::getFlash('intended_url');
-    if ($intended) {
+    if ($intended && str_starts_with($intended, '/') && !str_starts_with($intended, '//')) {
         $redirect = $intended;
     }
 
