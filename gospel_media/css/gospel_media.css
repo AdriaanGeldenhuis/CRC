@@ -2004,3 +2004,155 @@ select.form-input {
     border: 1px solid #ccc !important;
   }
 }
+
+/* =====================================================================
+   HOME DESIGN ALIGNMENT — 3D POP
+   Brings the feed in line with the home dashboard: glass cards that
+   lift with an accent glow + top sheen, glossy 3D buttons, and tabs
+   that use the same accent gradient as the home navigation.
+   ===================================================================== */
+
+/* ---------- CARDS : match home .dashboard-card (lift + sheen) ---------- */
+.create-post-card,
+.post-card,
+.empty-state {
+  transition:
+    transform 0.35s cubic-bezier(0.2, 0.8, 0.25, 1.2),
+    box-shadow 0.35s ease,
+    border-color 0.35s ease;
+}
+
+/* glossy top edge line */
+.create-post-card::after,
+.post-card::after,
+.empty-state::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.40), transparent);
+  z-index: 2;
+  pointer-events: none;
+}
+
+.post-card:hover,
+.create-post-card:hover {
+  transform: translateY(-3px);
+  border-color: rgba(124, 58, 237, 0.40);
+  box-shadow:
+    0 26px 54px rgba(0, 0, 0, 0.50),
+    0 0 28px rgba(124, 58, 237, 0.16);
+}
+
+/* ---------- FEED TABS : accent-gradient pills (match home nav) ---------- */
+.feed-tabs {
+  height: auto;
+  gap: 6px;
+  padding: 8px 10px;
+}
+
+.feed-tab {
+  border: none;
+  border-radius: 14px;
+  padding: 8px 6px;
+  transition: transform 0.2s ease, background 0.2s ease, color 0.2s ease;
+}
+
+.feed-tab:hover {
+  transform: translateY(-1px);
+}
+
+.feed-tab.active {
+  color: #fff;
+  background: linear-gradient(135deg, rgba(124, 58, 237, 0.85), rgba(34, 211, 238, 0.75));
+  border: 1px solid rgba(34, 211, 238, 0.30);
+  box-shadow: 0 8px 18px rgba(124, 58, 237, 0.28);
+}
+
+/* ---------- AVATARS : subtle glossy depth (match home greeting icon) ---------- */
+.author-avatar-placeholder,
+.create-avatar-placeholder,
+.comment-avatar-placeholder,
+.bottom-nav-avatar-placeholder {
+  box-shadow:
+    0 6px 16px rgba(124, 58, 237, 0.30),
+    inset 0 1px 2px rgba(255, 255, 255, 0.40);
+}
+
+/* ---------- CREATE FAB : glossy 3D button ---------- */
+.bottom-nav-item.create-btn {
+  position: relative;
+  overflow: visible;
+  box-shadow:
+    0 6px 0 rgba(124, 58, 237, 0.45),
+    0 16px 30px rgba(124, 58, 237, 0.45),
+    inset 0 2px 3px rgba(255, 255, 255, 0.50),
+    inset 0 -4px 8px rgba(0, 0, 0, 0.25);
+  transition: transform 0.3s cubic-bezier(0.2, 0.8, 0.25, 1.4), box-shadow 0.3s ease;
+}
+
+.bottom-nav-item.create-btn::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: linear-gradient(157deg, rgba(255, 255, 255, 0.50), rgba(255, 255, 255, 0) 55%);
+  pointer-events: none;
+}
+
+.bottom-nav-item.create-btn svg {
+  position: relative;
+  z-index: 1;
+  filter: drop-shadow(0 2px 3px rgba(0, 0, 0, 0.30));
+}
+
+.bottom-nav-item.create-btn:hover {
+  transform: translateY(-3px) scale(1.05);
+}
+
+.bottom-nav-item.create-btn:active {
+  transform: translateY(0) scale(0.96);
+}
+
+/* ---------- BUTTONS : pop ---------- */
+.btn-primary {
+  box-shadow: 0 10px 24px rgba(124, 58, 237, 0.35);
+  transition: transform 0.25s cubic-bezier(0.2, 0.8, 0.25, 1.4), box-shadow 0.25s ease;
+}
+
+.btn-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 16px 34px rgba(124, 58, 237, 0.45);
+}
+
+.btn-primary:active {
+  transform: translateY(0) scale(0.98);
+}
+
+.post-action,
+.create-action {
+  transition: transform 0.2s ease, background 0.2s ease, color 0.2s ease;
+}
+
+.post-action:hover {
+  transform: translateY(-1px);
+}
+
+.create-action:hover {
+  transform: translateY(-2px);
+}
+
+/* ---------- respect reduced-motion ---------- */
+@media (prefers-reduced-motion: reduce) {
+  .post-card,
+  .create-post-card,
+  .feed-tab,
+  .bottom-nav-item.create-btn,
+  .btn-primary,
+  .post-action,
+  .create-action {
+    transition: none !important;
+  }
+}

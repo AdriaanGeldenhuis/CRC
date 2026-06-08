@@ -158,7 +158,7 @@ try {
     ) ?: 0;
 } catch (Exception $e) {}
 ?>
-<body>
+<body data-theme="dark">
     <!-- Top Bar / Navigation (matching Home page exactly) -->
     <div class="topbar">
         <div class="inner">
@@ -689,6 +689,7 @@ try {
             const current = html.getAttribute('data-theme') || 'dark';
             const next = current === 'dark' ? 'light' : 'dark';
             html.setAttribute('data-theme', next);
+            document.body.setAttribute('data-theme', next);
             localStorage.setItem('theme', next);
         }
 

@@ -445,11 +445,11 @@ if (!$aiMessage) {
                         </div>
                         <span>AI Chat</span>
                     </a>
-                    <a href="/gospel_media/create.php" class="quick-action" data-ripple>
+                    <a href="/gospel_media/" class="quick-action" data-ripple>
                         <div class="qa-icon" style="background: linear-gradient(135deg, #F59E0B, #FBBF24);">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 11a9 9 0 0 1 9 9"/><path d="M4 4a16 16 0 0 1 16 16"/><circle cx="5" cy="19" r="1"/></svg>
                         </div>
-                        <span>Post</span>
+                        <span>Feed</span>
                     </a>
                     <a href="/diary/" class="quick-action" data-ripple>
                         <div class="qa-icon" style="background: linear-gradient(135deg, #10B981, #34D399);">
