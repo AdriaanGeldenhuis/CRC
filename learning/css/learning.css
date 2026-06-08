@@ -88,7 +88,7 @@ body::before {
 }
 
 .container {
-    max-width: 1200px;
+    max-width: 1080px;
     margin: 0 auto;
     padding: 0 1rem;
 }
@@ -864,7 +864,7 @@ body::before {
 }
 
 .lesson-content-wrapper {
-    max-width: 800px;
+    max-width: 1080px;
     margin: 0 auto;
     background: var(--bg-glass);
     backdrop-filter: blur(20px);

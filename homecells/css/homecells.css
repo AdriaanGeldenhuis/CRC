@@ -88,7 +88,7 @@ body::before {
 }
 
 .container {
-    max-width: 1200px;
+    max-width: 1080px;
     margin: 0 auto;
     padding: 0 1rem;
 }
@@ -105,7 +105,7 @@ body::before {
 }
 
 .nav-container {
-    max-width: 1200px;
+    max-width: 1080px;
     margin: 0 auto;
     padding: 0 1rem;
     display: flex;

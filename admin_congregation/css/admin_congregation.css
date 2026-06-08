@@ -212,6 +212,7 @@ body {
     flex: 1;
     margin-left: var(--sidebar-width);
     padding: 2rem;
+    max-width: calc(1080px + var(--sidebar-width));
     position: relative;
 }
 

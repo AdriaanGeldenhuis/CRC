@@ -248,6 +248,8 @@ body::before {
 
 .admin-content {
     padding: 1rem;
+    max-width: 1080px;
+    margin: 0 auto;
 }
 
 /* ==================== Stats Grid ==================== */

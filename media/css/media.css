@@ -80,13 +80,13 @@ body::before {
 }
 
 .container {
-  max-width: 1200px;
+  max-width: 1080px;
   margin: 0 auto;
   padding: 0 1rem;
 }
 
 .container-wide {
-  max-width: 1400px;
+  max-width: 1080px;
   margin: 0 auto;
   padding: 0 1rem;
 }
