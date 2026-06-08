@@ -98,7 +98,7 @@ $contentTypes = [
             <header class="admin-header">
                 <h1>Content</h1>
                 <div class="header-actions">
-                    <button onclick="openModal('add-content-modal')" class="btn btn-primary">
+                    <button onclick="openAddContent()" class="btn btn-primary">
                         + Add Content
                     </button>
                 </div>

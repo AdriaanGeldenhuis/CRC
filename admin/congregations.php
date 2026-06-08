@@ -87,7 +87,7 @@ $totalPages = ceil($totalCount / $perPage);
             <header class="admin-header">
                 <h1>Congregations</h1>
                 <div class="header-actions">
-                    <button onclick="openModal('add-congregation-modal')" class="btn btn-primary">
+                    <button onclick="openAddCongregation()" class="btn btn-primary">
                         + Add Congregation
                     </button>
                 </div>

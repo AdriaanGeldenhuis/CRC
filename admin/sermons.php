@@ -86,7 +86,7 @@ try {
             <header class="admin-header">
                 <h1>Sermons</h1>
                 <div class="header-actions">
-                    <button onclick="openModal('add-sermon-modal')" class="btn btn-primary">
+                    <button onclick="openAddSermon()" class="btn btn-primary">
                         + Add Sermon
                     </button>
                 </div>
@@ -180,7 +180,15 @@ try {
                 </div>
                 <div class="form-group">
                     <label>Speaker</label>
-                    <input type="text" name="speaker" class="form-input">
+                    <input type="text" name="speaker" required class="form-input">
+                </div>
+                <div class="form-group">
+                    <label>Date</label>
+                    <input type="date" name="sermon_date" required class="form-input">
+                </div>
+                <div class="form-group">
+                    <label>Category</label>
+                    <input type="text" name="category" class="form-input" placeholder="e.g. Faith, Prayer, Hope">
                 </div>
                 <div class="form-group">
                     <label>Description</label>

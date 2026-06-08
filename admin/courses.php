@@ -84,7 +84,7 @@ try {
             <header class="admin-header">
                 <h1>Courses</h1>
                 <div class="header-actions">
-                    <button onclick="openModal('add-course-modal')" class="btn btn-primary">
+                    <button onclick="openAddCourse()" class="btn btn-primary">
                         + Add Course
                     </button>
                 </div>

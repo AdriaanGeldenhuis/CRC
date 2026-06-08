@@ -14,7 +14,7 @@ $pageTitle = "Settings - Admin";
 // Get current settings
 $settings = [];
 try {
-    $settingsRows = Database::fetchAll("SELECT setting_key, setting_value FROM system_settings") ?: [];
+    $settingsRows = Database::fetchAll("SELECT setting_key, setting_value FROM settings") ?: [];
     foreach ($settingsRows as $row) {
         $settings[$row['setting_key']] = $row['setting_value'];
     }
