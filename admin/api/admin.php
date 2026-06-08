@@ -139,17 +139,15 @@ switch ($action) {
             Response::error('Name, city, and country are required');
         }
 
-        // Generate code if not provided
-        if (!$code) {
-            $code = strtoupper(substr(preg_replace('/[^a-zA-Z]/', '', $city), 0, 3)) . '-' . rand(100, 999);
-        }
+        // Use the provided code as a slug hint, otherwise derive it from the name
+        $slug = adminUniqueSlug('congregations', $code ?: $name);
 
         $congId = Database::insert('congregations', [
             'name' => $name,
+            'slug' => $slug,
             'city' => $city,
             'country' => $country,
             'address' => $address,
-            'code' => $code,
             'status' => $status,
             'created_by' => $user['id'],
             'created_at' => date('Y-m-d H:i:s')
@@ -189,7 +187,6 @@ switch ($action) {
             'city' => $city,
             'country' => $country,
             'address' => $address,
-            'code' => $code,
             'status' => $status,
             'updated_at' => date('Y-m-d H:i:s')
         ], 'id = ?', [$congId]);
@@ -248,17 +245,17 @@ switch ($action) {
 
             // Check if setting exists
             $existing = Database::fetchColumn(
-                "SELECT id FROM system_settings WHERE setting_key = ?",
+                "SELECT id FROM settings WHERE setting_key = ?",
                 [$key]
             );
 
             if ($existing) {
-                Database::update('system_settings', [
+                Database::update('settings', [
                     'setting_value' => $value,
                     'updated_at' => date('Y-m-d H:i:s')
                 ], 'setting_key = ?', [$key]);
             } else {
-                Database::insert('system_settings', [
+                Database::insert('settings', [
                     'setting_key' => $key,
                     'setting_value' => $value,
                     'created_at' => date('Y-m-d H:i:s'),
@@ -321,6 +318,8 @@ switch ($action) {
 
         $courseId = Database::insert('courses', [
             'title' => $title,
+            'slug' => adminUniqueSlug('courses', $title, $congId),
+            'scope' => $congId ? 'congregation' : 'global',
             'description' => $description,
             'category' => $category,
             'difficulty' => $difficulty,
@@ -333,6 +332,48 @@ switch ($action) {
         logActivity($user['id'], 'Created course: ' . $title);
 
         Response::success(['course_id' => $courseId], 'Course created successfully');
+        break;
+
+    case 'get_course':
+        $courseId = (int)input('course_id');
+        $course = Database::fetchOne("SELECT * FROM courses WHERE id = ?", [$courseId]);
+        if (!$course) {
+            Response::error('Course not found');
+        }
+        Response::success(['course' => $course]);
+        break;
+
+    case 'update_course':
+        $courseId = (int)input('course_id');
+        $title = trim(input('title'));
+        $description = trim(input('description'));
+        $category = trim(input('category'));
+        $difficulty = input('difficulty', 'beginner');
+
+        if (!$courseId || !$title) {
+            Response::error('Title is required');
+        }
+
+        Database::update('courses', [
+            'title' => $title,
+            'description' => $description,
+            'category' => $category,
+            'difficulty' => $difficulty
+        ], 'id = ?', [$courseId]);
+
+        logActivity($user['id'], 'Updated course: ' . $title);
+
+        Response::success([], 'Course updated successfully');
+        break;
+
+    case 'delete_course':
+        $courseId = (int)input('course_id');
+        if (!$courseId) {
+            Response::error('Course ID required');
+        }
+        Database::delete('courses', 'id = ?', [$courseId]);
+        logActivity($user['id'], 'Deleted course ID: ' . $courseId);
+        Response::success([], 'Course deleted');
         break;
 
     // Dashboard stats
@@ -352,6 +393,30 @@ switch ($action) {
 
     default:
         Response::error('Invalid action');
+}
+
+/**
+ * Build a unique slug for a table (global, or per-congregation for courses).
+ */
+function adminUniqueSlug(string $table, string $base, ?int $congId = null): string {
+    $base = trim(preg_replace('/[^a-z0-9]+/', '-', strtolower($base)), '-');
+    if ($base === '') {
+        $base = 'item';
+    }
+    $slug = $base;
+    $n = 1;
+    while (true) {
+        if ($congId !== null) {
+            $exists = Database::fetchColumn("SELECT COUNT(*) FROM `$table` WHERE slug = ? AND congregation_id = ?", [$slug, $congId]);
+        } else {
+            $exists = Database::fetchColumn("SELECT COUNT(*) FROM `$table` WHERE slug = ?", [$slug]);
+        }
+        if (!$exists) {
+            break;
+        }
+        $slug = $base . '-' . (++$n);
+    }
+    return $slug;
 }
 
 function logActivity($userId, $action) {

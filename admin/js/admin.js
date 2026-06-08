@@ -4,6 +4,10 @@
 
 const CSRF_TOKEN = document.querySelector('meta[name="csrf-token"]')?.content;
 
+// Edit state (reused add/edit modals)
+let editingCongregationId = null;
+let editingCourseId = null;
+
 // Modal functions
 function openModal(modalId) {
     document.getElementById(modalId)?.classList.add('open');
@@ -171,7 +175,12 @@ if (addCongregationForm) {
         e.preventDefault();
 
         const formData = new FormData(addCongregationForm);
-        formData.append('action', 'add_congregation');
+        if (editingCongregationId) {
+            formData.append('action', 'update_congregation');
+            formData.append('congregation_id', editingCongregationId);
+        } else {
+            formData.append('action', 'add_congregation');
+        }
 
         try {
             const response = await fetch('/admin/api/admin.php', {
@@ -295,4 +304,98 @@ function copyCode(code) {
 // Mobile sidebar toggle
 function toggleSidebar() {
     document.querySelector('.admin-sidebar')?.classList.toggle('open');
+}
+
+// ===== Congregations & Courses: Add/Edit (reuse the add modal) =====
+function setModalTitle(modalId, text) {
+    const h = document.querySelector('#' + modalId + ' .modal-header h2');
+    if (h) h.textContent = text;
+}
+function fillForm(form, data, fields) {
+    fields.forEach(m => {
+        const el = form.querySelector('[name="' + m.f + '"]');
+        if (el) el.value = data[m.k] ?? '';
+    });
+}
+async function adminPost(action, params) {
+    const fd = new FormData();
+    fd.append('action', action);
+    Object.keys(params || {}).forEach(k => fd.append(k, params[k]));
+    const res = await fetch('/admin/api/admin.php', { method: 'POST', body: fd, headers: { 'X-CSRF-Token': CSRF_TOKEN } });
+    return res.json();
+}
+
+// --- Congregations ---
+function openAddCongregation() {
+    editingCongregationId = null;
+    document.getElementById('add-congregation-form')?.reset();
+    setModalTitle('add-congregation-modal', 'Add Congregation');
+    openModal('add-congregation-modal');
+}
+async function editCongregation(id) {
+    try {
+        const data = await adminPost('get_congregation', { congregation_id: id });
+        if (!data.ok) { alert(data.error || 'Failed to load congregation'); return; }
+        const c = data.congregation;
+        const form = document.getElementById('add-congregation-form');
+        form.reset();
+        editingCongregationId = c.id;
+        fillForm(form, c, [
+            { f: 'name', k: 'name' }, { f: 'city', k: 'city' }, { f: 'country', k: 'country' },
+            { f: 'address', k: 'address' }, { f: 'code', k: 'slug' }, { f: 'status', k: 'status' }
+        ]);
+        setModalTitle('add-congregation-modal', 'Edit Congregation');
+        openModal('add-congregation-modal');
+    } catch (e) { console.error(e); alert('Failed to load congregation'); }
+}
+
+// --- Courses ---
+function openAddCourse() {
+    editingCourseId = null;
+    document.getElementById('add-course-form')?.reset();
+    setModalTitle('add-course-modal', 'Add Course');
+    openModal('add-course-modal');
+}
+const addCourseForm = document.getElementById('add-course-form');
+if (addCourseForm) {
+    addCourseForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const formData = new FormData(addCourseForm);
+        if (editingCourseId) {
+            formData.append('action', 'update_course');
+            formData.append('course_id', editingCourseId);
+        } else {
+            formData.append('action', 'add_course');
+        }
+        try {
+            const res = await fetch('/admin/api/admin.php', { method: 'POST', body: formData, headers: { 'X-CSRF-Token': CSRF_TOKEN } });
+            const data = await res.json();
+            if (data.ok) { window.location.reload(); }
+            else { alert(data.error || 'Failed to save course'); }
+        } catch (err) { console.error(err); alert('Failed to save course'); }
+    });
+}
+async function editCourse(id) {
+    try {
+        const data = await adminPost('get_course', { course_id: id });
+        if (!data.ok) { alert(data.error || 'Failed to load course'); return; }
+        const c = data.course;
+        const form = document.getElementById('add-course-form');
+        form.reset();
+        editingCourseId = c.id;
+        fillForm(form, c, [
+            { f: 'title', k: 'title' }, { f: 'category', k: 'category' },
+            { f: 'description', k: 'description' }, { f: 'thumbnail', k: 'thumbnail' }
+        ]);
+        setModalTitle('add-course-modal', 'Edit Course');
+        openModal('add-course-modal');
+    } catch (e) { console.error(e); alert('Failed to load course'); }
+}
+async function deleteCourse(id) {
+    if (!confirm('Are you sure you want to delete this course?')) return;
+    try {
+        const data = await adminPost('delete_course', { course_id: id });
+        if (data.ok) { window.location.reload(); }
+        else { alert(data.error || 'Failed to delete course'); }
+    } catch (e) { console.error(e); alert('Failed to delete course'); }
 }
