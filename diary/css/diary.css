@@ -81,7 +81,7 @@ body::before {
 }
 
 .container {
-  max-width: 1200px;
+  max-width: 1080px;
   margin: 0 auto;
   padding: 0 1rem;
 }
@@ -798,7 +798,7 @@ body::before {
 
 /* ===== ENTRY PAGE ===== */
 .entry-page {
-  max-width: 800px;
+  max-width: 1080px;
   margin: 0 auto;
 }
 
@@ -1873,5 +1873,76 @@ body::before {
     background: #fff !important;
     border-color: #ddd !important;
     box-shadow: none !important;
+  }
+}
+
+/* =====================================================================
+   HOME DESIGN ALIGNMENT — 3D POP
+   Prayer/stat cards lift with an accent glow + top sheen; filter pills
+   use the home accent gradient; primary buttons pop.
+   ===================================================================== */
+.prayer-card,
+.stat-card,
+.empty-state {
+  position: relative;
+  transition: transform 0.35s cubic-bezier(0.2, 0.8, 0.25, 1.2), box-shadow 0.35s ease, border-color 0.35s ease;
+}
+
+.prayer-card::after,
+.stat-card::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.40), transparent);
+  z-index: 2;
+  pointer-events: none;
+}
+
+.prayer-card:hover,
+.stat-card:hover {
+  transform: translateY(-4px);
+  border-color: rgba(124, 58, 237, 0.40);
+  box-shadow: 0 26px 54px rgba(0, 0, 0, 0.50), 0 0 28px rgba(124, 58, 237, 0.16);
+}
+
+.filter-tab {
+  transition: transform 0.2s ease, background 0.2s ease, color 0.2s ease;
+}
+
+.filter-tab:hover {
+  transform: translateY(-1px);
+}
+
+.filter-tab.active {
+  color: #fff;
+  background: linear-gradient(135deg, rgba(124, 58, 237, 0.85), rgba(34, 211, 238, 0.75));
+  border-color: rgba(34, 211, 238, 0.30);
+  box-shadow: 0 8px 18px rgba(124, 58, 237, 0.28);
+}
+
+.btn-primary {
+  box-shadow: 0 10px 24px rgba(124, 58, 237, 0.35);
+  transition: transform 0.25s cubic-bezier(0.2, 0.8, 0.25, 1.4), box-shadow 0.25s ease;
+}
+
+.btn-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 16px 34px rgba(124, 58, 237, 0.45);
+}
+
+.btn-primary:active {
+  transform: translateY(0) scale(0.98);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .prayer-card,
+  .stat-card,
+  .empty-state,
+  .filter-tab,
+  .btn-primary {
+    transition: none !important;
   }
 }

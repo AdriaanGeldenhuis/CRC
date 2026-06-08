@@ -48,7 +48,7 @@ try {
     echo "Creating sample congregation... ";
     Database::query("
         INSERT INTO congregations (name, slug, description, city, province, join_mode, status, created_by, created_at, updated_at)
-        VALUES ('CRC Main', 'crc-main', 'Die hoof gemeente van CRC', 'Cape Town', 'Western Cape', 'open', 'active', ?, NOW(), NOW())
+        VALUES ('CRC Main', 'crc-main', 'The main congregation of CRC', 'Cape Town', 'Western Cape', 'open', 'active', ?, NOW(), NOW())
         ON DUPLICATE KEY UPDATE name = name
     ", [$adminId]);
     echo "✓\n";
@@ -91,7 +91,7 @@ try {
     echo "Creating sample morning watch session... ";
     Database::query("
         INSERT INTO morning_sessions (scope, session_date, title, theme, scripture_ref, scripture_text, version_code, devotional, prayer_points, created_by, published_at, created_at, updated_at)
-        VALUES ('global', CURDATE(), 'Begin die Dag met God', 'Vertroue op God', 'Psalm 23:1-6', 'Die HERE is my herder; niks sal my ontbreek nie.', 'AFR53', 'Vandag se teks herinner ons dat God ons Herder is. Hy lei ons, verskaf aan ons behoeftes, en beskerm ons. Laat ons vandag in daardie vertroue leef.', '[\"Dank die Here vir Sy voorsiening\", \"Bid vir leiding in vandag se besluite\", \"Bid vir dié wat sukkel met vertroue\"]', ?, NOW(), NOW(), NOW())
+        VALUES ('global', CURDATE(), 'Begin the Day with God', 'Trust in God', 'Psalm 23:1-6', 'The LORD is my shepherd; I shall not want.', 'KJV', 'This passage reminds us that God is our Shepherd. He leads us, provides for our needs, and protects us. Let us live today in that trust.', '[\"Thank the Lord for His provision\", \"Pray for guidance in the decisions we make today\", \"Pray for those who struggle to trust\"]', ?, NOW(), NOW(), NOW())
         ON DUPLICATE KEY UPDATE title = title
     ", [$adminId]);
     echo "✓\n";
@@ -100,7 +100,7 @@ try {
     echo "Creating sample homecell... ";
     Database::query("
         INSERT INTO homecells (congregation_id, name, description, leader_user_id, meeting_day, meeting_time, meeting_frequency, location, status, created_at, updated_at)
-        VALUES (?, 'Gardens Homecell', 'Homecell vir die Gardens area', ?, 'wednesday', '19:00:00', 'weekly', '123 Gardens Road, Cape Town', 'active', NOW(), NOW())
+        VALUES (?, 'Gardens Homecell', 'Homecell for the Gardens area', ?, 'wednesday', '19:00:00', 'weekly', '123 Gardens Road, Cape Town', 'active', NOW(), NOW())
         ON DUPLICATE KEY UPDATE name = name
     ", [$congId, $adminId]);
     echo "✓\n";

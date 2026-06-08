@@ -80,7 +80,6 @@ try {
 
     if (!empty($tags)) {
         syncEntryTags($entryId, $userId, $tags);
-        }
     }
 
     echo json_encode([

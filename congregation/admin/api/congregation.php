@@ -19,7 +19,7 @@ if (!$primaryCong) {
 
 // Check if user is congregation admin
 $membership = Database::fetchOne(
-    "SELECT * FROM congregation_members WHERE user_id = ? AND congregation_id = ? AND status = 'active'",
+    "SELECT * FROM user_congregations WHERE user_id = ? AND congregation_id = ? AND status = 'active'",
     [$user['id'], $primaryCong['id']]
 );
 
@@ -44,7 +44,7 @@ switch ($action) {
         $existingUser = Database::fetchOne("SELECT id FROM users WHERE email = ?", [$email]);
         if ($existingUser) {
             $existingMember = Database::fetchOne(
-                "SELECT id FROM congregation_members WHERE user_id = ? AND congregation_id = ?",
+                "SELECT id FROM user_congregations WHERE user_id = ? AND congregation_id = ?",
                 [$existingUser['id'], $primaryCong['id']]
             );
             if ($existingMember) {
@@ -90,7 +90,7 @@ switch ($action) {
 
         // Verify member belongs to this congregation
         $member = Database::fetchOne(
-            "SELECT * FROM congregation_members WHERE id = ? AND congregation_id = ?",
+            "SELECT * FROM user_congregations WHERE id = ? AND congregation_id = ?",
             [$memberId, $primaryCong['id']]
         );
 
@@ -103,7 +103,7 @@ switch ($action) {
             Response::error('Cannot change your own role');
         }
 
-        Database::update('congregation_members', [
+        Database::update('user_congregations', [
             'role' => $newRole,
             'updated_at' => date('Y-m-d H:i:s')
         ], 'id = ?', [$memberId]);
@@ -115,7 +115,7 @@ switch ($action) {
         $memberId = (int)input('member_id');
 
         $member = Database::fetchOne(
-            "SELECT * FROM congregation_members WHERE id = ? AND congregation_id = ?",
+            "SELECT * FROM user_congregations WHERE id = ? AND congregation_id = ?",
             [$memberId, $primaryCong['id']]
         );
 
@@ -127,7 +127,7 @@ switch ($action) {
             Response::error('Cannot remove yourself');
         }
 
-        Database::update('congregation_members', [
+        Database::update('user_congregations', [
             'status' => 'removed',
             'updated_at' => date('Y-m-d H:i:s')
         ], 'id = ?', [$memberId]);
@@ -139,7 +139,7 @@ switch ($action) {
         $memberId = (int)input('member_id');
 
         $member = Database::fetchOne(
-            "SELECT * FROM congregation_members WHERE id = ? AND congregation_id = ? AND status = 'pending'",
+            "SELECT * FROM user_congregations WHERE id = ? AND congregation_id = ? AND status = 'pending'",
             [$memberId, $primaryCong['id']]
         );
 
@@ -147,7 +147,7 @@ switch ($action) {
             Response::error('Pending member not found');
         }
 
-        Database::update('congregation_members', [
+        Database::update('user_congregations', [
             'status' => 'active',
             'approved_by' => $user['id'],
             'approved_at' => date('Y-m-d H:i:s'),
@@ -254,7 +254,7 @@ switch ($action) {
 
         // Notify members
         $memberIds = Database::fetchAll(
-            "SELECT user_id FROM congregation_members WHERE congregation_id = ? AND status = 'active' AND user_id != ?",
+            "SELECT user_id FROM user_congregations WHERE congregation_id = ? AND status = 'active' AND user_id != ?",
             [$primaryCong['id'], $user['id']]
         );
 
@@ -342,11 +342,11 @@ switch ($action) {
     case 'get_stats':
         $stats = [
             'members' => Database::fetchColumn(
-                "SELECT COUNT(*) FROM congregation_members WHERE congregation_id = ? AND status = 'active'",
+                "SELECT COUNT(*) FROM user_congregations WHERE congregation_id = ? AND status = 'active'",
                 [$primaryCong['id']]
             ),
             'pending' => Database::fetchColumn(
-                "SELECT COUNT(*) FROM congregation_members WHERE congregation_id = ? AND status = 'pending'",
+                "SELECT COUNT(*) FROM user_congregations WHERE congregation_id = ? AND status = 'pending'",
                 [$primaryCong['id']]
             ),
             'events' => Database::fetchColumn(

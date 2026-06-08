@@ -88,7 +88,7 @@ body::before {
 }
 
 .container {
-    max-width: 1200px;
+    max-width: 1080px;
     margin: 0 auto;
     padding: 0 1rem;
 }
@@ -864,7 +864,7 @@ body::before {
 }
 
 .lesson-content-wrapper {
-    max-width: 800px;
+    max-width: 1080px;
     margin: 0 auto;
     background: var(--bg-glass);
     backdrop-filter: blur(20px);
@@ -1327,4 +1327,56 @@ body::before {
         -webkit-backdrop-filter: none;
         border: 1px solid #ddd;
     }
+}
+
+/* =====================================================================
+   HOME DESIGN ALIGNMENT — 3D POP
+   Cards lift with an accent glow + top sheen; primary buttons pop.
+   ===================================================================== */
+.course-card,
+.enrolled-card {
+  position: relative;
+  transition: transform 0.35s cubic-bezier(0.2, 0.8, 0.25, 1.2), box-shadow 0.35s ease, border-color 0.35s ease;
+}
+
+.course-card::after,
+.enrolled-card::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.40), transparent);
+  z-index: 2;
+  pointer-events: none;
+}
+
+.course-card:hover,
+.enrolled-card:hover {
+  transform: translateY(-4px);
+  border-color: rgba(124, 58, 237, 0.40);
+  box-shadow: 0 26px 54px rgba(0, 0, 0, 0.50), 0 0 28px rgba(124, 58, 237, 0.16);
+}
+
+.btn-primary {
+  box-shadow: 0 10px 24px rgba(124, 58, 237, 0.35);
+  transition: transform 0.25s cubic-bezier(0.2, 0.8, 0.25, 1.4), box-shadow 0.25s ease;
+}
+
+.btn-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 16px 34px rgba(124, 58, 237, 0.45);
+}
+
+.btn-primary:active {
+  transform: translateY(0) scale(0.98);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .course-card,
+  .enrolled-card,
+  .btn-primary {
+    transition: none !important;
+  }
 }

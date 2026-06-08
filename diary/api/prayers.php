@@ -37,7 +37,7 @@ switch ($action) {
 
         $data = [
             'title' => $title,
-            'request' => $request,
+            'description' => $request,
             'category' => $category,
             'scripture_ref' => $scriptureRef ?: null,
             'updated_at' => date('Y-m-d H:i:s')
@@ -102,7 +102,7 @@ switch ($action) {
 
         Database::update('prayer_requests', [
             'answered_at' => date('Y-m-d H:i:s'),
-            'testimony' => $testimony ?: null,
+            'answered_notes' => $testimony ?: null,
             'updated_at' => date('Y-m-d H:i:s')
         ], 'id = ?', [$prayerId]);
 

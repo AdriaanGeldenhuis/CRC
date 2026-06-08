@@ -59,7 +59,6 @@ define('DIARY_AI_MAX_TOKENS', 1000);
 define('DIARY_AI_TEMPERATURE', 0.7);
 define('DIARY_AI_TIMEOUT', 30);
 define('DIARY_AI_ENHANCE_PROMPT_EN', 'You are a helpful writing assistant. Enhance the following diary entry to make it more expressive, clear, and engaging while maintaining the original meaning and personal voice. Keep it in the same language as the original. Only return the enhanced text, nothing else.');
-define('DIARY_AI_ENHANCE_PROMPT_AF', 'Jy is \'n hulpvaardige skryfassistent. Verbeter die volgende dagboekinskrywing om dit meer ekspressief, duidelik en boeiend te maak terwyl jy die oorspronklike betekenis en persoonlike stem behou. Hou dit in dieselfde taal as die oorspronklike. Gee net die verbeterde teks terug, niks anders nie.');
 
 // AI SmartBible Settings
 define('SMARTBIBLE_OPENAI_API_KEY', getenv('SMARTBIBLE_OPENAI_API_KEY') ?: '');

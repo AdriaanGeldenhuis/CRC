@@ -9,7 +9,16 @@ require_once __DIR__ . '/../core/bootstrap.php';
 Auth::requireAuth();
 
 $user = Auth::user();
+$primaryCong = Auth::primaryCongregation();
 $pageTitle = 'Prayer Journal - CRC';
+
+$unreadNotifications = 0;
+try {
+    $unreadNotifications = Database::fetchColumn(
+        "SELECT COUNT(*) FROM notifications WHERE user_id = ? AND read_at IS NULL",
+        [$user['id']]
+    ) ?: 0;
+} catch (Exception $e) {}
 
 // Filters
 $status = input('status', 'active');
@@ -32,26 +41,35 @@ if ($category) {
 
 $whereClause = implode(' AND ', $where);
 
-$prayers = Database::fetchAll(
-    "SELECT * FROM prayer_requests
-     WHERE $whereClause
-     ORDER BY is_pinned DESC, created_at DESC",
-    $params
-);
+// Defaults so the page never crashes on a schema/availability issue
+$prayers = [];
+$totalPrayers = 0;
+$answeredCount = 0;
+$activeCount = 0;
 
-// Stats
-$totalPrayers = Database::fetchColumn(
-    "SELECT COUNT(*) FROM prayer_requests WHERE user_id = ?",
-    [$user['id']]
-);
-$answeredCount = Database::fetchColumn(
-    "SELECT COUNT(*) FROM prayer_requests WHERE user_id = ? AND answered_at IS NOT NULL",
-    [$user['id']]
-);
-$activeCount = Database::fetchColumn(
-    "SELECT COUNT(*) FROM prayer_requests WHERE user_id = ? AND answered_at IS NULL",
-    [$user['id']]
-);
+try {
+    $prayers = Database::fetchAll(
+        "SELECT * FROM prayer_requests
+         WHERE $whereClause
+         ORDER BY created_at DESC",
+        $params
+    ) ?: [];
+
+    $totalPrayers = (int) Database::fetchColumn(
+        "SELECT COUNT(*) FROM prayer_requests WHERE user_id = ?",
+        [$user['id']]
+    );
+    $answeredCount = (int) Database::fetchColumn(
+        "SELECT COUNT(*) FROM prayer_requests WHERE user_id = ? AND answered_at IS NOT NULL",
+        [$user['id']]
+    );
+    $activeCount = (int) Database::fetchColumn(
+        "SELECT COUNT(*) FROM prayer_requests WHERE user_id = ? AND answered_at IS NULL",
+        [$user['id']]
+    );
+} catch (Exception $e) {
+    // Leave defaults; render an empty state instead of a 500 error
+}
 
 $categories = ['personal', 'family', 'health', 'work', 'relationships', 'spiritual', 'financial', 'world', 'other'];
 
@@ -71,22 +89,170 @@ function getCategoryIcon($cat) {
 }
 ?>
 <!DOCTYPE html>
-<html lang="af">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
+    <link rel="icon" href="/favicon.ico" sizes="any">
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+    <link rel="manifest" href="/site.webmanifest">
+    <meta name="theme-color" content="#7C3AED">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><?= e($pageTitle) ?></title>
     <?= CSRF::meta() ?>
-    <link rel="stylesheet" href="/diary/css/diary.css">
+    <link rel="stylesheet" href="/home/css/home.css?v=<?= filemtime(__DIR__ . '/../home/css/home.css') ?>">
+    <link rel="stylesheet" href="/gospel_media/css/gospel_media.css?v=<?= filemtime(__DIR__ . '/../gospel_media/css/gospel_media.css') ?>">
+    <link rel="stylesheet" href="/diary/css/diary.css?v=<?= filemtime(__DIR__ . '/css/diary.css') ?>">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Parisienne&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script>
+        (function() {
+            const saved = localStorage.getItem('theme') || 'dark';
+            document.documentElement.setAttribute('data-theme', saved);
+        })();
+    </script>
 </head>
-<body>
-    <?php include __DIR__ . '/../home/partials/navbar.php'; ?>
+<body data-theme="dark">
+    <!-- Top Bar / Navigation -->
+    <div class="topbar">
+        <div class="inner">
+            <a href="/home/" class="brand">
+                <div class="logo" aria-hidden="true"></div>
+                <div>
+                    <h1>CRC App</h1>
+                    <span><?= e($primaryCong['name'] ?? 'My Diary') ?></span>
+                </div>
+            </a>
 
-    <main class="main-content">
-        <div class="container">
+            <div class="actions">
+                <div class="chip" title="Status">
+                    <span class="dot"></span>
+                    <?= e(explode(' ', $user['name'])[0]) ?>
+                </div>
+
+                <button class="theme-toggle" onclick="toggleTheme()" title="Toggle theme" data-ripple>
+                    <svg class="sun-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M12 3v2m0 14v2M3 12h2m14 0h2M5.2 5.2l1.4 1.4m10.8 10.8l1.4 1.4M18.8 5.2l-1.4 1.4M6.6 17.4l-1.4 1.4"></path>
+                        <circle cx="12" cy="12" r="5"></circle>
+                    </svg>
+                    <svg class="moon-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+                    </svg>
+                </button>
+
+                <a href="/notifications/" class="nav-icon-btn" title="Notifications" data-ripple>
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+                        <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+                    </svg>
+                    <?php if ($unreadNotifications > 0): ?>
+                        <span class="notification-badge"><?= $unreadNotifications > 9 ? '9+' : $unreadNotifications ?></span>
+                    <?php endif; ?>
+                </a>
+
+                <div class="more-menu">
+                    <button class="more-menu-btn" onclick="toggleMoreMenu()" title="More" data-ripple>
+                        <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor">
+                            <circle cx="12" cy="5" r="2"></circle>
+                            <circle cx="12" cy="12" r="2"></circle>
+                            <circle cx="12" cy="19" r="2"></circle>
+                        </svg>
+                    </button>
+                    <div class="more-dropdown" id="moreDropdown">
+                        <a href="/home/" class="more-dropdown-item">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
+                            Home
+                        </a>
+                        <a href="/gospel_media/" class="more-dropdown-item">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 11a9 9 0 0 1 9 9"></path><path d="M4 4a16 16 0 0 1 16 16"></path><circle cx="5" cy="19" r="1"></circle></svg>
+                            Feed
+                        </a>
+                        <a href="/bible/" class="more-dropdown-item">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path><path d="M12 6v7"></path><path d="M8 9h8"></path></svg>
+                            Bible
+                        </a>
+                        <a href="/ai_smartbible/" class="more-dropdown-item">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path><circle cx="19" cy="5" r="3" fill="currentColor"></circle></svg>
+                            AI SmartBible
+                        </a>
+                        <a href="/morning_watch/" class="more-dropdown-item">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line></svg>
+                            Morning Study
+                        </a>
+                        <a href="/calendar/" class="more-dropdown-item">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+                            Calendar
+                        </a>
+                        <a href="/media/" class="more-dropdown-item">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="23 7 16 12 23 17 23 7"></polygon><rect x="1" y="5" width="15" height="14" rx="2" ry="2"></rect></svg>
+                            Media
+                        </a>
+                        <div class="more-dropdown-divider"></div>
+                        <a href="/diary/" class="more-dropdown-item">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path></svg>
+                            My Diary
+                        </a>
+                        <a href="/homecells/" class="more-dropdown-item">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+                            Homecells
+                        </a>
+                        <a href="/learning/" class="more-dropdown-item">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 10v6M2 10l10-5 10 5-10 5z"></path><path d="M6 12v5c3 3 9 3 12 0v-5"></path></svg>
+                            Courses
+                        </a>
+                    </div>
+                </div>
+
+                <div class="user-menu">
+                    <button class="user-menu-btn" onclick="toggleUserMenu()">
+                        <?php if ($user['avatar']): ?>
+                            <img src="<?= e($user['avatar']) ?>" alt="" class="user-avatar" onerror="this.style.display='none';this.nextElementSibling.style.display='flex';">
+                            <div class="user-avatar-placeholder" style="display:none;"><?= strtoupper(substr($user['name'], 0, 1)) ?></div>
+                        <?php else: ?>
+                            <div class="user-avatar-placeholder"><?= strtoupper(substr($user['name'], 0, 1)) ?></div>
+                        <?php endif; ?>
+                    </button>
+                    <div class="user-dropdown" id="userDropdown">
+                        <div class="user-dropdown-header">
+                            <strong><?= e($user['name']) ?></strong>
+                            <span><?= e($primaryCong['name'] ?? '') ?></span>
+                        </div>
+                        <div class="user-dropdown-divider"></div>
+                        <a href="/profile/" class="user-dropdown-item">Profile</a>
+                        <?php if ($primaryCong && Auth::isCongregationAdmin($primaryCong['id'])): ?>
+                            <div class="user-dropdown-divider"></div>
+                            <a href="/admin_congregation/" class="user-dropdown-item">Manage Congregation</a>
+                        <?php endif; ?>
+                        <?php if (Auth::isAdmin()): ?>
+                            <a href="/admin/" class="user-dropdown-item">Admin Panel</a>
+                        <?php endif; ?>
+                        <div class="user-dropdown-divider"></div>
+                        <a href="/auth/logout.php" class="user-dropdown-item logout">Logout</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Diary Tabs -->
+    <nav class="feed-tabs">
+        <a href="/diary/" class="feed-tab">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
+                <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
+            </svg>
+            <span>Entries</span>
+        </a>
+        <a href="/diary/prayers.php" class="feed-tab active">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path>
+            </svg>
+            <span>Prayers</span>
+        </a>
+    </nav>
+
+    <main class="feed-container">
             <!-- Header -->
             <div class="diary-header">
                 <div class="diary-title">
@@ -211,21 +377,13 @@ function getCategoryIcon($cat) {
                     </div>
                 <?php else: ?>
                     <?php foreach ($prayers as $prayer): ?>
-                        <div class="prayer-card <?= $prayer['answered_at'] ? 'answered' : '' ?> <?= $prayer['is_pinned'] ? 'pinned' : '' ?>">
+                        <div class="prayer-card <?= $prayer['answered_at'] ? 'answered' : '' ?>">
                             <div class="prayer-header">
                                 <span class="prayer-category">
                                     <?= getCategoryIcon($prayer['category'] ?? 'personal') ?>
                                     <?= ucfirst($prayer['category'] ?? 'personal') ?>
                                 </span>
                                 <div class="prayer-badges">
-                                    <?php if ($prayer['is_pinned']): ?>
-                                        <span class="prayer-badge pinned">
-                                            <svg viewBox="0 0 24 24" fill="currentColor" stroke="none" width="14" height="14">
-                                                <path d="M16 2L18 4L16.5 5.5L19 8L21 6L22 7L17 12L15.5 10.5L12 14V17L10 15L6 19L5 18L9 14L7 12H10L13.5 8.5L12 7L17 2L18 3L16 5L18.5 7.5L20 6L19 5L16 2Z"></path>
-                                            </svg>
-                                            Pinned
-                                        </span>
-                                    <?php endif; ?>
                                     <?php if ($prayer['answered_at']): ?>
                                         <span class="prayer-badge answered">
                                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
@@ -238,7 +396,7 @@ function getCategoryIcon($cat) {
                             </div>
 
                             <h3 class="prayer-title"><?= e($prayer['title']) ?></h3>
-                            <p class="prayer-content"><?= nl2br(e(truncate($prayer['request'], 200))) ?></p>
+                            <p class="prayer-content"><?= nl2br(e(truncate($prayer['description'] ?? '', 200))) ?></p>
 
                             <?php if (!empty($prayer['scripture_ref'])): ?>
                                 <p class="prayer-scripture">
@@ -249,7 +407,7 @@ function getCategoryIcon($cat) {
                                 </p>
                             <?php endif; ?>
 
-                            <?php if ($prayer['answered_at'] && $prayer['testimony']): ?>
+                            <?php if ($prayer['answered_at'] && !empty($prayer['answered_notes'])): ?>
                                 <div class="prayer-testimony">
                                     <div class="testimony-header">
                                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
@@ -259,7 +417,7 @@ function getCategoryIcon($cat) {
                                         <strong>Testimony</strong>
                                         <span class="answered-date">Answered <?= date('M j, Y', strtotime($prayer['answered_at'])) ?></span>
                                     </div>
-                                    <p><?= nl2br(e($prayer['testimony'])) ?></p>
+                                    <p><?= nl2br(e($prayer['answered_notes'] ?? '')) ?></p>
                                 </div>
                             <?php endif; ?>
 
@@ -278,11 +436,6 @@ function getCategoryIcon($cat) {
                                         <button onclick="markAnswered(<?= $prayer['id'] ?>)" class="action-btn success" title="Mark as Answered">
                                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                                 <polyline points="20 6 9 17 4 12"></polyline>
-                                            </svg>
-                                        </button>
-                                        <button onclick="togglePin(<?= $prayer['id'] ?>)" class="action-btn <?= $prayer['is_pinned'] ? 'active' : '' ?>" title="<?= $prayer['is_pinned'] ? 'Unpin' : 'Pin' ?>">
-                                            <svg viewBox="0 0 24 24" fill="<?= $prayer['is_pinned'] ? 'currentColor' : 'none' ?>" stroke="currentColor" stroke-width="2">
-                                                <path d="M16 2L18 4L16.5 5.5L19 8L21 6L22 7L17 12L15.5 10.5L12 14V17L10 15L6 19L5 18L9 14L7 12H10L13.5 8.5L12 7L17 2L18 3L16 5L18.5 7.5L20 6L19 5L16 2Z"></path>
                                             </svg>
                                         </button>
                                     <?php endif; ?>
@@ -304,8 +457,35 @@ function getCategoryIcon($cat) {
                     <?php endforeach; ?>
                 <?php endif; ?>
             </div>
-        </div>
     </main>
+
+    <!-- Bottom Navigation -->
+    <nav class="bottom-nav">
+        <a href="/home/" class="bottom-nav-item">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
+            <span>Home</span>
+        </a>
+        <a href="/gospel_media/" class="bottom-nav-item">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 11a9 9 0 0 1 9 9"></path><path d="M4 4a16 16 0 0 1 16 16"></path><circle cx="5" cy="19" r="1"></circle></svg>
+            <span>Feed</span>
+        </a>
+        <a href="#" class="bottom-nav-item create-btn" onclick="openPrayerModal(); return false;" title="Add Prayer">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+        </a>
+        <a href="/diary/" class="bottom-nav-item active">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path></svg>
+            <span>Diary</span>
+        </a>
+        <a href="/profile/" class="bottom-nav-item">
+            <?php if ($user['avatar']): ?>
+                <img src="<?= e($user['avatar']) ?>" alt="" class="bottom-nav-avatar" onerror="this.style.display='none';this.nextElementSibling.style.display='flex';">
+                <div class="bottom-nav-avatar-placeholder" style="display:none;"><?= strtoupper(substr($user['name'], 0, 1)) ?></div>
+            <?php else: ?>
+                <div class="bottom-nav-avatar-placeholder"><?= strtoupper(substr($user['name'], 0, 1)) ?></div>
+            <?php endif; ?>
+            <span>Me</span>
+        </a>
+    </nav>
 
     <!-- Prayer Modal -->
     <div id="prayer-modal" class="modal">
@@ -422,6 +602,33 @@ function getCategoryIcon($cat) {
         </div>
     </div>
 
+    <script>
+        // Theme Toggle
+        function toggleTheme() {
+            const html = document.documentElement;
+            const current = html.getAttribute('data-theme') || 'dark';
+            const next = current === 'dark' ? 'light' : 'dark';
+            html.setAttribute('data-theme', next);
+            document.body.setAttribute('data-theme', next);
+            localStorage.setItem('theme', next);
+        }
+        function toggleMoreMenu() {
+            document.getElementById('moreDropdown').classList.toggle('show');
+            document.getElementById('userDropdown')?.classList.remove('show');
+        }
+        function toggleUserMenu() {
+            document.getElementById('userDropdown').classList.toggle('show');
+            document.getElementById('moreDropdown')?.classList.remove('show');
+        }
+        document.addEventListener('click', function(e) {
+            if (!e.target.closest('.user-menu')) {
+                document.getElementById('userDropdown')?.classList.remove('show');
+            }
+            if (!e.target.closest('.more-menu')) {
+                document.getElementById('moreDropdown')?.classList.remove('show');
+            }
+        });
+    </script>
     <script src="/diary/js/diary.js"></script>
 </body>
 </html>

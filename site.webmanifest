@@ -1,0 +1,15 @@
+{
+  "name": "CRC App",
+  "short_name": "CRC",
+  "description": "Christian Resource Center - Connect, Grow, and Serve together in your faith journey.",
+  "start_url": "/home/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#030014",
+  "theme_color": "#7C3AED",
+  "icons": [
+    { "src": "/icon-192.png", "type": "image/png", "sizes": "192x192", "purpose": "any maskable" },
+    { "src": "/icon-512.png", "type": "image/png", "sizes": "512x512", "purpose": "any maskable" },
+    { "src": "/favicon.svg", "type": "image/svg+xml", "sizes": "any" }
+  ]
+}

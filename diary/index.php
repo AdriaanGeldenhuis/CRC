@@ -204,9 +204,14 @@ try {
 } catch (Exception $e) {}
 ?>
 <!DOCTYPE html>
-<html lang="af">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
+    <link rel="icon" href="/favicon.ico" sizes="any">
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+    <link rel="manifest" href="/site.webmanifest">
+    <meta name="theme-color" content="#7C3AED">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title><?= e($pageTitle) ?></title>
     <?= CSRF::meta() ?>
@@ -652,6 +657,98 @@ try {
                 flex-direction: row;
                 gap: 0.5rem;
                 width: fit-content;
+            }
+        }
+
+        /* ===== HOME DESIGN ALIGNMENT — 3D POP ===== */
+        .stat-card,
+        .entry-card,
+        .empty-state {
+            box-shadow: var(--shadow);
+            transition: transform 0.35s cubic-bezier(0.2, 0.8, 0.25, 1.2), box-shadow 0.35s ease, border-color 0.35s ease;
+        }
+        .empty-state {
+            position: relative;
+            overflow: hidden;
+        }
+        .stat-card:hover,
+        .entry-card:hover {
+            transform: translateY(-4px);
+            border-color: rgba(124, 58, 237, 0.40);
+            box-shadow: 0 26px 54px rgba(0, 0, 0, 0.50), 0 0 28px rgba(124, 58, 237, 0.16);
+        }
+        /* glossy top sheen */
+        .entry-card::after,
+        .empty-state::after {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.40), transparent);
+            z-index: 2;
+            pointer-events: none;
+        }
+        /* gradient stat numbers (match home) */
+        .stat-value {
+            background: linear-gradient(135deg, #7C3AED, #22D3EE);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            filter: drop-shadow(0 2px 8px rgba(124, 58, 237, 0.35));
+        }
+        /* mood tabs: active = home accent gradient pill */
+        .mood-tab {
+            transition: transform 0.2s ease, background 0.2s ease, color 0.2s ease;
+        }
+        .mood-tab:hover {
+            transform: translateY(-1px);
+        }
+        .mood-tab.active {
+            color: #fff;
+            background: linear-gradient(135deg, rgba(124, 58, 237, 0.85), rgba(34, 211, 238, 0.75));
+            border-color: rgba(34, 211, 238, 0.30);
+            box-shadow: 0 8px 18px rgba(124, 58, 237, 0.28);
+        }
+        /* primary button pop */
+        .btn-primary {
+            transition: transform 0.25s cubic-bezier(0.2, 0.8, 0.25, 1.4), box-shadow 0.25s ease;
+        }
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 16px 34px rgba(124, 58, 237, 0.45);
+        }
+        .btn-primary:active {
+            transform: translateY(0) scale(0.98);
+        }
+        /* floating action button: glossy 3D */
+        .fab-btn {
+            overflow: visible;
+            box-shadow:
+                0 6px 0 rgba(124, 58, 237, 0.45),
+                0 16px 30px rgba(124, 58, 237, 0.45),
+                inset 0 2px 3px rgba(255, 255, 255, 0.50),
+                inset 0 -4px 8px rgba(0, 0, 0, 0.25);
+        }
+        .fab-btn::before {
+            content: "";
+            position: absolute;
+            inset: 0;
+            border-radius: inherit;
+            background: linear-gradient(157deg, rgba(255, 255, 255, 0.50), rgba(255, 255, 255, 0) 55%);
+            pointer-events: none;
+        }
+        .fab-btn svg {
+            position: relative;
+            z-index: 1;
+        }
+        .fab-btn:hover {
+            transform: translateY(-3px) scale(1.06);
+        }
+        @media (prefers-reduced-motion: reduce) {
+            .stat-card, .entry-card, .btn-primary, .fab-btn, .mood-tab {
+                transition: none !important;
             }
         }
     </style>

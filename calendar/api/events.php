@@ -461,7 +461,7 @@ switch ($action) {
                     "SELECT c.*, uce.enrolled_at, uce.status as enrollment_status,
                             uce.progress_percent
                      FROM courses c
-                     JOIN user_course_enrollments uce ON c.id = uce.course_id
+                     JOIN enrollments uce ON c.id = uce.course_id
                      WHERE uce.user_id = ? AND uce.status = 'active'",
                     [$user['id']]
                 ) ?: [];
@@ -471,7 +471,7 @@ switch ($action) {
                     $lessons = Database::fetchAll(
                         "SELECT l.*, ulp.status as lesson_status, ulp.completed_at
                          FROM lessons l
-                         LEFT JOIN user_lesson_progress ulp ON l.id = ulp.lesson_id AND ulp.user_id = ?
+                         LEFT JOIN lesson_progress ulp ON l.id = ulp.lesson_id AND ulp.user_id = ?
                          WHERE l.course_id = ?
                          AND (ulp.status IS NULL OR ulp.status != 'completed')
                          ORDER BY l.order_index ASC

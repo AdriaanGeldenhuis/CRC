@@ -20,17 +20,11 @@ $SYSTEM_PROMPT = '';
 if (is_file($INSTR_FILE)) {
     $SYSTEM_PROMPT = file_get_contents($INSTR_FILE) ?: '';
 } else {
-    $SYSTEM_PROMPT = 'You are a helpful Bible study assistant for CRC (Christian Revival Church). Answer questions about the Bible using the 1933/1953 Afrikaans translation or KJV English. Be helpful, accurate, and encouraging.';
+    $SYSTEM_PROMPT = 'You are a helpful Bible study assistant for CRC (Christian Revival Church). Answer questions about the Bible using the King James Version (KJV) English translation. Be helpful, accurate, and encouraging.';
 }
 
-// Detect language preference from browser or default to English
+// CRC is an English-only church
 $pageLang = 'en';
-if (isset($_SERVER['HTTP_ACCEPT_LANGUAGE'])) {
-    $browserLang = substr($_SERVER['HTTP_ACCEPT_LANGUAGE'], 0, 2);
-    if ($browserLang === 'af') {
-        $pageLang = 'af';
-    }
-}
 
 // Translation helper
 function t(string $key): string {
@@ -56,27 +50,6 @@ function t(string $key): string {
             'love_question_full' => 'What does the Bible teach about loving others?',
             'empty_question' => 'Please enter a question.',
             'missing_api_key' => 'Configuration error. Please contact support.',
-        ],
-        'af' => [
-            'ai_smartbible' => 'AI SlimBybel',
-            'bible_study_ai' => 'Jou Bybelstudiehelper',
-            'ask_scripture' => 'Vra Oor Die Skrif',
-            'ask_placeholder' => 'Vra \'n vraag oor die Bybel...',
-            'explain' => 'Vra',
-            'help_text' => 'Vra enige vraag oor die Bybel, Christelike lewe, of geestelike groei. SlimBybel sal jou help om die Skrif te verstaan en dit in jou lewe toe te pas.',
-            'answer' => 'Antwoord',
-            'answer_placeholder' => 'Jou antwoord sal hier verskyn...',
-            'example_questions' => 'Voorbeeldvrae',
-            'forgiveness_question_short' => 'Vergifnis',
-            'forgiveness_question_full' => 'Wat sê die Bybel oor vergifnis?',
-            'prayer_question_short' => 'Gebed',
-            'prayer_question_full' => 'Hoe moet ek bid volgens die Skrif?',
-            'faith_question_short' => 'Geloof',
-            'faith_question_full' => 'Hoe kan ek sterker word in my geloof?',
-            'love_question_short' => 'Liefde',
-            'love_question_full' => 'Wat leer die Bybel ons oor om ander lief te hê?',
-            'empty_question' => 'Voer asseblief \'n vraag in.',
-            'missing_api_key' => 'Konfigurasie fout. Kontak asseblief ondersteuning.',
         ],
     ];
     return $translations[$pageLang][$key] ?? $translations['en'][$key] ?? $key;
@@ -121,12 +94,8 @@ if (isset($_GET['stream']) && $_GET['stream'] === '1') {
         ['role' => 'user', 'content' => $q],
     ];
 
-    // Add language instruction based on detected language
-    if ($pageLang === 'af' || preg_match('/[àáâãäåæçèéêëìíîïðñòóôõöøùúûüýþÿ]/i', $q) || preg_match('/\b(wat|hoe|waar|wanneer|hoekom|wie|is|die|en|van|vir|om|te|kan|sal|het|nie|ons|jou|my)\b/i', $q)) {
-        $messages[] = ['role' => 'system', 'content' => 'The user appears to be asking in Afrikaans. Answer in Afrikaans. Use the 1933/1953 Afrikaans Bible translation for all Scripture quotes.'];
-    } else {
-        $messages[] = ['role' => 'system', 'content' => 'Answer in English. Use the King James Version (KJV) for all Scripture quotes.'];
-    }
+    // CRC is an English-only church - always answer in English using the KJV
+    $messages[] = ['role' => 'system', 'content' => 'Answer in English. Use the King James Version (KJV) for all Scripture quotes.'];
 
     $payload = json_encode([
         'model' => SMARTBIBLE_MODEL,
@@ -144,21 +113,32 @@ if (isset($_GET['stream']) && $_GET['stream'] === '1') {
     curl_setopt($ch, CURLOPT_POSTFIELDS, $payload);
     curl_setopt($ch, CURLOPT_RETURNTRANSFER, false);
     curl_setopt($ch, CURLOPT_TIMEOUT, 0);
-    curl_setopt($ch, CURLOPT_WRITEFUNCTION, function($ch, $chunk) use ($sse) {
-        $lines = preg_split("/\r?\n/", $chunk);
-        foreach ($lines as $line) {
-            if (strpos($line, 'data: ') === 0) {
-                $json = trim(substr($line, 6));
-                if ($json === '[DONE]') {
-                    $sse('done', 'end');
-                    continue;
-                }
-                $obj = json_decode($json, true);
-                if (isset($obj['choices'][0]['delta']['content'])) {
-                    $token = (string)$obj['choices'][0]['delta']['content'];
-                    if ($token !== '') {
-                        $sse('message', $token);
-                    }
+    // Buffer partial lines: OpenAI's streamed "data:" lines can be split
+    // across network chunks, so we must reassemble complete lines before
+    // decoding — otherwise tokens on a chunk boundary get dropped.
+    $streamBuffer = '';
+    curl_setopt($ch, CURLOPT_WRITEFUNCTION, function($ch, $chunk) use ($sse, &$streamBuffer) {
+        $streamBuffer .= $chunk;
+        // Process only complete lines; keep any trailing partial line buffered.
+        while (($nl = strpos($streamBuffer, "\n")) !== false) {
+            $line = rtrim(substr($streamBuffer, 0, $nl), "\r");
+            $streamBuffer = substr($streamBuffer, $nl + 1);
+            if (strpos($line, 'data:') !== 0) {
+                continue;
+            }
+            $json = trim(substr($line, 5));
+            if ($json === '') {
+                continue;
+            }
+            if ($json === '[DONE]') {
+                $sse('done', 'end');
+                continue;
+            }
+            $obj = json_decode($json, true);
+            if (isset($obj['choices'][0]['delta']['content'])) {
+                $token = (string)$obj['choices'][0]['delta']['content'];
+                if ($token !== '') {
+                    $sse('message', $token);
                 }
             }
         }
@@ -183,6 +163,11 @@ function esc($s) {
 <html lang="<?= $pageLang ?>">
 <head>
     <meta charset="UTF-8">
+    <link rel="icon" href="/favicon.ico" sizes="any">
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+    <link rel="manifest" href="/site.webmanifest">
+    <meta name="theme-color" content="#7C3AED">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><?= esc($pageTitle) ?></title>
     <?= CSRF::meta() ?>
@@ -486,6 +471,36 @@ try {
             </section>
         </div>
     </main>
+
+    <!-- Bottom Navigation (matching Home page) -->
+    <div class="bottom">
+        <nav class="nav" aria-label="Bottom navigation">
+            <a href="/home/" data-ripple>
+                <span class="icon" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 10.5l8-7 8 7V20a1.5 1.5 0 01-1.5 1.5h-3.5V15a1 1 0 00-1-1h-4a1 1 0 00-1 1v6.5H5.5A1.5 1.5 0 014 20v-9.5z" stroke-linejoin="round"/></svg>
+                </span>
+                Home
+            </a>
+            <a href="/morning_watch/" data-ripple>
+                <span class="icon" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 12h10M4 18h16" stroke-linecap="round"/></svg>
+                </span>
+                Study
+            </a>
+            <a href="/bible/" data-ripple>
+                <span class="icon" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 4h10a2 2 0 012 2v14l-7-3-7 3V6a2 2 0 012-2z" stroke-linejoin="round"/></svg>
+                </span>
+                Bible
+            </a>
+            <a href="/homecells/" data-ripple>
+                <span class="icon" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 21s7-4.4 7-11a7 7 0 10-14 0c0 6.6 7 11 7 11z" stroke-linejoin="round"/></svg>
+                </span>
+                Homecells
+            </a>
+        </nav>
+    </div>
 
     <script src="/ai_smartbible/js/ai_smartbible.js"></script>
     <script>

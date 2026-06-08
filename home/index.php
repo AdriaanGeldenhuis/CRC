@@ -127,9 +127,9 @@ try {
             (SELECT COUNT(*) FROM bible_highlights WHERE user_id = ?) as bible_highlights,
             (SELECT COUNT(*) FROM bible_notes WHERE user_id = ?) as bible_notes,
             (SELECT COUNT(*) FROM diary_entries WHERE user_id = ?) as diary_entries,
-            (SELECT COUNT(*) FROM prayers WHERE user_id = ?) as prayers_count,
-            (SELECT COUNT(*) FROM course_enrollments WHERE user_id = ?) as courses_enrolled,
-            (SELECT COUNT(*) FROM course_enrollments WHERE user_id = ? AND completed_at IS NOT NULL) as courses_completed,
+            (SELECT COUNT(*) FROM prayer_requests WHERE user_id = ?) as prayers_count,
+            (SELECT COUNT(*) FROM enrollments WHERE user_id = ?) as courses_enrolled,
+            (SELECT COUNT(*) FROM enrollments WHERE user_id = ? AND completed_at IS NOT NULL) as courses_completed,
             (SELECT COUNT(*) FROM posts WHERE user_id = ? AND status = 'active') as posts_count",
         [$user['id'], $user['id'], $user['id'], $user['id'], $user['id'], $user['id'], $user['id'], $user['id']]
     );
@@ -141,16 +141,16 @@ try {
 // Time-based greeting
 $hour = (int)date('H');
 if ($hour >= 5 && $hour < 12) {
-    $greeting = 'Goeie More';
+    $greeting = 'Good Morning';
     $greetingIcon = 'sunrise';
 } elseif ($hour >= 12 && $hour < 17) {
-    $greeting = 'Goeie Middag';
+    $greeting = 'Good Afternoon';
     $greetingIcon = 'sun';
 } elseif ($hour >= 17 && $hour < 21) {
-    $greeting = 'Goeie Naand';
+    $greeting = 'Good Evening';
     $greetingIcon = 'sunset';
 } else {
-    $greeting = 'Goeie Naand';
+    $greeting = 'Good Evening';
     $greetingIcon = 'moon';
 }
 
@@ -183,12 +183,17 @@ if (!$aiMessage) {
 }
 ?>
 <!DOCTYPE html>
-<html lang="af">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
+    <link rel="icon" href="/favicon.ico" sizes="any">
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+    <link rel="manifest" href="/site.webmanifest">
+    <meta name="theme-color" content="#7C3AED">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title><?= e($pageTitle) ?></title>
-    <meta name="description" content="CRC App - Jou gemeente dashboard vir Bybelstudie, oggendstudie, gebede, en gemeenskapsaktiwiteite.">
+    <meta name="description" content="CRC App - Your congregation dashboard for Bible study, morning study, prayers, and community activities.">
     <?= CSRF::meta() ?>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -404,7 +409,7 @@ if (!$aiMessage) {
                         </div>
                         <div class="streak-info">
                             <span class="streak-count"><?= (int)($streak['current_streak'] ?? 0) ?></span>
-                            <span class="streak-label">dag streak</span>
+                            <span class="streak-label">day streak</span>
                         </div>
                     </div>
                     <?php endif; ?>
@@ -414,13 +419,13 @@ if (!$aiMessage) {
                 <a href="/morning_watch/" class="morning-watch-banner fade-in" data-ripple>
                     <div class="mw-pulse"></div>
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/></svg>
-                    <span>Vandag se Oggendstudie is beskikbaar!</span>
+                    <span>Today's Morning Study is available!</span>
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
                 </a>
                 <?php elseif ($todaySession && $completedToday): ?>
                 <div class="morning-watch-done fade-in">
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
-                    <span>Oggendstudie voltooi vir vandag!</span>
+                    <span>Morning Study completed for today!</span>
                 </div>
                 <?php endif; ?>
             </section>
@@ -432,7 +437,7 @@ if (!$aiMessage) {
                         <div class="qa-icon" style="background: linear-gradient(135deg, #7C3AED, #A78BFA);">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/><path d="M12 6v7"/><path d="M8 9h8"/></svg>
                         </div>
-                        <span>Bybel</span>
+                        <span>Bible</span>
                     </a>
                     <a href="/ai_smartbible/" class="quick-action" data-ripple>
                         <div class="qa-icon" style="background: linear-gradient(135deg, #06B6D4, #22D3EE);">
@@ -440,35 +445,41 @@ if (!$aiMessage) {
                         </div>
                         <span>AI Chat</span>
                     </a>
-                    <a href="/gospel_media/create.php" class="quick-action" data-ripple>
+                    <a href="/gospel_media/" class="quick-action" data-ripple>
                         <div class="qa-icon" style="background: linear-gradient(135deg, #F59E0B, #FBBF24);">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 11a9 9 0 0 1 9 9"/><path d="M4 4a16 16 0 0 1 16 16"/><circle cx="5" cy="19" r="1"/></svg>
                         </div>
-                        <span>Plaas</span>
+                        <span>Feed</span>
+                    </a>
+                    <a href="/homecells/" class="quick-action" data-ripple>
+                        <div class="qa-icon" style="background: linear-gradient(135deg, #14B8A6, #5EEAD4);">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                        </div>
+                        <span>Homecells</span>
                     </a>
                     <a href="/diary/" class="quick-action" data-ripple>
                         <div class="qa-icon" style="background: linear-gradient(135deg, #10B981, #34D399);">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
                         </div>
-                        <span>Dagboek</span>
+                        <span>Diary</span>
                     </a>
                     <a href="/diary/prayers.php" class="quick-action" data-ripple>
                         <div class="qa-icon" style="background: linear-gradient(135deg, #EC4899, #F472B6);">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
                         </div>
-                        <span>Gebede</span>
+                        <span>Prayers</span>
                     </a>
                     <a href="/learning/" class="quick-action" data-ripple>
                         <div class="qa-icon" style="background: linear-gradient(135deg, #8B5CF6, #A78BFA);">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg>
                         </div>
-                        <span>Kursusse</span>
+                        <span>Courses</span>
                     </a>
                     <a href="/calendar/" class="quick-action" data-ripple>
                         <div class="qa-icon" style="background: linear-gradient(135deg, #EF4444, #F87171);">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
                         </div>
-                        <span>Kalender</span>
+                        <span>Calendar</span>
                     </a>
                     <a href="/media/" class="quick-action" data-ripple>
                         <div class="qa-icon" style="background: linear-gradient(135deg, #6366F1, #818CF8);">
@@ -484,19 +495,19 @@ if (!$aiMessage) {
                 <div class="stats-grid">
                     <div class="stat-item">
                         <span class="stat-number"><?= (int)($streak['current_streak'] ?? 0) ?></span>
-                        <span class="stat-label">Dag Streak</span>
+                        <span class="stat-label">Day Streak</span>
                     </div>
                     <div class="stat-item">
                         <span class="stat-number"><?= $userStats['diary_entries'] ?></span>
-                        <span class="stat-label">Dagboek</span>
+                        <span class="stat-label">Diary</span>
                     </div>
                     <div class="stat-item">
                         <span class="stat-number"><?= $userStats['bible_bookmarks'] + $userStats['bible_highlights'] ?></span>
-                        <span class="stat-label">Bybel Notas</span>
+                        <span class="stat-label">Bible Notes</span>
                     </div>
                     <div class="stat-item">
                         <span class="stat-number"><?= $userStats['prayers_count'] ?></span>
-                        <span class="stat-label">Gebede</span>
+                        <span class="stat-label">Prayers</span>
                     </div>
                 </div>
             </section>
@@ -664,7 +675,7 @@ if (!$aiMessage) {
     <!-- Bottom Navigation -->
     <div class="bottom">
         <nav class="nav" aria-label="Bottom navigation">
-            <a class="active" href="/" data-ripple>
+            <a class="active" href="/home/" data-ripple>
                 <span class="icon" aria-hidden="true">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 10.5l8-7 8 7V20a1.5 1.5 0 01-1.5 1.5h-3.5V15a1 1 0 00-1-1h-4a1 1 0 00-1 1v6.5H5.5A1.5 1.5 0 014 20v-9.5z" stroke-linejoin="round"/></svg>
                 </span>

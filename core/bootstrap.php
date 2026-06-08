@@ -65,7 +65,7 @@ set_exception_handler(function (Throwable $e) {
         ob_end_clean();
         http_response_code(500);
         header('Content-Type: text/html; charset=utf-8');
-        echo '<!DOCTYPE html><html lang="af"><head><meta charset="UTF-8">';
+        echo '<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8">';
         echo '<meta name="viewport" content="width=device-width, initial-scale=1.0">';
         echo '<title>Error - CRC</title>';
         echo '<style>body{font-family:Inter,system-ui,sans-serif;background:#0f172a;color:#e2e8f0;display:flex;align-items:center;justify-content:center;min-height:100vh;margin:0;padding:20px;text-align:center}';
@@ -119,8 +119,8 @@ function logged_in(): bool {
 /**
  * Helper: Escape HTML output
  */
-function e(string $value): string {
-    return htmlspecialchars($value, ENT_QUOTES, 'UTF-8');
+function e(?string $value): string {
+    return htmlspecialchars($value ?? '', ENT_QUOTES, 'UTF-8');
 }
 
 /**
@@ -135,21 +135,24 @@ function asset(string $path): string {
 /**
  * Helper: Format date for display
  */
-function format_date(string $date, string $format = 'd M Y'): string {
+function format_date(?string $date, string $format = 'd M Y'): string {
+    if (empty($date)) return '';
     return date($format, strtotime($date));
 }
 
 /**
  * Helper: Format datetime for display
  */
-function format_datetime(string $datetime, string $format = 'd M Y H:i'): string {
+function format_datetime(?string $datetime, string $format = 'd M Y H:i'): string {
+    if (empty($datetime)) return '';
     return date($format, strtotime($datetime));
 }
 
 /**
  * Helper: Time ago
  */
-function time_ago(string $datetime): string {
+function time_ago(?string $datetime): string {
+    if (empty($datetime)) return '';
     $time = strtotime($datetime);
     $diff = time() - $time;
 
@@ -172,7 +175,8 @@ function time_ago(string $datetime): string {
 /**
  * Helper: Truncate text
  */
-function truncate(string $text, int $length = 100, string $suffix = '...'): string {
+function truncate(?string $text, int $length = 100, string $suffix = '...'): string {
+    $text = $text ?? '';
     if (mb_strlen($text) <= $length) {
         return $text;
     }

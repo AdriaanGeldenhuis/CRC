@@ -126,9 +126,14 @@ $reactionIcons = [
 ];
 ?>
 <!DOCTYPE html>
-<html lang="af">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
+    <link rel="icon" href="/favicon.ico" sizes="any">
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+    <link rel="manifest" href="/site.webmanifest">
+    <meta name="theme-color" content="#7C3AED">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title><?= e($pageTitle) ?></title>
     <?= CSRF::meta() ?>
@@ -153,7 +158,7 @@ try {
     ) ?: 0;
 } catch (Exception $e) {}
 ?>
-<body>
+<body data-theme="dark">
     <!-- Top Bar / Navigation (matching Home page exactly) -->
     <div class="topbar">
         <div class="inner">
@@ -684,6 +689,7 @@ try {
             const current = html.getAttribute('data-theme') || 'dark';
             const next = current === 'dark' ? 'light' : 'dark';
             html.setAttribute('data-theme', next);
+            document.body.setAttribute('data-theme', next);
             localStorage.setItem('theme', next);
         }
 

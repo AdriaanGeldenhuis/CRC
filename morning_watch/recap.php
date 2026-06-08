@@ -54,9 +54,14 @@ $whatsappText = urlencode($recap['recap_text']);
 $whatsappUrl = "https://wa.me/?text=" . $whatsappText;
 ?>
 <!DOCTYPE html>
-<html lang="af">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
+    <link rel="icon" href="/favicon.ico" sizes="any">
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+    <link rel="manifest" href="/site.webmanifest">
+    <meta name="theme-color" content="#7C3AED">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><?= e($pageTitle) ?></title>
     <?= CSRF::meta() ?>
@@ -71,7 +76,7 @@ $whatsappUrl = "https://wa.me/?text=" . $whatsappText;
         })();
     </script>
     <style>
-        .recap-container { max-width: 700px; margin: 0 auto; padding: 2rem 1rem; padding-bottom: 100px; }
+        .recap-container { max-width: 1080px; margin: 0 auto; padding: 2rem 1rem; padding-bottom: 100px; }
         .recap-header { margin-bottom: 2rem; }
         .recap-back { display: inline-flex; align-items: center; gap: 0.5rem; color: var(--muted); text-decoration: none; font-size: 0.9rem; margin-bottom: 1rem; }
         .recap-back:hover { color: var(--accent); }

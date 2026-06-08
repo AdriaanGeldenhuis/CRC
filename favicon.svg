@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="CRC">
+  <defs>
+    <linearGradient id="crcGrad" x1="0" y1="0" x2="64" y2="64" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#7C3AED"/>
+      <stop offset="1" stop-color="#22D3EE"/>
+    </linearGradient>
+  </defs>
+  <rect x="2" y="2" width="60" height="60" rx="14" fill="url(#crcGrad)"/>
+  <g fill="#ffffff">
+    <rect x="26.69" y="14.72" width="10.62" height="34.56" rx="2.2"/>
+    <rect x="18.88" y="23.81" width="26.24" height="10.62" rx="2.2"/>
+  </g>
+</svg>

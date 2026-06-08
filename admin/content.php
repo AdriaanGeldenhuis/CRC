@@ -66,9 +66,14 @@ $contentTypes = [
 ];
 ?>
 <!DOCTYPE html>
-<html lang="af">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
+    <link rel="icon" href="/favicon.ico" sizes="any">
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+    <link rel="manifest" href="/site.webmanifest">
+    <meta name="theme-color" content="#7C3AED">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><?= e($pageTitle) ?></title>
     <?= CSRF::meta() ?>
@@ -93,7 +98,7 @@ $contentTypes = [
             <header class="admin-header">
                 <h1>Content</h1>
                 <div class="header-actions">
-                    <button onclick="openModal('add-content-modal')" class="btn btn-primary">
+                    <button onclick="openAddContent()" class="btn btn-primary">
                         + Add Content
                     </button>
                 </div>
