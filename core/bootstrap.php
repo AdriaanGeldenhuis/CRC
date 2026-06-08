@@ -119,8 +119,8 @@ function logged_in(): bool {
 /**
  * Helper: Escape HTML output
  */
-function e(string $value): string {
-    return htmlspecialchars($value, ENT_QUOTES, 'UTF-8');
+function e(?string $value): string {
+    return htmlspecialchars($value ?? '', ENT_QUOTES, 'UTF-8');
 }
 
 /**
@@ -135,21 +135,24 @@ function asset(string $path): string {
 /**
  * Helper: Format date for display
  */
-function format_date(string $date, string $format = 'd M Y'): string {
+function format_date(?string $date, string $format = 'd M Y'): string {
+    if (empty($date)) return '';
     return date($format, strtotime($date));
 }
 
 /**
  * Helper: Format datetime for display
  */
-function format_datetime(string $datetime, string $format = 'd M Y H:i'): string {
+function format_datetime(?string $datetime, string $format = 'd M Y H:i'): string {
+    if (empty($datetime)) return '';
     return date($format, strtotime($datetime));
 }
 
 /**
  * Helper: Time ago
  */
-function time_ago(string $datetime): string {
+function time_ago(?string $datetime): string {
+    if (empty($datetime)) return '';
     $time = strtotime($datetime);
     $diff = time() - $time;
 
