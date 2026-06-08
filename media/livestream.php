@@ -68,7 +68,7 @@ if ($livestream && $livestream['status'] === 'live' && $livestream['chat_enabled
 }
 ?>
 <!DOCTYPE html>
-<html lang="af">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">

@@ -21,7 +21,7 @@ $prefillDate = $_GET['date'] ?? date('Y-m-d');
 $prefillTime = $_GET['time'] ?? '09:00';
 ?>
 <!DOCTYPE html>
-<html lang="af" data-theme="light">
+<html lang="en" data-theme="light">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">

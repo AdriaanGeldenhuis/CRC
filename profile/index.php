@@ -104,7 +104,7 @@ $showEmail = $isOwnProfile || (!empty($user['show_email']) && $user['show_email'
 $showPhone = $isOwnProfile || (!empty($user['show_phone']) && $user['show_phone']);
 ?>
 <!DOCTYPE html>
-<html lang="af">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">

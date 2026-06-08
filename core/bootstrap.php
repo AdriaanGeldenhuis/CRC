@@ -65,7 +65,7 @@ set_exception_handler(function (Throwable $e) {
         ob_end_clean();
         http_response_code(500);
         header('Content-Type: text/html; charset=utf-8');
-        echo '<!DOCTYPE html><html lang="af"><head><meta charset="UTF-8">';
+        echo '<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8">';
         echo '<meta name="viewport" content="width=device-width, initial-scale=1.0">';
         echo '<title>Error - CRC</title>';
         echo '<style>body{font-family:Inter,system-ui,sans-serif;background:#0f172a;color:#e2e8f0;display:flex;align-items:center;justify-content:center;min-height:100vh;margin:0;padding:20px;text-align:center}';

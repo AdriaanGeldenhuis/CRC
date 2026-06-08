@@ -50,14 +50,8 @@ try {
         exit;
     }
 
-    // Get language preference (default to English)
-    $lang = $_SESSION['language'] ?? 'en';
-
-    // System prompts
-    $promptEn = 'You are a helpful writing assistant. Enhance the following diary entry to make it more expressive, clear, and engaging while maintaining the original meaning and personal voice. Keep it in the same language as the original. Only return the enhanced text, nothing else.';
-    $promptAf = 'Jy is \'n hulpvaardige skryfassistent. Verbeter die volgende dagboekinskrywing om dit meer ekspressief, duidelik en boeiend te maak terwyl jy die oorspronklike betekenis en persoonlike stem behou. Hou dit in dieselfde taal as die oorspronklike. Gee net die verbeterde teks terug, niks anders nie.';
-
-    $systemPrompt = ($lang === 'af') ? $promptAf : $promptEn;
+    // CRC is an English-only church - always enhance in English
+    $systemPrompt = 'You are a helpful writing assistant. Enhance the following diary entry to make it more expressive, clear, and engaging while maintaining the original meaning and personal voice. Write the enhanced entry in English. Only return the enhanced text, nothing else.';
 
     // AI settings
     $model = 'gpt-4o-mini';

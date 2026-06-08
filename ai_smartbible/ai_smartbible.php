@@ -20,17 +20,11 @@ $SYSTEM_PROMPT = '';
 if (is_file($INSTR_FILE)) {
     $SYSTEM_PROMPT = file_get_contents($INSTR_FILE) ?: '';
 } else {
-    $SYSTEM_PROMPT = 'You are a helpful Bible study assistant for CRC (Christian Revival Church). Answer questions about the Bible using the 1933/1953 Afrikaans translation or KJV English. Be helpful, accurate, and encouraging.';
+    $SYSTEM_PROMPT = 'You are a helpful Bible study assistant for CRC (Christian Revival Church). Answer questions about the Bible using the King James Version (KJV) English translation. Be helpful, accurate, and encouraging.';
 }
 
-// Detect language preference from browser or default to English
+// CRC is an English-only church
 $pageLang = 'en';
-if (isset($_SERVER['HTTP_ACCEPT_LANGUAGE'])) {
-    $browserLang = substr($_SERVER['HTTP_ACCEPT_LANGUAGE'], 0, 2);
-    if ($browserLang === 'af') {
-        $pageLang = 'af';
-    }
-}
 
 // Translation helper
 function t(string $key): string {
@@ -56,27 +50,6 @@ function t(string $key): string {
             'love_question_full' => 'What does the Bible teach about loving others?',
             'empty_question' => 'Please enter a question.',
             'missing_api_key' => 'Configuration error. Please contact support.',
-        ],
-        'af' => [
-            'ai_smartbible' => 'AI SlimBybel',
-            'bible_study_ai' => 'Jou Bybelstudiehelper',
-            'ask_scripture' => 'Vra Oor Die Skrif',
-            'ask_placeholder' => 'Vra \'n vraag oor die Bybel...',
-            'explain' => 'Vra',
-            'help_text' => 'Vra enige vraag oor die Bybel, Christelike lewe, of geestelike groei. SlimBybel sal jou help om die Skrif te verstaan en dit in jou lewe toe te pas.',
-            'answer' => 'Antwoord',
-            'answer_placeholder' => 'Jou antwoord sal hier verskyn...',
-            'example_questions' => 'Voorbeeldvrae',
-            'forgiveness_question_short' => 'Vergifnis',
-            'forgiveness_question_full' => 'Wat sê die Bybel oor vergifnis?',
-            'prayer_question_short' => 'Gebed',
-            'prayer_question_full' => 'Hoe moet ek bid volgens die Skrif?',
-            'faith_question_short' => 'Geloof',
-            'faith_question_full' => 'Hoe kan ek sterker word in my geloof?',
-            'love_question_short' => 'Liefde',
-            'love_question_full' => 'Wat leer die Bybel ons oor om ander lief te hê?',
-            'empty_question' => 'Voer asseblief \'n vraag in.',
-            'missing_api_key' => 'Konfigurasie fout. Kontak asseblief ondersteuning.',
         ],
     ];
     return $translations[$pageLang][$key] ?? $translations['en'][$key] ?? $key;
@@ -121,12 +94,8 @@ if (isset($_GET['stream']) && $_GET['stream'] === '1') {
         ['role' => 'user', 'content' => $q],
     ];
 
-    // Add language instruction based on detected language
-    if ($pageLang === 'af' || preg_match('/[àáâãäåæçèéêëìíîïðñòóôõöøùúûüýþÿ]/i', $q) || preg_match('/\b(wat|hoe|waar|wanneer|hoekom|wie|is|die|en|van|vir|om|te|kan|sal|het|nie|ons|jou|my)\b/i', $q)) {
-        $messages[] = ['role' => 'system', 'content' => 'The user appears to be asking in Afrikaans. Answer in Afrikaans. Use the 1933/1953 Afrikaans Bible translation for all Scripture quotes.'];
-    } else {
-        $messages[] = ['role' => 'system', 'content' => 'Answer in English. Use the King James Version (KJV) for all Scripture quotes.'];
-    }
+    // CRC is an English-only church - always answer in English using the KJV
+    $messages[] = ['role' => 'system', 'content' => 'Answer in English. Use the King James Version (KJV) for all Scripture quotes.'];
 
     $payload = json_encode([
         'model' => SMARTBIBLE_MODEL,

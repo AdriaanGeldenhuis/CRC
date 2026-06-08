@@ -189,6 +189,4 @@ INSERT INTO bible_versions (code, name, language, description, is_default, is_ac
 ('KJV', 'King James Version', 'en', 'Traditional English translation', 1, 1),
 ('NIV', 'New International Version', 'en', 'Modern English translation', 0, 1),
 ('ESV', 'English Standard Version', 'en', 'Essentially literal translation', 0, 1),
-('NLT', 'New Living Translation', 'en', 'Thought-for-thought translation', 0, 1),
-('AFR83', 'Afrikaans 1983', 'af', 'Afrikaanse vertaling 1983', 0, 1),
-('AFR53', 'Afrikaans 1953', 'af', 'Afrikaanse vertaling 1953', 0, 1);
+('NLT', 'New Living Translation', 'en', 'Thought-for-thought translation', 0, 1);
