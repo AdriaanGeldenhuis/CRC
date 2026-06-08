@@ -538,11 +538,15 @@ function adminUniqueSlug(string $table, string $base, ?int $congId = null): stri
 }
 
 function logActivity($userId, $action) {
-    Database::insert('activity_log', [
-        'user_id' => $userId,
-        'action' => $action,
-        'ip_address' => $_SERVER['REMOTE_ADDR'] ?? null,
-        'user_agent' => $_SERVER['HTTP_USER_AGENT'] ?? null,
-        'created_at' => date('Y-m-d H:i:s')
-    ]);
+    try {
+        Database::insert('activity_log', [
+            'user_id' => $userId,
+            'action' => $action,
+            'ip_address' => $_SERVER['REMOTE_ADDR'] ?? null,
+            'user_agent' => $_SERVER['HTTP_USER_AGENT'] ?? null,
+            'created_at' => date('Y-m-d H:i:s')
+        ]);
+    } catch (Exception $e) {
+        // activity_log is optional — never let audit logging break an admin action
+    }
 }
