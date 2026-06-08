@@ -113,21 +113,32 @@ if (isset($_GET['stream']) && $_GET['stream'] === '1') {
     curl_setopt($ch, CURLOPT_POSTFIELDS, $payload);
     curl_setopt($ch, CURLOPT_RETURNTRANSFER, false);
     curl_setopt($ch, CURLOPT_TIMEOUT, 0);
-    curl_setopt($ch, CURLOPT_WRITEFUNCTION, function($ch, $chunk) use ($sse) {
-        $lines = preg_split("/\r?\n/", $chunk);
-        foreach ($lines as $line) {
-            if (strpos($line, 'data: ') === 0) {
-                $json = trim(substr($line, 6));
-                if ($json === '[DONE]') {
-                    $sse('done', 'end');
-                    continue;
-                }
-                $obj = json_decode($json, true);
-                if (isset($obj['choices'][0]['delta']['content'])) {
-                    $token = (string)$obj['choices'][0]['delta']['content'];
-                    if ($token !== '') {
-                        $sse('message', $token);
-                    }
+    // Buffer partial lines: OpenAI's streamed "data:" lines can be split
+    // across network chunks, so we must reassemble complete lines before
+    // decoding — otherwise tokens on a chunk boundary get dropped.
+    $streamBuffer = '';
+    curl_setopt($ch, CURLOPT_WRITEFUNCTION, function($ch, $chunk) use ($sse, &$streamBuffer) {
+        $streamBuffer .= $chunk;
+        // Process only complete lines; keep any trailing partial line buffered.
+        while (($nl = strpos($streamBuffer, "\n")) !== false) {
+            $line = rtrim(substr($streamBuffer, 0, $nl), "\r");
+            $streamBuffer = substr($streamBuffer, $nl + 1);
+            if (strpos($line, 'data:') !== 0) {
+                continue;
+            }
+            $json = trim(substr($line, 5));
+            if ($json === '') {
+                continue;
+            }
+            if ($json === '[DONE]') {
+                $sse('done', 'end');
+                continue;
+            }
+            $obj = json_decode($json, true);
+            if (isset($obj['choices'][0]['delta']['content'])) {
+                $token = (string)$obj['choices'][0]['delta']['content'];
+                if ($token !== '') {
+                    $sse('message', $token);
                 }
             }
         }
