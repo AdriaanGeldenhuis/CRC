@@ -32,26 +32,35 @@ if ($category) {
 
 $whereClause = implode(' AND ', $where);
 
-$prayers = Database::fetchAll(
-    "SELECT * FROM prayer_requests
-     WHERE $whereClause
-     ORDER BY is_pinned DESC, created_at DESC",
-    $params
-);
+// Defaults so the page never crashes on a schema/availability issue
+$prayers = [];
+$totalPrayers = 0;
+$answeredCount = 0;
+$activeCount = 0;
 
-// Stats
-$totalPrayers = Database::fetchColumn(
-    "SELECT COUNT(*) FROM prayer_requests WHERE user_id = ?",
-    [$user['id']]
-);
-$answeredCount = Database::fetchColumn(
-    "SELECT COUNT(*) FROM prayer_requests WHERE user_id = ? AND answered_at IS NOT NULL",
-    [$user['id']]
-);
-$activeCount = Database::fetchColumn(
-    "SELECT COUNT(*) FROM prayer_requests WHERE user_id = ? AND answered_at IS NULL",
-    [$user['id']]
-);
+try {
+    $prayers = Database::fetchAll(
+        "SELECT * FROM prayer_requests
+         WHERE $whereClause
+         ORDER BY created_at DESC",
+        $params
+    ) ?: [];
+
+    $totalPrayers = (int) Database::fetchColumn(
+        "SELECT COUNT(*) FROM prayer_requests WHERE user_id = ?",
+        [$user['id']]
+    );
+    $answeredCount = (int) Database::fetchColumn(
+        "SELECT COUNT(*) FROM prayer_requests WHERE user_id = ? AND answered_at IS NOT NULL",
+        [$user['id']]
+    );
+    $activeCount = (int) Database::fetchColumn(
+        "SELECT COUNT(*) FROM prayer_requests WHERE user_id = ? AND answered_at IS NULL",
+        [$user['id']]
+    );
+} catch (Exception $e) {
+    // Leave defaults; render an empty state instead of a 500 error
+}
 
 $categories = ['personal', 'family', 'health', 'work', 'relationships', 'spiritual', 'financial', 'world', 'other'];
 
@@ -216,21 +225,13 @@ function getCategoryIcon($cat) {
                     </div>
                 <?php else: ?>
                     <?php foreach ($prayers as $prayer): ?>
-                        <div class="prayer-card <?= $prayer['answered_at'] ? 'answered' : '' ?> <?= $prayer['is_pinned'] ? 'pinned' : '' ?>">
+                        <div class="prayer-card <?= $prayer['answered_at'] ? 'answered' : '' ?>">
                             <div class="prayer-header">
                                 <span class="prayer-category">
                                     <?= getCategoryIcon($prayer['category'] ?? 'personal') ?>
                                     <?= ucfirst($prayer['category'] ?? 'personal') ?>
                                 </span>
                                 <div class="prayer-badges">
-                                    <?php if ($prayer['is_pinned']): ?>
-                                        <span class="prayer-badge pinned">
-                                            <svg viewBox="0 0 24 24" fill="currentColor" stroke="none" width="14" height="14">
-                                                <path d="M16 2L18 4L16.5 5.5L19 8L21 6L22 7L17 12L15.5 10.5L12 14V17L10 15L6 19L5 18L9 14L7 12H10L13.5 8.5L12 7L17 2L18 3L16 5L18.5 7.5L20 6L19 5L16 2Z"></path>
-                                            </svg>
-                                            Pinned
-                                        </span>
-                                    <?php endif; ?>
                                     <?php if ($prayer['answered_at']): ?>
                                         <span class="prayer-badge answered">
                                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
@@ -243,7 +244,7 @@ function getCategoryIcon($cat) {
                             </div>
 
                             <h3 class="prayer-title"><?= e($prayer['title']) ?></h3>
-                            <p class="prayer-content"><?= nl2br(e(truncate($prayer['request'], 200))) ?></p>
+                            <p class="prayer-content"><?= nl2br(e(truncate($prayer['description'] ?? '', 200))) ?></p>
 
                             <?php if (!empty($prayer['scripture_ref'])): ?>
                                 <p class="prayer-scripture">
@@ -254,7 +255,7 @@ function getCategoryIcon($cat) {
                                 </p>
                             <?php endif; ?>
 
-                            <?php if ($prayer['answered_at'] && $prayer['testimony']): ?>
+                            <?php if ($prayer['answered_at'] && !empty($prayer['answered_notes'])): ?>
                                 <div class="prayer-testimony">
                                     <div class="testimony-header">
                                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
@@ -264,7 +265,7 @@ function getCategoryIcon($cat) {
                                         <strong>Testimony</strong>
                                         <span class="answered-date">Answered <?= date('M j, Y', strtotime($prayer['answered_at'])) ?></span>
                                     </div>
-                                    <p><?= nl2br(e($prayer['testimony'])) ?></p>
+                                    <p><?= nl2br(e($prayer['answered_notes'] ?? '')) ?></p>
                                 </div>
                             <?php endif; ?>
 
@@ -283,11 +284,6 @@ function getCategoryIcon($cat) {
                                         <button onclick="markAnswered(<?= $prayer['id'] ?>)" class="action-btn success" title="Mark as Answered">
                                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                                 <polyline points="20 6 9 17 4 12"></polyline>
-                                            </svg>
-                                        </button>
-                                        <button onclick="togglePin(<?= $prayer['id'] ?>)" class="action-btn <?= $prayer['is_pinned'] ? 'active' : '' ?>" title="<?= $prayer['is_pinned'] ? 'Unpin' : 'Pin' ?>">
-                                            <svg viewBox="0 0 24 24" fill="<?= $prayer['is_pinned'] ? 'currentColor' : 'none' ?>" stroke="currentColor" stroke-width="2">
-                                                <path d="M16 2L18 4L16.5 5.5L19 8L21 6L22 7L17 12L15.5 10.5L12 14V17L10 15L6 19L5 18L9 14L7 12H10L13.5 8.5L12 7L17 2L18 3L16 5L18.5 7.5L20 6L19 5L16 2Z"></path>
                                             </svg>
                                         </button>
                                     <?php endif; ?>

@@ -172,7 +172,8 @@ function time_ago(string $datetime): string {
 /**
  * Helper: Truncate text
  */
-function truncate(string $text, int $length = 100, string $suffix = '...'): string {
+function truncate(?string $text, int $length = 100, string $suffix = '...'): string {
+    $text = $text ?? '';
     if (mb_strlen($text) <= $length) {
         return $text;
     }
