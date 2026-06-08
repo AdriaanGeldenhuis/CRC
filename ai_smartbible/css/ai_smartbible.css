@@ -1325,3 +1325,82 @@ body[data-theme="light"] {
     border: 1px solid #ccc !important;
   }
 }
+
+/* =====================================================================
+   HOME DESIGN ALIGNMENT — 3D POP
+   Matches the home dashboard exactly: cards lift with an accent glow +
+   top sheen, example tiles pop in 3D, primary buttons and the input
+   gain depth.
+   ===================================================================== */
+.smartbible-header,
+.smartbible-section {
+  transition:
+    transform 0.35s cubic-bezier(0.2, 0.8, 0.25, 1.2),
+    box-shadow 0.35s ease,
+    border-color 0.35s ease;
+}
+
+.smartbible-header::after,
+.smartbible-section::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.40), transparent);
+  z-index: 2;
+  pointer-events: none;
+}
+
+.smartbible-section:hover {
+  transform: translateY(-4px);
+  border-color: rgba(124, 58, 237, 0.40);
+  box-shadow:
+    0 30px 60px rgba(0, 0, 0, 0.50),
+    0 0 30px rgba(124, 58, 237, 0.18);
+}
+
+.example-card {
+  transition:
+    transform 0.35s cubic-bezier(0.2, 0.8, 0.25, 1.5),
+    box-shadow 0.35s ease,
+    border-color 0.3s ease,
+    background 0.3s ease;
+}
+
+.example-card:hover {
+  transform: translateY(-5px);
+  border-color: rgba(124, 58, 237, 0.45);
+  box-shadow:
+    0 20px 36px rgba(0, 0, 0, 0.45),
+    0 0 26px rgba(124, 58, 237, 0.30);
+}
+
+.example-icon {
+  transition: transform 0.35s cubic-bezier(0.2, 0.8, 0.25, 1.5);
+  filter: drop-shadow(0 3px 6px rgba(0, 0, 0, 0.30));
+}
+
+.example-card:hover .example-icon {
+  transform: scale(1.18) translateY(-2px);
+}
+
+.btn-primary:active {
+  transform: translateY(0) scale(0.98);
+}
+
+.smartbible-input:focus {
+  box-shadow:
+    0 0 0 3px rgba(124, 58, 237, 0.22),
+    0 0 22px rgba(124, 58, 237, 0.16);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .smartbible-header,
+  .smartbible-section,
+  .example-card,
+  .example-icon {
+    transition: none !important;
+  }
+}

@@ -461,6 +461,36 @@ try {
         </div>
     </main>
 
+    <!-- Bottom Navigation (matching Home page) -->
+    <div class="bottom">
+        <nav class="nav" aria-label="Bottom navigation">
+            <a href="/home/" data-ripple>
+                <span class="icon" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 10.5l8-7 8 7V20a1.5 1.5 0 01-1.5 1.5h-3.5V15a1 1 0 00-1-1h-4a1 1 0 00-1 1v6.5H5.5A1.5 1.5 0 014 20v-9.5z" stroke-linejoin="round"/></svg>
+                </span>
+                Home
+            </a>
+            <a href="/morning_watch/" data-ripple>
+                <span class="icon" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 12h10M4 18h16" stroke-linecap="round"/></svg>
+                </span>
+                Study
+            </a>
+            <a href="/bible/" data-ripple>
+                <span class="icon" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 4h10a2 2 0 012 2v14l-7-3-7 3V6a2 2 0 012-2z" stroke-linejoin="round"/></svg>
+                </span>
+                Bible
+            </a>
+            <a href="/homecells/" data-ripple>
+                <span class="icon" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 21s7-4.4 7-11a7 7 0 10-14 0c0 6.6 7 11 7 11z" stroke-linejoin="round"/></svg>
+                </span>
+                Homecells
+            </a>
+        </nav>
+    </div>
+
     <script src="/ai_smartbible/js/ai_smartbible.js"></script>
     <script>
         // Theme toggle function
