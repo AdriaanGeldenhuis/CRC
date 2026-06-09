@@ -63,20 +63,37 @@ try {
         array_merge([Auth::id()], $params, [$perPage, $offset])
     ) ?: [];
 
-    // Get reaction breakdown for each post
+    // Get reaction breakdown for all posts in ONE query (avoids N+1)
     foreach ($posts as &$post) {
         $post['reaction_breakdown'] = [];
-        try {
-            $breakdown = Database::fetchAll(
-                "SELECT reaction_type, COUNT(*) as count FROM reactions WHERE reactable_type = 'post' AND reactable_id = ? GROUP BY reaction_type ORDER BY count DESC",
-                [$post['id']]
-            ) ?: [];
-            foreach ($breakdown as $r) {
-                $post['reaction_breakdown'][$r['reaction_type']] = (int)$r['count'];
-            }
-        } catch (Exception $e2) {}
     }
     unset($post);
+
+    $postIds = array_column($posts, 'id');
+    if ($postIds) {
+        try {
+            $placeholders = implode(',', array_fill(0, count($postIds), '?'));
+            $breakdownRows = Database::fetchAll(
+                "SELECT reactable_id, reaction_type, COUNT(*) as count
+                 FROM reactions
+                 WHERE reactable_type = 'post' AND reactable_id IN ($placeholders)
+                 GROUP BY reactable_id, reaction_type
+                 ORDER BY count DESC",
+                $postIds
+            ) ?: [];
+
+            $breakdownByPost = [];
+            foreach ($breakdownRows as $r) {
+                $breakdownByPost[$r['reactable_id']][$r['reaction_type']] = (int)$r['count'];
+            }
+            foreach ($posts as &$post) {
+                if (isset($breakdownByPost[$post['id']])) {
+                    $post['reaction_breakdown'] = $breakdownByPost[$post['id']];
+                }
+            }
+            unset($post);
+        } catch (Exception $e2) {}
+    }
 } catch (Exception $e) {}
 
 // Get total for pagination
@@ -681,6 +698,16 @@ try {
 
     <div id="toast" class="toast"></div>
 
+    <script>
+        // Context for client-rendered (infinite-scroll) posts so they match
+        // the server-rendered cards exactly.
+        window.FEED_CTX = {
+            userInitial: <?= json_encode(strtoupper(substr($user['name'], 0, 1))) ?>,
+            userAvatar: <?= json_encode($user['avatar'] ?: '') ?>,
+            isAdmin: <?= Auth::isAdmin() ? 'true' : 'false' ?>,
+            canModerate: <?= ($primaryCong && Auth::isCongregationAdmin($primaryCong['id'])) ? 'true' : 'false' ?>
+        };
+    </script>
     <script src="/gospel_media/js/gospel_media.js"></script>
     <script>
         // Theme Toggle
