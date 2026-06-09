@@ -53,14 +53,13 @@ switch ($action) {
         );
 
         // Create notification for user
-        Database::insert('notifications', [
-            'user_id' => $userId,
-            'type' => 'approval_status',
-            'title' => 'Membership Approved',
-            'message' => 'Your request to join ' . $primaryCong['name'] . ' has been approved!',
-            'link' => '/home/',
-            'created_at' => date('Y-m-d H:i:s')
-        ]);
+        Notify::send(
+            (int) $userId,
+            'approval_status',
+            'Membership Approved',
+            'Your request to join ' . $primaryCong['name'] . ' has been approved!',
+            '/home/'
+        );
 
         Logger::audit($adminId, 'approved_member', [
             'congregation_id' => $congregationId,
@@ -88,13 +87,12 @@ switch ($action) {
         );
 
         // Create notification for user
-        Database::insert('notifications', [
-            'user_id' => $userId,
-            'type' => 'approval_status',
-            'title' => 'Membership Request',
-            'message' => 'Your request to join ' . $primaryCong['name'] . ' was not approved.',
-            'created_at' => date('Y-m-d H:i:s')
-        ]);
+        Notify::send(
+            (int) $userId,
+            'approval_status',
+            'Membership Request',
+            'Your request to join ' . $primaryCong['name'] . ' was not approved.'
+        );
 
         Logger::audit($adminId, 'rejected_member', [
             'congregation_id' => $congregationId,

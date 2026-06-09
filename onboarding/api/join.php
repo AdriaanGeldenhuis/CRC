@@ -130,7 +130,20 @@ switch ($action) {
             ]);
         }
 
-        // TODO: Notify congregation admins
+        // Notify congregation leaders/admins of the pending request
+        $admins = Database::fetchAll(
+            "SELECT user_id FROM user_congregations
+             WHERE congregation_id = ? AND status = 'active' AND role IN ('leader', 'admin', 'pastor')",
+            [$congregationId]
+        );
+        $requester = Auth::user();
+        Notify::sendMany(
+            array_column($admins, 'user_id'),
+            'approval_request',
+            'New Join Request',
+            ($requester['name'] ?? 'Someone') . ' requested to join ' . $congregation['name'],
+            '/admin_congregation/members.php'
+        );
 
         Logger::audit($userId, 'requested_to_join', ['congregation_id' => $congregationId]);
         Response::success(['message' => 'Join request submitted']);

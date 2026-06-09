@@ -418,3 +418,11 @@ document.addEventListener('keydown', function(e) {
     if ((e.ctrlKey || e.metaKey) && e.shiftKey && (e.key === 'L' || e.key === 'l')) { e.preventDefault(); toggleTheme(); }
 });
 </script>
+<script>
+// Web Push: expose the VAPID public key and register the service worker so
+// push notifications can be received across the whole origin.
+window.VAPID_PUBLIC_KEY = '<?= defined('VAPID_PUBLIC_KEY') ? e(VAPID_PUBLIC_KEY) : '' ?>';
+if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('/sw.js').catch(function () {});
+}
+</script>

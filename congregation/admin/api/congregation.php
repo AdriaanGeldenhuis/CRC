@@ -258,16 +258,14 @@ switch ($action) {
             [$primaryCong['id'], $user['id']]
         );
 
-        foreach ($memberIds as $member) {
-            Database::insert('notifications', [
-                'user_id' => $member['user_id'],
-                'type' => 'announcement',
-                'title' => 'New Announcement',
-                'message' => $title,
-                'link' => '/announcements/?id=' . $announcementId,
-                'created_at' => date('Y-m-d H:i:s')
-            ]);
-        }
+        Notify::sendMany(
+            array_column($memberIds, 'user_id'),
+            'announcement',
+            'New Announcement',
+            $title,
+            '/announcements/?id=' . $announcementId,
+            ['priority' => $priority === 'high' ? 'high' : 'normal']
+        );
 
         Response::success(['announcement_id' => $announcementId], 'Announcement posted');
         break;

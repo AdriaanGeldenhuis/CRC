@@ -245,34 +245,90 @@ if (settingsForm) {
 // Push notification subscription
 async function subscribeToPush() {
     if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
-        console.log('Push notifications not supported');
+        showToast('Push notifications are not supported on this device', 'error');
+        return false;
+    }
+    if (!window.VAPID_PUBLIC_KEY) {
+        showToast('Push notifications are not configured on the server', 'error');
         return false;
     }
 
     try {
+        // Ask for permission up front so the user gets a clear prompt.
+        const permission = await Notification.requestPermission();
+        if (permission !== 'granted') {
+            showToast('Push permission was not granted', 'error');
+            return false;
+        }
+
         const registration = await navigator.serviceWorker.ready;
 
-        const subscription = await registration.pushManager.subscribe({
-            userVisibleOnly: true,
-            applicationServerKey: urlBase64ToUint8Array(window.VAPID_PUBLIC_KEY)
-        });
+        let subscription = await registration.pushManager.getSubscription();
+        if (!subscription) {
+            subscription = await registration.pushManager.subscribe({
+                userVisibleOnly: true,
+                applicationServerKey: urlBase64ToUint8Array(window.VAPID_PUBLIC_KEY)
+            });
+        }
 
         // Send subscription to server
         const formData = new FormData();
         formData.append('action', 'subscribe_push');
         formData.append('subscription', JSON.stringify(subscription));
 
+        const res = await fetch('/notifications/api/notifications.php', {
+            method: 'POST',
+            body: formData,
+            headers: { 'X-CSRF-Token': CSRF_TOKEN }
+        });
+        const data = await res.json();
+        return !!(data && data.ok);
+    } catch (error) {
+        console.error('Push subscription error:', error);
+        showToast('Could not enable push notifications', 'error');
+        return false;
+    }
+}
+
+// Remove the current push subscription (browser + server)
+async function unsubscribeFromPush() {
+    if (!('serviceWorker' in navigator)) return;
+
+    try {
+        const registration = await navigator.serviceWorker.ready;
+        const subscription = await registration.pushManager.getSubscription();
+        if (!subscription) return;
+
+        const endpoint = subscription.endpoint;
+        await subscription.unsubscribe();
+
+        const formData = new FormData();
+        formData.append('action', 'unsubscribe_push');
+        formData.append('endpoint', endpoint);
+
         await fetch('/notifications/api/notifications.php', {
             method: 'POST',
             body: formData,
             headers: { 'X-CSRF-Token': CSRF_TOKEN }
         });
-
-        return true;
     } catch (error) {
-        console.error('Push subscription error:', error);
-        return false;
+        console.error('Push unsubscribe error:', error);
     }
+}
+
+// Wire the "Push Notifications" toggle on the settings page.
+const pushToggle = document.querySelector('#settings-form input[name="push_enabled"]');
+if (pushToggle) {
+    pushToggle.addEventListener('change', async () => {
+        if (pushToggle.checked) {
+            const ok = await subscribeToPush();
+            if (!ok) {
+                pushToggle.checked = false;
+            }
+        } else {
+            await unsubscribeFromPush();
+        }
+    });
 }
 
 // Helper: Convert VAPID key

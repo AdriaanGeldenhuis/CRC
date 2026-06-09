@@ -69,14 +69,13 @@ switch ($action) {
         ]);
 
         // Notify leader
-        Database::insert('notifications', [
-            'user_id' => $homecell['leader_user_id'],
-            'type' => 'homecell_join',
-            'title' => 'New Member',
-            'message' => $user['name'] . ' joined ' . $homecell['name'],
-            'link' => '/homecells/view.php?id=' . $homecellId,
-            'created_at' => date('Y-m-d H:i:s')
-        ]);
+        Notify::send(
+            (int) $homecell['leader_user_id'],
+            'homecell_join',
+            'New Member',
+            $user['name'] . ' joined ' . $homecell['name'],
+            '/homecells/view.php?id=' . $homecellId
+        );
 
         Response::success([], 'Successfully joined homecell');
         break;

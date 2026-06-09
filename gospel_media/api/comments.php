@@ -126,14 +126,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
             // Create notification for post owner
             if ($post['user_id'] !== Auth::id()) {
                 $user = Auth::user();
-                Database::insert('notifications', [
-                    'user_id' => $post['user_id'],
-                    'type' => 'new_comment',
-                    'title' => 'New Comment',
-                    'message' => $user['name'] . ' commented on your post',
-                    'link' => '/gospel_media/post.php?id=' . $postId,
-                    'created_at' => date('Y-m-d H:i:s')
-                ]);
+                Notify::send(
+                    (int) $post['user_id'],
+                    'new_comment',
+                    'New Comment',
+                    $user['name'] . ' commented on your post',
+                    '/gospel_media/post.php?id=' . $postId
+                );
             }
 
             Response::success(['comment_id' => $commentId], 'Comment posted');

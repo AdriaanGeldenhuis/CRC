@@ -133,7 +133,9 @@ switch ($action) {
             'sermon_updates' => input('sermon_updates') ? 1 : 0,
             'livestream_alerts' => input('livestream_alerts') ? 1 : 0,
             'announcements' => input('announcements') ? 1 : 0,
-            'digest_frequency' => input('digest_frequency', 'daily'),
+            'social_updates' => input('social_updates') ? 1 : 0,
+            'digest_frequency' => in_array(input('digest_frequency'), ['none', 'daily', 'weekly'], true)
+                ? input('digest_frequency') : 'daily',
             'quiet_hours_start' => input('quiet_hours_start') ?: null,
             'quiet_hours_end' => input('quiet_hours_end') ?: null,
             'updated_at' => date('Y-m-d H:i:s')
@@ -174,6 +176,7 @@ switch ($action) {
                 'sermon_updates' => 1,
                 'livestream_alerts' => 1,
                 'announcements' => 1,
+                'social_updates' => 1,
                 'digest_frequency' => 'daily',
                 'quiet_hours_start' => null,
                 'quiet_hours_end' => null
@@ -186,22 +189,43 @@ switch ($action) {
     case 'subscribe_push':
         $subscription = input('subscription');
 
-        if (!$subscription) {
+        // FormData clients send the subscription as a JSON string.
+        if (is_string($subscription)) {
+            $subscription = json_decode($subscription, true);
+        }
+
+        if (!is_array($subscription) || empty($subscription['endpoint'])) {
             Response::error('Subscription data required');
         }
 
-        // Store push subscription
+        $endpoint = $subscription['endpoint'];
+        $p256dh = $subscription['keys']['p256dh'] ?? '';
+        $auth = $subscription['keys']['auth'] ?? '';
+
+        if ($p256dh === '' || $auth === '') {
+            Response::error('Invalid subscription keys');
+        }
+
+        // Upsert: reactivate/refresh if this endpoint already exists.
         $existing = Database::fetchColumn(
             "SELECT id FROM push_subscriptions WHERE user_id = ? AND endpoint = ?",
-            [$user['id'], $subscription['endpoint'] ?? '']
+            [$user['id'], $endpoint]
         );
 
-        if (!$existing) {
+        if ($existing) {
+            Database::update('push_subscriptions', [
+                'p256dh_key' => $p256dh,
+                'auth_key' => $auth,
+                'is_active' => 1,
+                'last_used_at' => date('Y-m-d H:i:s')
+            ], 'id = ?', [$existing]);
+        } else {
             Database::insert('push_subscriptions', [
                 'user_id' => $user['id'],
-                'endpoint' => $subscription['endpoint'] ?? '',
-                'p256dh_key' => $subscription['keys']['p256dh'] ?? '',
-                'auth_key' => $subscription['keys']['auth'] ?? '',
+                'endpoint' => $endpoint,
+                'p256dh_key' => $p256dh,
+                'auth_key' => $auth,
+                'user_agent' => substr($_SERVER['HTTP_USER_AGENT'] ?? '', 0, 255),
                 'created_at' => date('Y-m-d H:i:s')
             ]);
         }
