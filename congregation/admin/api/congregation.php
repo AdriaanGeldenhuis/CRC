@@ -296,14 +296,13 @@ switch ($action) {
             'created_at' => date('Y-m-d H:i:s')
         ]);
 
-        // Add leader as member
+        // Add leader as member (homecell_members has no created_at column)
         Database::insert('homecell_members', [
             'homecell_id' => $homecellId,
             'user_id' => $leaderId,
             'role' => 'leader',
             'status' => 'active',
-            'joined_at' => date('Y-m-d H:i:s'),
-            'created_at' => date('Y-m-d H:i:s')
+            'joined_at' => date('Y-m-d H:i:s')
         ]);
 
         Response::success(['homecell_id' => $homecellId], 'Homecell created');

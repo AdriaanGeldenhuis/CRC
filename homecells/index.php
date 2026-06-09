@@ -47,6 +47,14 @@ try {
 
 $days = ['monday' => 'Monday', 'tuesday' => 'Tuesday', 'wednesday' => 'Wednesday',
          'thursday' => 'Thursday', 'friday' => 'Friday', 'saturday' => 'Saturday', 'sunday' => 'Sunday'];
+
+// Safely format a homecell's meeting schedule (day/time may be unset).
+function homecellSchedule(?string $day, ?string $time): string {
+    $dayPart = $day ? ucfirst($day) . 's' : '';
+    $timePart = $time ? date('g:i A', strtotime($time)) : '';
+    if ($dayPart && $timePart) return $dayPart . ' at ' . $timePart;
+    return $dayPart ?: ($timePart ?: 'Schedule to be announced');
+}
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -232,7 +240,7 @@ $days = ['monday' => 'Monday', 'tuesday' => 'Tuesday', 'wednesday' => 'Wednesday
                         <div class="cell-meta">
                             <span>
                                 <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" width="14" height="14"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
-                                <?= ucfirst($myHomecell['meeting_day']) ?>s at <?= date('g:i A', strtotime($myHomecell['meeting_time'])) ?>
+                                <?= e(homecellSchedule($myHomecell['meeting_day'], $myHomecell['meeting_time'])) ?>
                             </span>
                             <span>
                                 <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" width="14" height="14"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
@@ -275,7 +283,7 @@ $days = ['monday' => 'Monday', 'tuesday' => 'Tuesday', 'wednesday' => 'Wednesday
                                     <div class="detail-icon">
                                         <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
                                     </div>
-                                    <span><?= ucfirst($hc['meeting_day']) ?>s at <?= date('g:i A', strtotime($hc['meeting_time'])) ?></span>
+                                    <span><?= e(homecellSchedule($hc['meeting_day'], $hc['meeting_time'])) ?></span>
                                 </div>
                                 <div class="detail-item">
                                     <div class="detail-icon">

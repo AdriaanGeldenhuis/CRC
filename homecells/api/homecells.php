@@ -36,6 +36,10 @@ switch ($action) {
             Response::error('Homecell not found');
         }
 
+        if (!$homecell['is_accepting_members']) {
+            Response::error('This homecell is not accepting new members right now');
+        }
+
         // Check if already member of any homecell
         $existing = Database::fetchOne(
             "SELECT hm.* FROM homecell_members hm
@@ -48,25 +52,40 @@ switch ($action) {
             Response::error('You are already a member of a homecell. Leave your current homecell first.');
         }
 
-        // Check for pending request
-        $pending = Database::fetchOne(
-            "SELECT * FROM homecell_members WHERE homecell_id = ? AND user_id = ? AND status = 'pending'",
+        // Enforce capacity if a limit is set
+        if (!empty($homecell['max_members'])) {
+            $memberCount = (int) Database::fetchColumn(
+                "SELECT COUNT(*) FROM homecell_members WHERE homecell_id = ? AND status = 'active'",
+                [$homecellId]
+            );
+            if ($memberCount >= (int)$homecell['max_members']) {
+                Response::error('This homecell is full');
+            }
+        }
+
+        // Join homecell (auto-approve). Re-activate a prior row if one exists,
+        // since (homecell_id, user_id) is unique and a 'left' row is kept.
+        $prior = Database::fetchOne(
+            "SELECT id FROM homecell_members WHERE homecell_id = ? AND user_id = ?",
             [$homecellId, $user['id']]
         );
 
-        if ($pending) {
-            Response::error('You have a pending request for this homecell');
+        if ($prior) {
+            Database::update('homecell_members', [
+                'role' => 'member',
+                'status' => 'active',
+                'joined_at' => date('Y-m-d H:i:s'),
+                'left_at' => null
+            ], 'id = ?', [$prior['id']]);
+        } else {
+            Database::insert('homecell_members', [
+                'homecell_id' => $homecellId,
+                'user_id' => $user['id'],
+                'role' => 'member',
+                'status' => 'active',
+                'joined_at' => date('Y-m-d H:i:s')
+            ]);
         }
-
-        // Join homecell (auto-approve for now)
-        Database::insert('homecell_members', [
-            'homecell_id' => $homecellId,
-            'user_id' => $user['id'],
-            'role' => 'member',
-            'status' => 'active',
-            'joined_at' => date('Y-m-d H:i:s'),
-            'created_at' => date('Y-m-d H:i:s')
-        ]);
 
         // Notify leader
         Notify::send(
@@ -146,7 +165,7 @@ switch ($action) {
         }
 
         $members = Database::fetchAll(
-            "SELECT hm.role, u.id, u.name, u.avatar_url
+            "SELECT hm.role, u.id, u.name, u.avatar
              FROM homecell_members hm
              JOIN users u ON hm.user_id = u.id
              WHERE hm.homecell_id = ? AND hm.status = 'active'
@@ -172,6 +191,15 @@ switch ($action) {
             Response::forbidden('Only the leader can record attendance');
         }
 
+        // Verify the meeting belongs to this homecell
+        $meeting = Database::fetchOne(
+            "SELECT id FROM homecell_meetings WHERE id = ? AND homecell_id = ?",
+            [$meetingId, $homecellId]
+        );
+        if (!$meeting) {
+            Response::error('Meeting not found');
+        }
+
         // Clear existing attendance for this meeting
         Database::delete('homecell_attendance', 'meeting_id = ?', [$meetingId]);
 
@@ -181,7 +209,8 @@ switch ($action) {
                 'meeting_id' => $meetingId,
                 'user_id' => (int)$userId,
                 'status' => 'present',
-                'created_at' => date('Y-m-d H:i:s')
+                'recorded_by' => $user['id'],
+                'recorded_at' => date('Y-m-d H:i:s')
             ]);
         }
 
