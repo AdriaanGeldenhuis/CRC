@@ -699,8 +699,8 @@ async function loadPrayer(prayerId) {
 
         if (data.ok && data.prayer) {
             document.getElementById('prayer-id').value = data.prayer.id;
-            document.getElementById('prayer-title').value = data.prayer.title;
-            document.getElementById('prayer-request').value = data.prayer.request;
+            document.getElementById('prayer-title').value = data.prayer.title || '';
+            document.getElementById('prayer-request').value = data.prayer.description ?? data.prayer.request ?? '';
             document.getElementById('prayer-category').value = data.prayer.category || 'personal';
             document.getElementById('prayer-scripture').value = data.prayer.scripture_ref || '';
         }

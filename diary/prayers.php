@@ -97,21 +97,445 @@ function getCategoryIcon($cat) {
     <link rel="apple-touch-icon" href="/apple-touch-icon.png">
     <link rel="manifest" href="/site.webmanifest">
     <meta name="theme-color" content="#7C3AED">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title><?= e($pageTitle) ?></title>
     <?= CSRF::meta() ?>
     <link rel="stylesheet" href="/home/css/home.css?v=<?= filemtime(__DIR__ . '/../home/css/home.css') ?>">
     <link rel="stylesheet" href="/gospel_media/css/gospel_media.css?v=<?= filemtime(__DIR__ . '/../gospel_media/css/gospel_media.css') ?>">
-    <link rel="stylesheet" href="/diary/css/diary.css?v=<?= filemtime(__DIR__ . '/css/diary.css') ?>">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <script>
         (function() {
             const saved = localStorage.getItem('theme') || 'dark';
             document.documentElement.setAttribute('data-theme', saved);
         })();
     </script>
+    <style>
+        /* ===== Prayer Journal — aligned with app (home) design system ===== */
+        .feed-container { padding-bottom: 100px; }
+
+        /* Header */
+        .diary-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1.5rem;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+        .diary-title h1,
+        .diary-title .display-title {
+            font-family: Inter, system-ui, -apple-system, sans-serif;
+            font-size: 1.75rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, #7C3AED, #22D3EE);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin: 0;
+        }
+        .diary-title p,
+        .diary-title .subtitle {
+            color: var(--muted);
+            font-size: 0.9rem;
+            margin: 0.25rem 0 0;
+        }
+        .diary-actions { display: flex; gap: 0.75rem; flex-wrap: wrap; }
+
+        /* Buttons */
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            padding: 0.75rem 1.25rem;
+            border-radius: 12px;
+            font-weight: 600;
+            font-size: 0.9rem;
+            text-decoration: none;
+            transition: all 0.2s ease;
+            border: none;
+            cursor: pointer;
+            font-family: inherit;
+        }
+        .btn-outline { background: var(--card); border: 1px solid var(--line); color: var(--text); }
+        .btn-outline:hover { background: var(--card2); border-color: var(--accent); }
+        .btn-secondary { background: var(--card); border: 1px solid var(--line); color: var(--text); }
+        .btn-secondary:hover { background: var(--card2); }
+        .btn-primary {
+            background: linear-gradient(135deg, #7C3AED, #22D3EE);
+            color: #fff;
+            box-shadow: 0 4px 15px rgba(124, 58, 237, 0.3);
+            transition: transform 0.25s cubic-bezier(0.2, 0.8, 0.25, 1.4), box-shadow 0.25s ease;
+        }
+        .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(124, 58, 237, 0.4); }
+        .btn-primary:active { transform: translateY(0) scale(0.98); }
+        .btn-success, .btn-primary.btn-success {
+            background: linear-gradient(135deg, #10B981, #22D3EE);
+            box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3);
+        }
+        .btn-success:hover, .btn-primary.btn-success:hover { box-shadow: 0 6px 20px rgba(16, 185, 129, 0.4); }
+
+        /* Stats */
+        .diary-stats {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 1rem;
+            padding: 0 1rem 1rem;
+        }
+        .stat-card {
+            background: var(--card);
+            border: 1px solid var(--line);
+            border-radius: 16px;
+            padding: 1.25rem;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+            box-shadow: var(--shadow);
+            transition: transform 0.35s cubic-bezier(0.2, 0.8, 0.25, 1.2), box-shadow 0.35s ease, border-color 0.35s ease;
+        }
+        .stat-card::before {
+            content: "";
+            position: absolute;
+            top: 0; left: 0; right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, #7C3AED, #22D3EE);
+        }
+        .stat-card:hover {
+            transform: translateY(-4px);
+            border-color: rgba(124, 58, 237, 0.40);
+            box-shadow: 0 26px 54px rgba(0, 0, 0, 0.50), 0 0 28px rgba(124, 58, 237, 0.16);
+        }
+        .stat-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 12px;
+            background: rgba(124, 58, 237, 0.15);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 0.75rem;
+        }
+        .stat-icon svg { width: 24px; height: 24px; color: #7C3AED; }
+        .stat-icon.accent { background: rgba(34, 211, 238, 0.15); }
+        .stat-icon.accent svg { color: #22D3EE; }
+        .stat-icon.success { background: rgba(16, 185, 129, 0.15); }
+        .stat-icon.success svg { color: #10B981; }
+        .stat-icon.warning { background: rgba(245, 158, 11, 0.15); }
+        .stat-icon.warning svg { color: #F59E0B; }
+        .stat-value {
+            display: block;
+            font-size: 1.75rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, #7C3AED, #22D3EE);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            filter: drop-shadow(0 2px 8px rgba(124, 58, 237, 0.35));
+        }
+        .stat-label { display: block; font-size: 0.8rem; color: var(--muted); margin-top: 0.25rem; }
+
+        /* Filters */
+        .prayer-filters {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 1rem;
+            padding: 0 1rem 1rem;
+            flex-wrap: wrap;
+        }
+        .filter-tabs { display: flex; gap: 0.5rem; flex-wrap: wrap; }
+        .filter-tab {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+            padding: 0.6rem 1rem;
+            background: var(--card);
+            border: 1px solid var(--line);
+            border-radius: 20px;
+            color: var(--muted);
+            font-size: 0.85rem;
+            font-weight: 500;
+            text-decoration: none;
+            white-space: nowrap;
+            transition: transform 0.2s ease, background 0.2s ease, color 0.2s ease;
+        }
+        .filter-tab:hover { background: var(--card2); color: var(--text); transform: translateY(-1px); }
+        .filter-tab.active {
+            color: #fff;
+            background: linear-gradient(135deg, rgba(124, 58, 237, 0.85), rgba(34, 211, 238, 0.75));
+            border-color: rgba(34, 211, 238, 0.30);
+            box-shadow: 0 8px 18px rgba(124, 58, 237, 0.28);
+        }
+        .filter-categories select {
+            padding: 0.6rem 2.25rem 0.6rem 1rem;
+            background: var(--card);
+            border: 1px solid var(--line);
+            border-radius: 12px;
+            color: var(--text);
+            font-size: 0.85rem;
+            font-family: inherit;
+            cursor: pointer;
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23888' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 0.85rem center;
+        }
+        .filter-categories select:focus { outline: none; border-color: var(--accent); }
+
+        /* Prayer list */
+        .prayer-list { display: grid; gap: 1rem; padding: 0 1rem; }
+        .prayer-card {
+            background: var(--card);
+            border: 1px solid var(--line);
+            border-radius: 16px;
+            padding: 1.25rem;
+            position: relative;
+            overflow: hidden;
+            box-shadow: var(--shadow);
+            transition: transform 0.35s cubic-bezier(0.2, 0.8, 0.25, 1.2), box-shadow 0.35s ease, border-color 0.35s ease;
+        }
+        .prayer-card:hover {
+            transform: translateY(-4px);
+            border-color: rgba(124, 58, 237, 0.40);
+            box-shadow: 0 26px 54px rgba(0, 0, 0, 0.50), 0 0 28px rgba(124, 58, 237, 0.16);
+        }
+        .prayer-card.answered { border-color: rgba(16, 185, 129, 0.35); }
+        .prayer-card.answered::before { background: linear-gradient(90deg, #10B981, #22D3EE); }
+        .prayer-card::before {
+            content: "";
+            position: absolute;
+            top: 0; left: 0; right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, #7C3AED, #22D3EE);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+        .prayer-card:hover::before, .prayer-card.answered::before { opacity: 1; }
+        .prayer-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 0.75rem;
+            margin-bottom: 0.75rem;
+        }
+        .prayer-category {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+            padding: 0.35rem 0.75rem;
+            background: rgba(124, 58, 237, 0.15);
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: var(--text);
+            text-transform: capitalize;
+        }
+        .prayer-category svg { width: 14px; height: 14px; color: #7C3AED; }
+        .prayer-badges { display: flex; gap: 0.5rem; }
+        .prayer-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.3rem;
+            padding: 0.3rem 0.65rem;
+            border-radius: 20px;
+            font-size: 0.72rem;
+            font-weight: 600;
+        }
+        .prayer-badge.answered { background: rgba(16, 185, 129, 0.15); color: #10B981; }
+        .prayer-title { margin: 0 0 0.5rem; font-size: 1.05rem; font-weight: 700; color: var(--text); }
+        .prayer-content { margin: 0 0 0.75rem; font-size: 0.9rem; color: var(--muted); line-height: 1.6; }
+        .prayer-scripture {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+            font-size: 0.8rem;
+            color: #22D3EE;
+            margin: 0 0 0.75rem;
+            font-style: italic;
+        }
+        .prayer-scripture svg { width: 16px; height: 16px; }
+        .prayer-testimony {
+            background: rgba(16, 185, 129, 0.08);
+            border: 1px solid rgba(16, 185, 129, 0.2);
+            border-radius: 12px;
+            padding: 0.85rem 1rem;
+            margin: 0 0 0.75rem;
+        }
+        .testimony-header {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-bottom: 0.4rem;
+            color: #10B981;
+            font-size: 0.8rem;
+        }
+        .testimony-header svg { width: 16px; height: 16px; }
+        .testimony-header .answered-date { margin-left: auto; color: var(--muted); font-weight: 500; font-size: 0.72rem; }
+        .prayer-testimony p { margin: 0; font-size: 0.85rem; color: var(--text); line-height: 1.5; }
+        .prayer-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 0.75rem;
+            padding-top: 0.75rem;
+            border-top: 1px solid var(--line);
+        }
+        .prayer-date { display: inline-flex; align-items: center; gap: 0.4rem; font-size: 0.78rem; color: var(--muted); }
+        .prayer-date svg { color: var(--muted); }
+        .prayer-actions-menu { display: flex; gap: 0.4rem; }
+        .action-btn {
+            width: 34px;
+            height: 34px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            background: var(--card);
+            border: 1px solid var(--line);
+            border-radius: 10px;
+            color: var(--muted);
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+        .action-btn svg { width: 16px; height: 16px; }
+        .action-btn:hover { background: var(--card2); color: var(--text); transform: translateY(-1px); }
+        .action-btn.success:hover { color: #10B981; border-color: rgba(16, 185, 129, 0.4); }
+        .action-btn.danger:hover { color: #EF4444; border-color: rgba(239, 68, 68, 0.4); }
+
+        /* Empty state */
+        .empty-state {
+            text-align: center;
+            padding: 3rem 1.5rem;
+            background: var(--card);
+            border: 1px solid var(--line);
+            border-radius: 16px;
+            box-shadow: var(--shadow);
+        }
+        .empty-icon {
+            width: 80px;
+            height: 80px;
+            margin: 0 auto 1.5rem;
+            background: linear-gradient(135deg, rgba(124, 58, 237, 0.15), rgba(34, 211, 238, 0.1));
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .empty-icon svg { width: 40px; height: 40px; color: #7C3AED; }
+        .empty-state h3 { margin: 0 0 0.5rem; font-size: 1.25rem; color: var(--text); }
+        .empty-state p { margin: 0 0 1.5rem; color: var(--muted); }
+
+        /* Modal */
+        .modal {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.85);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 2000;
+            padding: 1rem;
+        }
+        .modal.show { display: flex; }
+        .modal-content {
+            background: var(--bg1);
+            border: 1px solid var(--line);
+            border-radius: 18px;
+            box-shadow: var(--shadow);
+            width: 100%;
+            max-width: 520px;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1.25rem 1.5rem;
+            border-bottom: 1px solid var(--line);
+        }
+        .modal-header h2,
+        .modal-header .display-title {
+            margin: 0;
+            font-size: 1.15rem;
+            font-weight: 700;
+            color: var(--text);
+            background: none;
+            -webkit-text-fill-color: currentColor;
+            font-family: inherit;
+        }
+        .modal-close {
+            width: 36px;
+            height: 36px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: var(--card);
+            border: 1px solid var(--line);
+            border-radius: 10px;
+            color: var(--muted);
+            cursor: pointer;
+            transition: all 0.12s ease;
+        }
+        .modal-close svg { width: 18px; height: 18px; }
+        .modal-close:hover { background: var(--card2); color: var(--text); }
+        #prayer-form, #answered-form { padding: 1.5rem; }
+        .form-group { margin-bottom: 1.25rem; }
+        .form-group label {
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+            color: var(--muted);
+            font-size: 0.78rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .form-group label svg { width: 16px; height: 16px; color: var(--accent); }
+        .form-group input,
+        .form-group textarea,
+        .form-group select {
+            width: 100%;
+            padding: 0.85rem 1rem;
+            border: 1px solid var(--line);
+            border-radius: 12px;
+            background: var(--card);
+            color: var(--text);
+            font-size: 0.95rem;
+            font-family: inherit;
+            transition: all 0.12s ease;
+        }
+        .form-group textarea { resize: vertical; min-height: 110px; }
+        .form-group input:focus,
+        .form-group textarea:focus,
+        .form-group select:focus { outline: none; border-color: var(--accent); background: var(--card2); }
+        .form-group input::placeholder,
+        .form-group textarea::placeholder { color: var(--muted2); }
+        .form-group select {
+            appearance: none;
+            cursor: pointer;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23888' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 1rem center;
+            padding-right: 2.5rem;
+        }
+        .form-actions { display: flex; gap: 0.75rem; justify-content: flex-end; padding-top: 0.5rem; }
+
+        /* Responsive */
+        @media (max-width: 640px) {
+            .diary-header { flex-direction: column; align-items: flex-start; }
+            .diary-stats { grid-template-columns: repeat(2, 1fr); }
+            .prayer-filters { flex-direction: column; align-items: stretch; }
+            .filter-categories select { width: 100%; }
+        }
+        @media (prefers-reduced-motion: reduce) {
+            .stat-card, .prayer-card, .btn-primary, .filter-tab, .action-btn { transition: none !important; }
+        }
+    </style>
 </head>
 <body data-theme="dark">
     <!-- Top Bar / Navigation -->
