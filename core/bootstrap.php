@@ -31,6 +31,8 @@ require_once __DIR__ . '/validators.php';
 require_once __DIR__ . '/session.php';
 require_once __DIR__ . '/auth.php';
 require_once __DIR__ . '/upload.php';
+require_once __DIR__ . '/push.php';
+require_once __DIR__ . '/notifications.php';
 
 // Set security headers
 Security::setHeaders();

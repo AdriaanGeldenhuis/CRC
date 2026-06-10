@@ -69,14 +69,13 @@ if ($existing) {
             $user = Auth::user();
             $reactionLabels = ['like' => 'liked', 'love' => 'loved', 'pray' => 'is praying for', 'amen' => 'said Amen to'];
             $actionText = $reactionLabels[$reactionType] ?? 'reacted to';
-            Database::insert('notifications', [
-                'user_id' => $post['user_id'],
-                'type' => 'new_reaction',
-                'title' => 'New Reaction',
-                'message' => $user['name'] . ' ' . $actionText . ' your post',
-                'link' => '/gospel_media/post.php?id=' . $id,
-                'created_at' => date('Y-m-d H:i:s')
-            ]);
+            Notify::send(
+                (int) $post['user_id'],
+                'new_reaction',
+                'New Reaction',
+                $user['name'] . ' ' . $actionText . ' your post',
+                '/gospel_media/post.php?id=' . $id
+            );
         }
     }
 

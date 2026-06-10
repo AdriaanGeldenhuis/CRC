@@ -28,6 +28,7 @@ if (!$settings) {
         'sermon_updates' => 1,
         'livestream_alerts' => 1,
         'announcements' => 1,
+        'social_updates' => 1,
         'digest_frequency' => 'daily',
         'quiet_hours_start' => null,
         'quiet_hours_end' => null
@@ -171,6 +172,16 @@ $digestOptions = [
                         </div>
                         <label class="toggle">
                             <input type="checkbox" name="announcements" <?= $settings['announcements'] ? 'checked' : '' ?>>
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+                    <div class="setting-item">
+                        <div class="setting-info">
+                            <h4>💬 Comments &amp; Reactions</h4>
+                            <p>When someone comments on or reacts to your posts</p>
+                        </div>
+                        <label class="toggle">
+                            <input type="checkbox" name="social_updates" <?= ($settings['social_updates'] ?? 1) ? 'checked' : '' ?>>
                             <span class="toggle-slider"></span>
                         </label>
                     </div>

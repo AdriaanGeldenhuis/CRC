@@ -302,6 +302,21 @@ switch ($action) {
 
         logActivity($user['id'], 'Added sermon: ' . $title);
 
+        // Notify congregation members about the new sermon
+        if ($congId) {
+            $members = Database::fetchAll(
+                "SELECT user_id FROM user_congregations WHERE congregation_id = ? AND status = 'active'",
+                [$congId]
+            );
+            Notify::sendMany(
+                array_column($members, 'user_id'),
+                'new_sermon',
+                'New Sermon',
+                $title . ' • ' . $speaker,
+                '/media/sermon.php?id=' . $sermonId
+            );
+        }
+
         Response::success(['sermon_id' => $sermonId], 'Sermon added successfully');
         break;
 

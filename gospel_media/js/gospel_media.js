@@ -26,104 +26,6 @@ function escapeHtml(text) {
 }
 
 // =====================================================
-// POST MODAL
-// =====================================================
-
-function openPostModal(type) {
-    const modal = document.getElementById('postModal');
-    if (modal) {
-        modal.classList.add('show');
-        document.getElementById('postContent')?.focus();
-    }
-}
-
-function closePostModal() {
-    const modal = document.getElementById('postModal');
-    if (modal) {
-        modal.classList.remove('show');
-        document.getElementById('createPostForm')?.reset();
-        const preview = document.getElementById('mediaPreview');
-        if (preview) preview.innerHTML = '';
-    }
-}
-
-// Preview media before upload
-function previewMedia(input) {
-    const preview = document.getElementById('mediaPreview');
-    if (!preview) return;
-    preview.innerHTML = '';
-
-    Array.from(input.files).forEach(file => {
-        if (file.type.startsWith('image/')) {
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                const img = document.createElement('img');
-                img.src = e.target.result;
-                preview.appendChild(img);
-            };
-            reader.readAsDataURL(file);
-        }
-    });
-}
-
-// =====================================================
-// CREATE POST
-// =====================================================
-
-async function createPost(e) {
-    e.preventDefault();
-
-    const btn = document.getElementById('postSubmitBtn');
-    const contentEl = document.getElementById('postContent');
-    const scopeEl = document.getElementById('postScope');
-    const mediaInput = document.getElementById('postMedia');
-
-    if (!btn || !contentEl) return;
-
-    const content = contentEl.value.trim();
-    if (!content) {
-        showToast('Please write something', 'error');
-        return;
-    }
-
-    btn.disabled = true;
-    btn.textContent = 'Posting...';
-
-    const formData = new FormData();
-    formData.append('content', content);
-    formData.append('scope', scopeEl?.value || 'congregation');
-
-    if (mediaInput?.files.length > 0) {
-        Array.from(mediaInput.files).forEach(file => {
-            formData.append('media[]', file);
-        });
-    }
-
-    try {
-        const response = await fetch('/gospel_media/api/posts.php?action=create', {
-            method: 'POST',
-            headers: { 'X-CSRF-Token': getCSRFToken() },
-            body: formData
-        });
-
-        const data = await response.json();
-
-        if (data.ok) {
-            showToast('Post created!');
-            closePostModal();
-            setTimeout(() => location.reload(), 500);
-        } else {
-            showToast(data.error || 'Failed to create post', 'error');
-        }
-    } catch (error) {
-        showToast('Network error', 'error');
-    } finally {
-        btn.disabled = false;
-        btn.textContent = 'Post';
-    }
-}
-
-// =====================================================
 // REACTIONS - Multiple Types (Like, Love, Pray, Amen)
 // =====================================================
 
@@ -196,10 +98,9 @@ async function toggleReaction(postId, reactionType) {
     var picker = postCard.querySelector('.reaction-picker');
     if (picker) picker.classList.remove('show');
 
-    var currentReaction = reactionBtn.getAttribute('data-reaction') || '';
-
-    // If clicking the same reaction, remove it. Otherwise set new reaction.
-    var sendType = (currentReaction === reactionType) ? reactionType : reactionType;
+    // The server toggles the reaction off when the same type is sent again,
+    // so we always send the requested type and let the API decide.
+    var sendType = reactionType;
 
     try {
         var response = await fetch('/gospel_media/api/reactions.php', {
@@ -990,18 +891,53 @@ async function loadMorePosts() {
     }
 }
 
+var FEED_REACTION_COLORS = { like: '#3B82F6', love: '#EF4444', pray: '#8B5CF6', amen: '#F59E0B' };
+var FEED_REACTION_MINI = {
+    like: '<svg viewBox="0 0 24 24" fill="currentColor" width="14" height="14"><path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3zM7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3"/></svg>',
+    love: '<svg viewBox="0 0 24 24" fill="currentColor" width="14" height="14"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>',
+    pray: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M12 22s-8-4-8-10V5l8-3 8 3v7c0 6-8 10-8 10z"/></svg>',
+    amen: '<svg viewBox="0 0 24 24" fill="currentColor" width="14" height="14"><path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z"/></svg>'
+};
+
 function createPostElement(post) {
     var article = document.createElement('article');
     article.className = 'post-card fade-in-post';
     article.dataset.postId = post.id;
 
-    var avatarHtml = '<div class="author-avatar-placeholder">' + (post.author_name || '?').charAt(0).toUpperCase() + '</div>';
+    var ctx = window.FEED_CTX || { userInitial: '?', userAvatar: '', isAdmin: false, canModerate: false };
+    var initial = (post.author_name || '?').charAt(0).toUpperCase();
+
+    // Author avatar (image with placeholder fallback, matching server render)
+    var avatarHtml = post.author_avatar
+        ? '<img src="' + escapeHtml(post.author_avatar) + '" alt="" class="author-avatar" onerror="this.style.display=\'none\';this.nextElementSibling.style.display=\'flex\';"><div class="author-avatar-placeholder" style="display:none;">' + initial + '</div>'
+        : '<div class="author-avatar-placeholder">' + initial + '</div>';
 
     var scopeHtml = '';
     if (post.scope === 'global') {
         scopeHtml = '<span class="scope-badge global">Global</span>';
     } else if (post.congregation_name) {
         scopeHtml = '<span class="scope-badge">' + escapeHtml(post.congregation_name) + '</span>';
+    }
+
+    var pinned = (post.is_pinned == 1);
+    var pinnedHtml = pinned
+        ? '<span class="pinned-badge"><svg viewBox="0 0 24 24" fill="currentColor" width="14" height="14"><path d="M16 12V4h1V2H7v2h1v8l-2 2v2h5v6l1 1 1-1v-6h5v-2l-2-2z"/></svg></span>'
+        : '';
+
+    // Options menu (edit/delete for owner/admin, pin for admins) — parity with server
+    var optionsHtml = '';
+    if (post.can_edit) {
+        var pinBtn = ctx.isAdmin
+            ? '<button class="post-option" onclick="togglePin(' + post.id + ', ' + (pinned ? 'true' : 'false') + ')"><svg viewBox="0 0 24 24" fill="' + (pinned ? 'currentColor' : 'none') + '" stroke="currentColor" stroke-width="2"><path d="M16 12V4h1V2H7v2h1v8l-2 2v2h5v6l1 1 1-1v-6h5v-2l-2-2z"/></svg>' + (pinned ? 'Unpin' : 'Pin') + '</button>'
+            : '';
+        optionsHtml =
+            '<div class="post-options">' +
+                '<button class="post-options-btn" onclick="togglePostMenu(' + post.id + ')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="1"></circle><circle cx="12" cy="5" r="1"></circle><circle cx="12" cy="19" r="1"></circle></svg></button>' +
+                '<div class="post-options-menu" id="postMenu-' + post.id + '">' + pinBtn +
+                    '<button class="post-option" onclick="editPost(' + post.id + ')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>Edit</button>' +
+                    '<button class="post-option delete" onclick="deletePost(' + post.id + ')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>Delete</button>' +
+                '</div>' +
+            '</div>';
     }
 
     var mediaHtml = '';
@@ -1027,21 +963,51 @@ function createPostElement(post) {
         .replace(/@(\w+)/g, '<span class="mention">@$1</span>')
         .replace(/\n/g, '<br>');
 
+    // Engagement stats (reaction + comment counts)
+    var reactionCount = parseInt(post.reaction_count) || 0;
+    var commentCount = parseInt(post.comment_count) || 0;
+    var userReaction = post.user_reaction || '';
+    var statsHtml = '';
+    if (reactionCount > 0 || commentCount > 0) {
+        var miniType = userReaction || 'like';
+        var reactPart = reactionCount > 0
+            ? '<span class="stat reaction-summary" data-post-id="' + post.id + '"><span class="reaction-icons-row"><span class="reaction-mini" style="color:' + (FEED_REACTION_COLORS[miniType] || '#7C3AED') + '">' + FEED_REACTION_MINI[miniType] + '</span></span> ' + reactionCount + '</span>'
+            : '';
+        var commentPart = commentCount > 0
+            ? '<span class="stat comment-stat" onclick="toggleComments(' + post.id + ')">' + commentCount + ' comment' + (commentCount !== 1 ? 's' : '') + '</span>'
+            : '';
+        statsHtml = '<div class="engagement-stats">' + reactPart + commentPart + '</div>';
+    }
+
+    // Like button reflecting the user's existing reaction
+    var labels = { like: 'Like', love: 'Love', pray: 'Pray', amen: 'Amen' };
+    var likeIcon = (userReaction && FEED_REACTION_MINI[userReaction])
+        ? FEED_REACTION_MINI[userReaction].replace(' width="14" height="14"', '')
+        : '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3zM7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3"></path></svg>';
+    var likeClass = 'post-action' + (userReaction ? ' reacted reaction-' + userReaction : '');
+    var likeColor = userReaction ? (FEED_REACTION_COLORS[userReaction] || '') : '';
+    var likeLabel = labels[userReaction] || 'Like';
+
+    // Comment form avatar (current viewer)
+    var commentAvatar = ctx.userAvatar
+        ? '<img src="' + escapeHtml(ctx.userAvatar) + '" alt="" class="comment-avatar" onerror="this.style.display=\'none\';this.nextElementSibling.style.display=\'flex\';"><div class="comment-avatar-placeholder" style="display:none;">' + escapeHtml(ctx.userInitial) + '</div>'
+        : '<div class="comment-avatar-placeholder">' + escapeHtml(ctx.userInitial) + '</div>';
+
     article.innerHTML =
         '<div class="post-header">' +
             '<div class="post-author">' + avatarHtml +
                 '<div class="author-info"><strong>' + escapeHtml(post.author_name) + '</strong>' +
                 '<span class="post-meta">' + (post.time_ago || '') + ' ' + scopeHtml + '</span></div>' +
             '</div>' +
+            '<div class="post-header-right">' + pinnedHtml + optionsHtml + '</div>' +
         '</div>' +
         '<div class="post-content">' + content + '</div>' +
         mediaHtml +
-        '<div class="post-engagement"></div>' +
+        '<div class="post-engagement">' + statsHtml + '</div>' +
         '<div class="post-actions">' +
             '<div class="reaction-btn-wrap">' +
-                '<button class="post-action" data-reaction="" onclick="toggleReaction(' + post.id + ', \'like\')">' +
-                    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3zM7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3"></path></svg>' +
-                    '<span>Like</span>' +
+                '<button class="' + likeClass + '" data-reaction="' + userReaction + '" onclick="toggleReaction(' + post.id + ', \'' + (userReaction || 'like') + '\')"' + (likeColor ? ' style="color:' + likeColor + '"' : '') + '>' +
+                    likeIcon + '<span>' + likeLabel + '</span>' +
                 '</button>' +
                 '<div class="reaction-picker" id="reactionPicker-' + post.id + '">' +
                     '<button class="reaction-option" onclick="selectReaction(' + post.id + ', \'like\')"><span class="reaction-emoji">&#128077;</span></button>' +
@@ -1056,7 +1022,7 @@ function createPostElement(post) {
         '<div class="comments-section" id="comments-' + post.id + '" style="display:none;">' +
             '<div class="comments-list"></div>' +
             '<form class="comment-form" onsubmit="submitComment(event, ' + post.id + ')">' +
-                '<div class="comment-avatar-placeholder">?</div>' +
+                commentAvatar +
                 '<input type="text" placeholder="Write a comment..." class="comment-input" required>' +
                 '<button type="submit" class="comment-submit"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg></button>' +
             '</form>' +
@@ -1076,7 +1042,6 @@ function createPostElement(post) {
 
 document.addEventListener('keydown', function(e) {
     if (e.key === 'Escape') {
-        closePostModal();
         document.querySelectorAll('.post-options-menu.show').forEach(function(menu) {
             menu.classList.remove('show');
         });
@@ -1115,4 +1080,10 @@ function closeImageViewer() {
 document.addEventListener('DOMContentLoaded', function() {
     setupReactionPickers();
     setupInfiniteScroll();
+
+    // Register the service worker so push notifications work from the feed
+    // (these pages don't include the shared navbar that registers it).
+    if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.register('/sw.js').catch(function() {});
+    }
 });

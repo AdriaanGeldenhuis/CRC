@@ -69,6 +69,11 @@ define('SMARTBIBLE_TEMPERATURE', 0.3);
 define('MAIL_FROM', 'noreply@crc.org.za');
 define('MAIL_FROM_NAME', 'CRC App');
 
+// Web Push (VAPID) Settings — generate with: php _scripts/generate_vapid.php
+define('VAPID_PUBLIC_KEY', getenv('VAPID_PUBLIC_KEY') ?: '');
+define('VAPID_PRIVATE_KEY', getenv('VAPID_PRIVATE_KEY') ?: '');
+define('VAPID_SUBJECT', getenv('VAPID_SUBJECT') ?: 'mailto:' . MAIL_FROM);
+
 // Pagination
 define('DEFAULT_PAGE_SIZE', 20);
 define('MAX_PAGE_SIZE', 100);
