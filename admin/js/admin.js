@@ -414,8 +414,22 @@ async function editSermon(id) {
     fillForm(form, s, [
         { f: 'title', k: 'title' }, { f: 'speaker', k: 'speaker' }, { f: 'sermon_date', k: 'sermon_date' },
         { f: 'description', k: 'description' }, { f: 'video_url', k: 'video_url' },
-        { f: 'audio_url', k: 'audio_url' }, { f: 'category', k: 'category' }
+        { f: 'audio_url', k: 'audio_url' }, { f: 'category', k: 'category' },
+        { f: 'thumbnail', k: 'thumbnail' }, { f: 'status', k: 'status' },
+        { f: 'series_id', k: 'series_id' }, { f: 'congregation_id', k: 'congregation_id' }
     ]);
+    // Duration is stored in seconds; the form captures whole minutes.
+    const durMin = form.querySelector('[name="duration_minutes"]');
+    if (durMin) durMin.value = s.duration ? Math.round(s.duration / 60) : '';
+    // Scripture references are stored as a JSON array; show one per line.
+    const scrip = form.querySelector('[name="scripture_references"]');
+    if (scrip) {
+        let refs = [];
+        try { refs = s.scripture_references ? JSON.parse(s.scripture_references) : []; } catch (e) { refs = []; }
+        scrip.value = Array.isArray(refs) ? refs.join('\n') : (s.scripture_references || '');
+    }
+    const newSeries = form.querySelector('[name="new_series"]');
+    if (newSeries) newSeries.value = '';
     setModalTitle('add-sermon-modal', 'Edit Sermon');
     openModal('add-sermon-modal');
 }

@@ -21,6 +21,8 @@ $offset = ($page - 1) * $perPage;
 $sermons = [];
 $totalCount = 0;
 $totalPages = 0;
+$allSeries = [];
+$congregations = [];
 
 try {
     $whereClause = "WHERE 1=1";
@@ -39,9 +41,10 @@ try {
     );
 
     $sermons = Database::fetchAll(
-        "SELECT s.*, c.name as congregation_name
+        "SELECT s.*, c.name as congregation_name, ss.name as series_name
          FROM sermons s
          LEFT JOIN congregations c ON s.congregation_id = c.id
+         LEFT JOIN sermon_series ss ON s.series_id = ss.id
          $whereClause
          ORDER BY s.created_at DESC
          LIMIT $perPage OFFSET $offset",
@@ -49,6 +52,14 @@ try {
     ) ?: [];
 
     $totalPages = ceil($totalCount / $perPage);
+
+    $allSeries = Database::fetchAll(
+        "SELECT id, name FROM sermon_series ORDER BY name ASC"
+    ) ?: [];
+
+    $congregations = Database::fetchAll(
+        "SELECT id, name FROM congregations WHERE status = 'active' ORDER BY name ASC"
+    ) ?: [];
 } catch (Exception $e) {
     // Table might not exist
 }
@@ -113,6 +124,7 @@ try {
                                     <tr>
                                         <th>Title</th>
                                         <th>Speaker</th>
+                                        <th>Series</th>
                                         <th>Congregation</th>
                                         <th>Date</th>
                                         <th>Status</th>
@@ -124,8 +136,9 @@ try {
                                         <tr>
                                             <td><strong><?= e($s['title']) ?></strong></td>
                                             <td><?= e($s['speaker'] ?? '-') ?></td>
+                                            <td><?= e($s['series_name'] ?? '—') ?></td>
                                             <td><?= e($s['congregation_name'] ?? 'Global') ?></td>
-                                            <td><?= date('M j, Y', strtotime($s['created_at'])) ?></td>
+                                            <td><?= e(date('M j, Y', strtotime($s['created_at']))) ?></td>
                                             <td>
                                                 <span class="status-badge status-<?= $s['status'] ?? 'draft' ?>">
                                                     <?= ucfirst($s['status'] ?? 'draft') ?>
@@ -186,25 +199,75 @@ try {
                     <label>Date</label>
                     <input type="date" name="sermon_date" required class="form-input">
                 </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Category</label>
+                        <input type="text" name="category" class="form-input" placeholder="e.g. Faith, Prayer, Hope">
+                    </div>
+                    <div class="form-group">
+                        <label>Status</label>
+                        <select name="status" class="form-input">
+                            <option value="published">Published</option>
+                            <option value="draft">Draft</option>
+                            <option value="archived">Archived</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Congregation</label>
+                        <select name="congregation_id" class="form-input">
+                            <option value="">Global (all congregations)</option>
+                            <?php foreach ($congregations as $cg): ?>
+                                <option value="<?= (int)$cg['id'] ?>"><?= e($cg['name']) ?></option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Series</label>
+                        <select name="series_id" class="form-input">
+                            <option value="">— None —</option>
+                            <?php foreach ($allSeries as $sr): ?>
+                                <option value="<?= (int)$sr['id'] ?>"><?= e($sr['name']) ?></option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
+                </div>
                 <div class="form-group">
-                    <label>Category</label>
-                    <input type="text" name="category" class="form-input" placeholder="e.g. Faith, Prayer, Hope">
+                    <label>Or create a new series</label>
+                    <input type="text" name="new_series" class="form-input" placeholder="Leave blank to use the selection above">
                 </div>
                 <div class="form-group">
                     <label>Description</label>
                     <textarea name="description" class="form-textarea" rows="3"></textarea>
                 </div>
-                <div class="form-group">
-                    <label>Video URL</label>
-                    <input type="url" name="video_url" class="form-input" placeholder="YouTube or Vimeo URL">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Video URL</label>
+                        <input type="url" name="video_url" class="form-input" placeholder="YouTube or Vimeo URL">
+                    </div>
+                    <div class="form-group">
+                        <label>Audio URL</label>
+                        <input type="url" name="audio_url" class="form-input" placeholder="MP3 or audio file URL">
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Thumbnail URL</label>
+                        <input type="url" name="thumbnail" class="form-input" placeholder="Cover image URL">
+                    </div>
+                    <div class="form-group">
+                        <label>Duration (minutes)</label>
+                        <input type="number" name="duration_minutes" min="0" step="1" class="form-input" placeholder="e.g. 45">
+                    </div>
                 </div>
                 <div class="form-group">
-                    <label>Audio URL</label>
-                    <input type="url" name="audio_url" class="form-input" placeholder="MP3 or audio file URL">
+                    <label>Scripture References</label>
+                    <textarea name="scripture_references" class="form-textarea" rows="2" placeholder="One reference per line, e.g. John 3:16"></textarea>
                 </div>
                 <div class="form-actions">
                     <button type="button" onclick="closeModal('add-sermon-modal')" class="btn btn-outline">Cancel</button>
-                    <button type="submit" class="btn btn-primary">Add Sermon</button>
+                    <button type="submit" class="btn btn-primary">Save Sermon</button>
                 </div>
             </form>
         </div>

@@ -278,8 +278,12 @@ switch ($action) {
         $videoUrl = trim(input('video_url'));
         $audioUrl = trim(input('audio_url'));
         $category = trim(input('category'));
-        $seriesId = (int)input('series_id') ?: null;
+        $thumbnail = trim(input('thumbnail'));
         $congId = (int)input('congregation_id') ?: null;
+        $status = in_array(input('status'), ['draft', 'published', 'archived'], true) ? input('status') : 'published';
+        $duration = sermonParseDuration(input('duration_minutes'), input('duration'));
+        $scripture = sermonParseScripture(input('scripture_references'));
+        $seriesId = sermonResolveSeries(input('series_id'), input('new_series'), $congId, $user['id']);
 
         if (!$title || !$speaker || !$sermonDate) {
             Response::error('Title, speaker, and date are required');
@@ -293,9 +297,13 @@ switch ($action) {
             'video_url' => $videoUrl,
             'audio_url' => $audioUrl,
             'category' => $category,
+            'thumbnail' => $thumbnail ?: null,
+            'duration' => $duration,
+            'scripture_references' => $scripture,
             'series_id' => $seriesId,
             'congregation_id' => $congId,
-            'status' => 'published',
+            'scope' => $congId ? 'congregation' : 'global',
+            'status' => $status,
             'created_by' => $user['id'],
             'created_at' => date('Y-m-d H:i:s')
         ]);
@@ -338,6 +346,12 @@ switch ($action) {
         $videoUrl = trim(input('video_url'));
         $audioUrl = trim(input('audio_url'));
         $category = trim(input('category'));
+        $thumbnail = trim(input('thumbnail'));
+        $congId = (int)input('congregation_id') ?: null;
+        $status = in_array(input('status'), ['draft', 'published', 'archived'], true) ? input('status') : 'published';
+        $duration = sermonParseDuration(input('duration_minutes'), input('duration'));
+        $scripture = sermonParseScripture(input('scripture_references'));
+        $seriesId = sermonResolveSeries(input('series_id'), input('new_series'), $congId, $user['id']);
 
         if (!$sermonId || !$title || !$speaker || !$sermonDate) {
             Response::error('Title, speaker, and date are required');
@@ -351,6 +365,13 @@ switch ($action) {
             'video_url' => $videoUrl,
             'audio_url' => $audioUrl,
             'category' => $category,
+            'thumbnail' => $thumbnail ?: null,
+            'duration' => $duration,
+            'scripture_references' => $scripture,
+            'series_id' => $seriesId,
+            'congregation_id' => $congId,
+            'scope' => $congId ? 'congregation' : 'global',
+            'status' => $status,
             'updated_at' => date('Y-m-d H:i:s')
         ], 'id = ?', [$sermonId]);
 
@@ -564,4 +585,60 @@ function logActivity($userId, $action) {
     } catch (Exception $e) {
         // activity_log is optional — never let audit logging break an admin action
     }
+}
+
+/**
+ * Convert a sermon duration from the admin form into stored seconds.
+ * Accepts minutes (preferred form field) or a raw seconds value.
+ */
+function sermonParseDuration($minutes, $seconds): ?int {
+    $minutes = is_string($minutes) ? trim($minutes) : $minutes;
+    if ($minutes !== '' && $minutes !== null) {
+        $m = (int)$minutes;
+        return $m > 0 ? $m * 60 : null;
+    }
+    $seconds = is_string($seconds) ? trim($seconds) : $seconds;
+    if ($seconds !== '' && $seconds !== null) {
+        $s = (int)$seconds;
+        return $s > 0 ? $s : null;
+    }
+    return null;
+}
+
+/**
+ * Normalise a free-text scripture-reference field (one per line / comma
+ * separated) into a JSON array string for storage, or null when empty.
+ */
+function sermonParseScripture($raw): ?string {
+    $raw = trim((string)$raw);
+    if ($raw === '') {
+        return null;
+    }
+    $parts = array_values(array_filter(array_map('trim', preg_split('/[\r\n,]+/', $raw))));
+    return $parts ? json_encode($parts) : null;
+}
+
+/**
+ * Resolve the series for a sermon: create a new series when a name is given,
+ * otherwise use the selected id (or null for none).
+ */
+function sermonResolveSeries($seriesId, $newSeries, ?int $congId, $userId): ?int {
+    $newSeries = trim((string)$newSeries);
+    if ($newSeries !== '') {
+        $existing = Database::fetchColumn(
+            "SELECT id FROM sermon_series WHERE name = ? AND (congregation_id <=> ?)",
+            [$newSeries, $congId]
+        );
+        if ($existing) {
+            return (int)$existing;
+        }
+        return (int)Database::insert('sermon_series', [
+            'name' => $newSeries,
+            'congregation_id' => $congId,
+            'created_by' => $userId,
+            'created_at' => date('Y-m-d H:i:s')
+        ]);
+    }
+    $seriesId = (int)$seriesId;
+    return $seriesId ?: null;
 }

@@ -15,11 +15,11 @@ if (!$sermonId) {
     Response::redirect('/media/sermons.php');
 }
 
-$congId = $primaryCong ? $primaryCong['id'] : 0;
+$congId = $primaryCong ? (int)$primaryCong['id'] : 0;
 
 // Get sermon
 $sermon = Database::fetchOne(
-    "SELECT s.*, u.name as speaker_name, u.avatar_url as speaker_avatar, c.name as congregation_name, ss.name as series_name
+    "SELECT s.*, u.name AS speaker_name, u.avatar AS speaker_avatar, c.name AS congregation_name, ss.name AS series_name
      FROM sermons s
      LEFT JOIN users u ON s.speaker_user_id = u.id
      LEFT JOIN congregations c ON s.congregation_id = c.id
@@ -29,31 +29,37 @@ $sermon = Database::fetchOne(
 );
 
 if (!$sermon) {
+    Session::flash('error', 'That sermon is not available.');
     Response::redirect('/media/sermons.php');
 }
 
-$pageTitle = e($sermon['title']) . " - Sermons";
+$speakerLabel = $sermon['speaker_name'] ?? $sermon['speaker'] ?? 'Unknown speaker';
+$pageTitle = $sermon['title'] . " - Sermons";
 
 // Track view
-Database::query(
-    "UPDATE sermons SET view_count = view_count + 1 WHERE id = ?",
-    [$sermonId]
-);
+try {
+    Database::query(
+        "UPDATE sermons SET views = views + 1 WHERE id = ?",
+        [$sermonId]
+    );
+} catch (Throwable $e) {
+    // View tracking is best-effort.
+}
 
-// Get related sermons (same series or same speaker)
+// Get related sermons (same series, else same speaker)
 $relatedSermons = [];
-if ($sermon['series_id']) {
+if (!empty($sermon['series_id'])) {
     $relatedSermons = Database::fetchAll(
-        "SELECT s.*, u.name as speaker_name
+        "SELECT s.*, u.name AS speaker_name
          FROM sermons s
          LEFT JOIN users u ON s.speaker_user_id = u.id
          WHERE s.series_id = ? AND s.id != ? AND s.status = 'published'
          ORDER BY s.sermon_date DESC LIMIT 4",
         [$sermon['series_id'], $sermonId]
     );
-} else {
+} elseif (!empty($sermon['speaker'])) {
     $relatedSermons = Database::fetchAll(
-        "SELECT s.*, u.name as speaker_name
+        "SELECT s.*, u.name AS speaker_name
          FROM sermons s
          LEFT JOIN users u ON s.speaker_user_id = u.id
          WHERE s.speaker = ? AND s.id != ? AND s.status = 'published'
@@ -63,10 +69,10 @@ if ($sermon['series_id']) {
 }
 
 // Check if user has saved/bookmarked
-$isSaved = Database::fetchColumn(
+$isSaved = (int)Database::fetchColumn(
     "SELECT COUNT(*) FROM user_saved_sermons WHERE user_id = ? AND sermon_id = ?",
     [$user['id'], $sermonId]
-);
+) > 0;
 
 // Get sermon notes if any
 $notes = Database::fetchOne(
@@ -76,8 +82,35 @@ $notes = Database::fetchOne(
 
 // Get scripture references
 $scriptures = [];
-if ($sermon['scripture_references']) {
-    $scriptures = json_decode($sermon['scripture_references'], true) ?: [];
+if (!empty($sermon['scripture_references'])) {
+    $decoded = json_decode($sermon['scripture_references'], true);
+    if (is_array($decoded)) {
+        $scriptures = $decoded;
+    } else {
+        // Fallback: comma/newline separated string
+        $scriptures = array_values(array_filter(array_map('trim', preg_split('/[\n,]+/', $sermon['scripture_references']))));
+    }
+}
+
+// Get chapter timestamps
+$timestamps = [];
+if (!empty($sermon['timestamps'])) {
+    $decoded = json_decode($sermon['timestamps'], true);
+    if (is_array($decoded)) {
+        $timestamps = $decoded;
+    }
+}
+
+function formatDuration($seconds): string {
+    $seconds = (int)$seconds;
+    $hours = intdiv($seconds, 3600);
+    $minutes = intdiv($seconds % 3600, 60);
+    $secs = $seconds % 60;
+
+    if ($hours > 0) {
+        return sprintf('%d:%02d:%02d', $hours, $minutes, $secs);
+    }
+    return sprintf('%d:%02d', $minutes, $secs);
 }
 ?>
 <!DOCTYPE html>
@@ -90,7 +123,7 @@ if ($sermon['scripture_references']) {
     <link rel="manifest" href="/site.webmanifest">
     <meta name="theme-color" content="#7C3AED">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><?= $pageTitle ?></title>
+    <title><?= e($pageTitle) ?></title>
     <?= CSRF::meta() ?>
     <link rel="stylesheet" href="/media/css/media.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -113,7 +146,7 @@ if ($sermon['scripture_references']) {
                 <div class="sermon-main">
                     <!-- Video/Audio Player -->
                     <div class="sermon-player">
-                        <?php if ($sermon['video_url']): ?>
+                        <?php if (!empty($sermon['video_url'])): ?>
                             <?php if (strpos($sermon['video_url'], 'youtube.com') !== false || strpos($sermon['video_url'], 'youtu.be') !== false): ?>
                                 <?php
                                 preg_match('/(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/', $sermon['video_url'], $matches);
@@ -137,27 +170,27 @@ if ($sermon['scripture_references']) {
                                             allowfullscreen></iframe>
                                 </div>
                             <?php else: ?>
-                                <video controls class="video-player">
+                                <video controls class="video-player" preload="metadata">
                                     <source src="<?= e($sermon['video_url']) ?>" type="video/mp4">
                                     Your browser does not support video playback.
                                 </video>
                             <?php endif; ?>
-                        <?php elseif ($sermon['audio_url']): ?>
+                        <?php elseif (!empty($sermon['audio_url'])): ?>
                             <div class="audio-player-container">
-                                <?php if ($sermon['thumbnail_url']): ?>
-                                    <img src="<?= e($sermon['thumbnail_url']) ?>" alt="" class="audio-cover">
+                                <?php if (!empty($sermon['thumbnail'])): ?>
+                                    <img src="<?= e($sermon['thumbnail']) ?>" alt="" class="audio-cover">
                                 <?php else: ?>
                                     <div class="audio-cover-placeholder">🎤</div>
                                 <?php endif; ?>
-                                <audio controls class="audio-player" id="audio-player">
+                                <audio controls class="audio-player" id="audio-player" preload="metadata">
                                     <source src="<?= e($sermon['audio_url']) ?>" type="audio/mpeg">
                                     Your browser does not support audio playback.
                                 </audio>
                             </div>
                         <?php else: ?>
                             <div class="no-media">
-                                <?php if ($sermon['thumbnail_url']): ?>
-                                    <img src="<?= e($sermon['thumbnail_url']) ?>" alt="">
+                                <?php if (!empty($sermon['thumbnail'])): ?>
+                                    <img src="<?= e($sermon['thumbnail']) ?>" alt="">
                                 <?php else: ?>
                                     <div class="no-media-placeholder">🎤</div>
                                 <?php endif; ?>
@@ -178,7 +211,7 @@ if ($sermon['scripture_references']) {
                                 <span class="icon">↗</span>
                                 <span class="label">Share</span>
                             </button>
-                            <?php if ($sermon['audio_url']): ?>
+                            <?php if (!empty($sermon['audio_url'])): ?>
                                 <a href="<?= e($sermon['audio_url']) ?>" download class="action-btn">
                                     <span class="icon">↓</span>
                                     <span class="label">Download</span>
@@ -189,37 +222,39 @@ if ($sermon['scripture_references']) {
 
                     <div class="sermon-meta-bar">
                         <div class="speaker-info">
-                            <?php if ($sermon['speaker_avatar']): ?>
+                            <?php if (!empty($sermon['speaker_avatar'])): ?>
                                 <img src="<?= e($sermon['speaker_avatar']) ?>" alt="" class="speaker-avatar" onerror="this.style.display='none';this.nextElementSibling.style.display='flex';">
                                 <div class="speaker-avatar-placeholder" style="display:none;">
-                                    <?= strtoupper(substr($sermon['speaker_name'] ?? $sermon['speaker'], 0, 1)) ?>
+                                    <?= e(strtoupper(mb_substr($speakerLabel, 0, 1))) ?>
                                 </div>
                             <?php else: ?>
                                 <div class="speaker-avatar-placeholder">
-                                    <?= strtoupper(substr($sermon['speaker_name'] ?? $sermon['speaker'], 0, 1)) ?>
+                                    <?= e(strtoupper(mb_substr($speakerLabel, 0, 1))) ?>
                                 </div>
                             <?php endif; ?>
                             <div>
-                                <span class="speaker-name"><?= e($sermon['speaker_name'] ?? $sermon['speaker']) ?></span>
-                                <span class="sermon-date"><?= date('F j, Y', strtotime($sermon['sermon_date'])) ?></span>
+                                <span class="speaker-name"><?= e($speakerLabel) ?></span>
+                                <?php if (!empty($sermon['sermon_date'])): ?>
+                                    <span class="sermon-date"><?= e(date('F j, Y', strtotime($sermon['sermon_date']))) ?></span>
+                                <?php endif; ?>
                             </div>
                         </div>
                         <div class="sermon-stats">
-                            <?php if ($sermon['duration']): ?>
+                            <?php if (!empty($sermon['duration'])): ?>
                                 <span>⏱ <?= formatDuration($sermon['duration']) ?></span>
                             <?php endif; ?>
-                            <span>👁 <?= number_format($sermon['view_count']) ?> views</span>
+                            <span>👁 <?= number_format((int)($sermon['views'] ?? 0)) ?> views</span>
                         </div>
                     </div>
 
-                    <?php if ($sermon['series_name']): ?>
-                        <a href="/media/sermons.php?series=<?= $sermon['series_id'] ?>" class="series-link">
+                    <?php if (!empty($sermon['series_name'])): ?>
+                        <a href="/media/sermons.php?series=<?= (int)$sermon['series_id'] ?>" class="series-link">
                             📚 Part of: <strong><?= e($sermon['series_name']) ?></strong>
                         </a>
                     <?php endif; ?>
 
                     <!-- Description -->
-                    <?php if ($sermon['description']): ?>
+                    <?php if (!empty($sermon['description'])): ?>
                         <div class="sermon-description">
                             <h2>About This Sermon</h2>
                             <div class="description-content">
@@ -259,20 +294,22 @@ if ($sermon['scripture_references']) {
                     <!-- Related Sermons -->
                     <?php if ($relatedSermons): ?>
                         <div class="sidebar-card">
-                            <h3><?= $sermon['series_name'] ? 'More in This Series' : 'More from ' . e($sermon['speaker_name'] ?? $sermon['speaker']) ?></h3>
+                            <h3><?= !empty($sermon['series_name']) ? 'More in This Series' : 'More from ' . e($speakerLabel) ?></h3>
                             <div class="related-list">
                                 <?php foreach ($relatedSermons as $related): ?>
-                                    <a href="/media/sermon.php?id=<?= $related['id'] ?>" class="related-item">
+                                    <a href="/media/sermon.php?id=<?= (int)$related['id'] ?>" class="related-item">
                                         <div class="related-thumb">
-                                            <?php if ($related['thumbnail_url']): ?>
-                                                <img src="<?= e($related['thumbnail_url']) ?>" alt="">
+                                            <?php if (!empty($related['thumbnail'])): ?>
+                                                <img src="<?= e($related['thumbnail']) ?>" alt="" loading="lazy">
                                             <?php else: ?>
                                                 <div class="thumb-mini">🎤</div>
                                             <?php endif; ?>
                                         </div>
                                         <div class="related-info">
                                             <h4><?= e($related['title']) ?></h4>
-                                            <span><?= date('M j, Y', strtotime($related['sermon_date'])) ?></span>
+                                            <?php if (!empty($related['sermon_date'])): ?>
+                                                <span><?= e(date('M j, Y', strtotime($related['sermon_date']))) ?></span>
+                                            <?php endif; ?>
                                         </div>
                                     </a>
                                 <?php endforeach; ?>
@@ -281,21 +318,19 @@ if ($sermon['scripture_references']) {
                     <?php endif; ?>
 
                     <!-- Timestamps/Chapters if available -->
-                    <?php if ($sermon['timestamps']): ?>
-                        <?php $timestamps = json_decode($sermon['timestamps'], true) ?: []; ?>
-                        <?php if ($timestamps): ?>
-                            <div class="sidebar-card">
-                                <h3>Chapters</h3>
-                                <div class="timestamps-list">
-                                    <?php foreach ($timestamps as $ts): ?>
-                                        <button onclick="seekTo(<?= (int)$ts['time'] ?>)" class="timestamp-item">
-                                            <span class="ts-time"><?= formatDuration($ts['time']) ?></span>
-                                            <span class="ts-label"><?= e($ts['label']) ?></span>
-                                        </button>
-                                    <?php endforeach; ?>
-                                </div>
+                    <?php if ($timestamps): ?>
+                        <div class="sidebar-card">
+                            <h3>Chapters</h3>
+                            <div class="timestamps-list">
+                                <?php foreach ($timestamps as $ts): ?>
+                                    <?php if (!isset($ts['time'])) continue; ?>
+                                    <button onclick="seekTo(<?= (int)$ts['time'] ?>)" class="timestamp-item">
+                                        <span class="ts-time"><?= formatDuration($ts['time']) ?></span>
+                                        <span class="ts-label"><?= e($ts['label'] ?? '') ?></span>
+                                    </button>
+                                <?php endforeach; ?>
                             </div>
-                        <?php endif; ?>
+                        </div>
                     <?php endif; ?>
                 </aside>
             </div>
@@ -308,15 +343,3 @@ if ($sermon['scripture_references']) {
     <script src="/media/js/media.js"></script>
 </body>
 </html>
-<?php
-function formatDuration($seconds) {
-    $hours = floor($seconds / 3600);
-    $minutes = floor(($seconds % 3600) / 60);
-    $secs = $seconds % 60;
-
-    if ($hours > 0) {
-        return sprintf('%d:%02d:%02d', $hours, $minutes, $secs);
-    }
-    return sprintf('%d:%02d', $minutes, $secs);
-}
-?>
