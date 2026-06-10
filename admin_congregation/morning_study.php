@@ -69,66 +69,40 @@ if ($todaySession && !empty($todaySession['study_questions'])) {
         })();
     </script>
     <style>
-        .super-admin-link { background: var(--primary); display: inline-block; margin-top: 0.5rem; padding: 0.25rem 0.5rem; color: white; border-radius: 4px; text-decoration: none; font-size: 0.75rem; }
-        .super-admin-link:hover { background: var(--primary-dark); }
-        .congregation-select { width: 100%; padding: 0.5rem; margin-top: 0.5rem; border: 1px solid var(--glass-border); border-radius: 6px; background: var(--glass-bg); color: var(--text-primary); font-size: 0.8rem; cursor: pointer; }
-        .congregation-select option { background: var(--bg-surface); color: var(--text-primary); }
-        .study-grid { display: grid; grid-template-columns: 1fr 350px; gap: 1.5rem; }
+        .study-grid { display: grid; grid-template-columns: 1fr 350px; gap: 1.5rem; align-items: start; }
         @media (max-width: 900px) { .study-grid { grid-template-columns: 1fr; } }
-
-        .card { background: var(--glass-bg); backdrop-filter: blur(20px); border: 1px solid var(--glass-border); border-radius: var(--radius-lg); box-shadow: var(--shadow); }
-        .card-header { padding: 1rem 1.5rem; border-bottom: 1px solid var(--glass-border); display: flex; justify-content: space-between; align-items: center; }
-        .card-header h2 { margin: 0; font-size: 1.1rem; font-weight: 600; color: var(--text-primary); }
-        .card-body { padding: 1.5rem; }
-
-        .form-group { margin-bottom: 1.25rem; }
-        .form-group label { display: block; font-size: 0.875rem; font-weight: 500; margin-bottom: 0.5rem; color: var(--text-primary); }
-        .form-group input, .form-group select, .form-group textarea { width: 100%; padding: 0.625rem; border: 1px solid var(--glass-border); border-radius: var(--radius); font-size: 0.875rem; background: var(--bg-elevated); color: var(--text-primary); }
-        .form-group input:focus, .form-group select:focus, .form-group textarea:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 2px var(--primary-glow); }
-        .form-group textarea { min-height: 100px; resize: vertical; }
-        .form-group small { font-size: 0.75rem; color: var(--text-muted); margin-top: 0.25rem; display: block; }
-        .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
 
         .questions-list { margin-top: 0.5rem; }
         .question-item { display: flex; gap: 0.5rem; margin-bottom: 0.5rem; }
         .question-item input { flex: 1; }
-        .question-item button { padding: 0.5rem; background: var(--glass-bg); border: 1px solid var(--glass-border); border-radius: var(--radius); cursor: pointer; color: var(--text-secondary); }
-        .question-item button:hover { background: rgba(239, 68, 68, 0.2); color: var(--danger); }
-        .add-question { background: var(--glass-bg); border: 1px dashed var(--glass-border); padding: 0.5rem; border-radius: var(--radius); cursor: pointer; text-align: center; font-size: 0.875rem; color: var(--text-secondary); }
-        .add-question:hover { background: var(--glass-bg-hover); }
+        .question-item button { display: flex; align-items: center; justify-content: center; width: 44px; flex-shrink: 0; background: var(--card); border: 1px solid var(--line); border-radius: var(--radius-sm); cursor: pointer; color: var(--muted); transition: all 0.2s ease; }
+        .question-item button:hover { background: rgba(239, 68, 68, 0.15); border-color: var(--bad); color: var(--bad); }
+        .add-question { background: var(--card); border: 1px dashed var(--input-border); padding: 0.75rem; border-radius: var(--radius-sm); cursor: pointer; text-align: center; font-size: 0.875rem; color: var(--muted); transition: all 0.2s ease; }
+        .add-question:hover { background: var(--card2); border-color: var(--accent); color: var(--text); }
 
-        .status-badge { padding: 0.375rem 0.75rem; border-radius: 100px; font-size: 0.75rem; font-weight: 600; text-transform: uppercase; }
-        .status-badge.live { background: rgba(239, 68, 68, 0.2); color: var(--danger); animation: pulse 2s infinite; }
-        .status-badge.scheduled { background: rgba(245, 158, 11, 0.2); color: #F59E0B; }
-        .status-badge.ended { background: rgba(16, 185, 129, 0.2); color: var(--success); }
+        .status-badge.live { background: rgba(239, 68, 68, 0.15); border: 1px solid rgba(239, 68, 68, 0.3); color: var(--bad); text-transform: uppercase; animation: pulse 2s infinite; }
+        .status-badge.live::before { background: var(--bad); }
+        .status-badge.scheduled { background: rgba(245, 158, 11, 0.15); border: 1px solid rgba(245, 158, 11, 0.3); color: var(--warn); text-transform: uppercase; }
+        .status-badge.scheduled::before { background: var(--warn); }
+        .status-badge.ended { background: rgba(34, 197, 94, 0.15); border: 1px solid rgba(34, 197, 94, 0.3); color: var(--good); text-transform: uppercase; }
+        .status-badge.ended::before { background: var(--good); }
         @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.7; } }
 
         .live-controls { display: flex; gap: 0.75rem; flex-wrap: wrap; margin-top: 1rem; }
-        .btn { display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.625rem 1rem; border-radius: var(--radius); font-size: 0.875rem; font-weight: 500; cursor: pointer; border: none; transition: var(--transition); text-decoration: none; }
-        .btn-primary { background: var(--primary); color: white; }
-        .btn-primary:hover { background: var(--primary-dark); }
-        .btn-success { background: var(--success); color: white; }
-        .btn-success:hover { background: #059669; }
-        .btn-danger { background: var(--danger); color: white; }
-        .btn-danger:hover { background: #DC2626; }
-        .btn-outline { background: transparent; border: 1px solid var(--glass-border); color: var(--text-secondary); }
-        .btn-outline:hover { background: var(--glass-bg-hover); }
-        .btn-warning { background: var(--warning); color: white; }
-        .btn-warning:hover { background: #D97706; }
 
         .recent-sessions { list-style: none; padding: 0; margin: 0; }
-        .recent-sessions li { padding: 0.75rem 0; border-bottom: 1px solid var(--glass-border); }
+        .recent-sessions li { padding: 0.75rem 0; border-bottom: 1px solid var(--line); }
         .recent-sessions li:last-child { border-bottom: none; }
-        .recent-session-title { font-weight: 500; color: var(--text-primary); font-size: 0.9rem; }
-        .recent-session-meta { font-size: 0.8rem; color: var(--text-muted); display: flex; gap: 1rem; margin-top: 0.25rem; }
+        .recent-session-title { font-weight: 500; color: var(--text); font-size: 0.9rem; }
+        .recent-session-meta { font-size: 0.8rem; color: var(--muted); display: flex; gap: 1rem; margin-top: 0.25rem; }
 
-        .preview-link { font-size: 0.875rem; color: var(--primary-light); text-decoration: none; }
+        .preview-link { font-size: 0.875rem; color: var(--accent2); text-decoration: none; }
         .preview-link:hover { text-decoration: underline; }
 
-        #toast { position: fixed; bottom: 2rem; right: 2rem; padding: 1rem 1.5rem; border-radius: var(--radius); background: var(--bg-surface); color: var(--text-primary); opacity: 0; transition: opacity 0.3s; z-index: 1000; border: 1px solid var(--glass-border); }
+        #toast { position: fixed; bottom: 2rem; right: 2rem; padding: 1rem 1.5rem; border-radius: var(--radius-sm); background: var(--bg1); color: var(--text); opacity: 0; transition: opacity 0.3s; z-index: 1000; border: 1px solid var(--line); box-shadow: var(--shadow); }
         #toast.show { opacity: 1; }
-        #toast.error { background: var(--danger); border-color: var(--danger); }
-        #toast.success { background: var(--success); border-color: var(--success); }
+        #toast.error { background: var(--bad); border-color: var(--bad); color: white; }
+        #toast.success { background: var(--good); border-color: var(--good); color: white; }
     </style>
 </head>
 <body>
@@ -299,7 +273,7 @@ if ($todaySession && !empty($todaySession['study_questions'])) {
                         </form>
 
                         <?php if ($todaySession): ?>
-                            <hr style="margin: 1.5rem 0; border: none; border-top: 1px solid var(--gray-200);">
+                            <hr style="margin: 1.5rem 0; border: none; border-top: 1px solid var(--line);">
 
                             <h3 style="font-size: 1rem; margin-bottom: 1rem;">Live Controls</h3>
                             <div class="live-controls">
@@ -314,7 +288,7 @@ if ($todaySession && !empty($todaySession['study_questions'])) {
                                         End Session
                                     </button>
                                 <?php else: ?>
-                                    <span style="color: var(--gray-500);">Session has ended</span>
+                                    <span style="color: var(--dim);">Session has ended</span>
                                     <a href="/morning_watch/recap.php?session_id=<?= $todaySession['id'] ?>" class="btn btn-outline">View Recap</a>
                                 <?php endif; ?>
                             </div>
@@ -330,7 +304,7 @@ if ($todaySession && !empty($todaySession['study_questions'])) {
                         </div>
                         <div class="card-body" style="padding: 0.75rem 1.5rem;">
                             <?php if (empty($recentSessions)): ?>
-                                <p style="color: var(--gray-500); font-size: 0.9rem; padding: 1rem 0;">No sessions yet.</p>
+                                <p style="color: var(--dim); font-size: 0.9rem; padding: 1rem 0;">No sessions yet.</p>
                             <?php else: ?>
                                 <ul class="recent-sessions">
                                     <?php foreach ($recentSessions as $session): ?>

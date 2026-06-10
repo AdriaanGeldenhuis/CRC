@@ -177,21 +177,22 @@ if ($tableExists) {
         * { margin: 0; padding: 0; box-sizing: border-box; }
 
         :root {
-            --bg-base: #0a0a0a;
-            --bg-card: #161616;
-            --bg-surface: #1c1c1c;
-            --primary: #8B5CF6;
+            --bg-base: #070A12;
+            --bg-card: #090F1F;
+            --bg-surface: #0D1326;
+            --primary: #7C3AED;
             --primary-light: #A78BFA;
-            --accent: #A855F7;
-            --text-primary: #f5f5f5;
-            --text-secondary: #c8c8c8;
-            --text-muted: #7a7a7a;
-            --success: #10B981;
+            --accent: #22D3EE;
+            --text-primary: #EAF0FF;
+            --text-secondary: rgba(234,240,255,0.72);
+            --text-muted: rgba(234,240,255,0.48);
+            --success: #22C55E;
             --danger: #EF4444;
-            --border: rgba(139, 92, 246, 0.15);
-            --glow-primary: rgba(139, 92, 246, 0.3);
+            --border: rgba(255, 255, 255, 0.10);
+            --glow-primary: rgba(124, 58, 237, 0.3);
             --radius: 16px;
-            --shadow: 0 8px 32px rgba(0, 0, 0, 0.8);
+            --shadow: 0 8px 32px rgba(0, 0, 0, 0.55);
+            color-scheme: dark;
         }
 
         body {

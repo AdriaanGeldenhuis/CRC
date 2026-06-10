@@ -11,6 +11,8 @@
     --card: rgba(255,255,255,0.06);
     --card2: rgba(255,255,255,0.085);
     --line: rgba(255,255,255,0.10);
+    --input-bg: rgba(255,255,255,0.07);
+    --input-border: rgba(255,255,255,0.18);
     --text: #EAF0FF;
     --muted: rgba(234,240,255,0.72);
     --accent: #7C3AED;
@@ -24,6 +26,7 @@
     --radius-sm: 10px;
     --radius-lg: 24px;
     --sidebar-width: 260px;
+    color-scheme: dark;
 }
 
 [data-theme="light"] {
@@ -33,8 +36,11 @@
     --card: rgba(10,15,31,0.05);
     --card2: rgba(10,15,31,0.08);
     --line: rgba(10,15,31,0.10);
+    --input-bg: rgba(10,15,31,0.04);
+    --input-border: rgba(10,15,31,0.18);
     --text: #0A0F1F;
     --muted: rgba(10,15,31,0.72);
+    color-scheme: light;
 }
 
 /* ==================== Base Reset ==================== */
@@ -578,8 +584,8 @@ body::before {
     padding: 0.875rem 1rem;
     font-size: 0.875rem;
     font-family: var(--font);
-    background: var(--card);
-    border: 1px solid var(--line);
+    background: var(--input-bg);
+    border: 1px solid var(--input-border);
     border-radius: var(--radius-sm);
     color: var(--text);
 }
@@ -604,8 +610,8 @@ body::before {
     padding: 0.875rem 1rem;
     font-size: 0.875rem;
     font-family: var(--font);
-    background: var(--card);
-    border: 1px solid var(--line);
+    background: var(--input-bg);
+    border: 1px solid var(--input-border);
     border-radius: var(--radius-sm);
     color: var(--text);
     cursor: pointer;
@@ -986,8 +992,8 @@ body::before {
     padding: 0.875rem 1rem;
     font-size: 0.9375rem;
     font-family: var(--font);
-    background: var(--card);
-    border: 1px solid var(--line);
+    background: var(--input-bg);
+    border: 1px solid var(--input-border);
     border-radius: var(--radius-sm);
     color: var(--text);
 }
@@ -1005,8 +1011,8 @@ body::before {
     box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.15);
 }
 
-.form-select option {
-    background: var(--bg1);
+select option {
+    background-color: var(--bg1);
     color: var(--text);
 }
 
@@ -1326,6 +1332,111 @@ body::before {
     .admin-sidebar {
         padding-bottom: env(safe-area-inset-bottom);
     }
+}
+
+/* ==================== Hover States (pointer devices) ==================== */
+@media (hover: hover) {
+    .nav-item:hover {
+        color: var(--text);
+        background: var(--card);
+    }
+
+    .menu-toggle:hover {
+        background: var(--card2);
+        color: var(--accent);
+    }
+
+    .view-all:hover {
+        background: rgba(124, 58, 237, 0.2);
+    }
+
+    .data-table tbody tr:hover {
+        background: var(--card);
+    }
+
+    .action-btn:hover {
+        background: var(--card2);
+        color: var(--text);
+    }
+
+    .action-btn.edit:hover {
+        border-color: var(--accent);
+        color: var(--accent);
+    }
+
+    .action-btn.delete:hover {
+        border-color: var(--bad);
+        color: var(--bad);
+    }
+
+    .search-input:hover,
+    .filter-select:hover,
+    .form-input:hover,
+    .form-select:hover,
+    .form-textarea:hover {
+        border-color: var(--accent);
+    }
+
+    .page-btn:hover {
+        background: var(--card2);
+        border-color: var(--accent);
+        color: var(--accent);
+    }
+
+    .stat-card:hover,
+    .member-item:hover,
+    .event-item:hover {
+        border-color: var(--accent);
+    }
+
+    .quick-action:hover {
+        background: var(--card2);
+        border-color: var(--accent);
+        color: var(--accent);
+    }
+
+    .modal-close:hover {
+        background: rgba(239, 68, 68, 0.15);
+        border-color: rgba(239, 68, 68, 0.3);
+        color: var(--bad);
+    }
+
+    .btn-primary:hover {
+        filter: brightness(1.1);
+        box-shadow: 0 6px 20px var(--accent-glow);
+    }
+
+    .btn-outline:hover {
+        background: var(--card2);
+        border-color: var(--accent);
+        color: var(--text);
+    }
+
+    .btn-danger:hover {
+        filter: brightness(1.1);
+    }
+
+    .copy-btn:hover {
+        filter: brightness(1.1);
+    }
+
+    ::-webkit-scrollbar-thumb:hover {
+        background: var(--accent);
+    }
+}
+
+/* ==================== Focus Visibility ==================== */
+.btn:focus-visible,
+.action-btn:focus-visible,
+.nav-item:focus-visible,
+.view-all:focus-visible,
+.quick-action:focus-visible,
+.page-btn:focus-visible,
+.menu-toggle:focus-visible,
+.modal-close:focus-visible,
+.copy-btn:focus-visible {
+    outline: 2px solid var(--accent2);
+    outline-offset: 2px;
 }
 
 /* ==================== Reduced Motion ==================== */

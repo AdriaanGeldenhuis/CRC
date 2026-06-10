@@ -70,43 +70,36 @@ $expiredInvites = Database::fetchAll(
     <style>
         .page-actions { margin-bottom: 1.5rem; }
         .invite-grid { display: grid; gap: 1rem; }
-        .invite-card { background: var(--glass-bg); backdrop-filter: blur(20px); border: 1px solid var(--glass-border); border-radius: var(--radius-lg); padding: 1.5rem; box-shadow: var(--shadow); }
+        .invite-card { background: var(--bg-glass); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border: 1px solid var(--line); border-radius: var(--radius); padding: 1.5rem; box-shadow: var(--shadow); transition: all 0.2s ease; }
+        .invite-card:hover { border-color: var(--accent); }
         .invite-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1rem; }
         .invite-role { font-size: 0.75rem; padding: 0.25rem 0.75rem; border-radius: 100px; font-weight: 500; }
-        .invite-role.member { background: var(--glass-bg); color: var(--text-muted); }
-        .invite-role.leader { background: rgba(16, 185, 129, 0.2); color: var(--success); }
-        .invite-role.admin { background: rgba(139, 92, 246, 0.2); color: var(--primary-light); }
-        .invite-link-box { background: var(--bg-surface); border: 1px solid var(--glass-border); border-radius: var(--radius); padding: 0.75rem; margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem; }
-        .invite-link-text { flex: 1; font-family: monospace; font-size: 0.8rem; color: var(--text-secondary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-        .copy-btn { background: var(--primary); color: white; border: none; padding: 0.5rem 1rem; border-radius: var(--radius); font-size: 0.75rem; cursor: pointer; }
-        .copy-btn:hover { background: var(--primary-dark); }
-        .invite-stats { display: flex; gap: 2rem; font-size: 0.875rem; color: var(--text-secondary); margin-bottom: 1rem; }
+        .invite-role.member { background: var(--card); color: var(--muted); }
+        .invite-role.leader { background: rgba(34, 197, 94, 0.15); color: var(--good); }
+        .invite-role.admin { background: rgba(124, 58, 237, 0.15); color: #A78BFA; }
+        .invite-link-box { background: var(--bg1); border: 1px solid var(--line); border-radius: var(--radius-sm); padding: 0.75rem; margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem; }
+        .invite-link-text { flex: 1; font-family: monospace; font-size: 0.8rem; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .copy-btn { background: linear-gradient(135deg, var(--accent) 0%, #9333EA 100%); color: white; border: none; padding: 0.5rem 1rem; border-radius: var(--radius-sm); font-size: 0.75rem; font-weight: 600; font-family: var(--font); cursor: pointer; transition: all 0.2s ease; }
+        .copy-btn:hover { filter: brightness(1.1); box-shadow: 0 4px 15px var(--accent-glow); }
+        .invite-stats { display: flex; gap: 2rem; font-size: 0.875rem; color: var(--muted); margin-bottom: 1rem; }
         .invite-stat { display: flex; align-items: center; gap: 0.5rem; }
         .invite-stat svg { width: 16px; height: 16px; }
-        .invite-meta { font-size: 0.75rem; color: var(--text-dim); }
-        .invite-actions { display: flex; gap: 0.5rem; margin-top: 1rem; padding-top: 1rem; border-top: 1px solid var(--glass-border); }
-        .btn-xs { padding: 0.25rem 0.75rem; font-size: 0.75rem; }
-        .btn-outline { background: transparent; border: 1px solid var(--glass-border); color: var(--text-secondary); }
-        .btn-primary { background: var(--primary); color: white; border: none; }
-        .expired-badge { font-size: 0.7rem; padding: 0.125rem 0.5rem; background: var(--glass-bg); color: var(--text-muted); border-radius: 100px; }
-        .revoked-badge { font-size: 0.7rem; padding: 0.125rem 0.5rem; background: rgba(239, 68, 68, 0.2); color: var(--danger); border-radius: 100px; }
+        .invite-meta { font-size: 0.75rem; color: var(--dim); }
+        .invite-actions { display: flex; gap: 0.5rem; margin-top: 1rem; padding-top: 1rem; border-top: 1px solid var(--line); }
+        .expired-badge { font-size: 0.7rem; padding: 0.125rem 0.5rem; background: var(--card); color: var(--muted); border-radius: 100px; }
+        .revoked-badge { font-size: 0.7rem; padding: 0.125rem 0.5rem; background: rgba(239, 68, 68, 0.15); color: var(--bad); border-radius: 100px; }
 
-        .modal { position: fixed; inset: 0; background: rgba(0,0,0,0.7); display: none; align-items: center; justify-content: center; z-index: 1000; }
+        .modal { position: fixed; inset: 0; background: rgba(0,0,0,0.7); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); display: none; align-items: center; justify-content: center; z-index: 1000; }
         .modal.show { display: flex; }
-        .modal-content { background: var(--bg-surface); border: 1px solid var(--glass-border); border-radius: var(--radius-lg); padding: 1.5rem; max-width: 450px; width: 90%; }
-        .modal-header { font-weight: 600; margin-bottom: 1rem; font-size: 1.1rem; color: var(--text-primary); }
-        .modal-body { margin-bottom: 1.5rem; color: var(--text-secondary); }
+        .modal-content { background: var(--bg1); border: 1px solid var(--line); border-radius: var(--radius); padding: 1.5rem; max-width: 450px; width: 90%; box-shadow: var(--shadow-lg); }
+        .modal-header { font-weight: 600; margin-bottom: 1rem; font-size: 1.1rem; color: var(--text); }
+        .modal-body { margin-bottom: 1.5rem; color: var(--muted); }
         .modal-footer { display: flex; gap: 0.5rem; justify-content: flex-end; }
 
-        .form-group { margin-bottom: 1rem; }
-        .form-group label { display: block; font-size: 0.875rem; font-weight: 500; margin-bottom: 0.5rem; color: var(--text-primary); }
-        .form-group select, .form-group input { width: 100%; padding: 0.625rem; border: 1px solid var(--glass-border); border-radius: var(--radius); font-size: 0.875rem; background: var(--bg-elevated); color: var(--text-primary); }
-        .form-group small { font-size: 0.75rem; color: var(--text-muted); margin-top: 0.25rem; display: block; }
-
         .empty-state { text-align: center; padding: 3rem; }
-        .empty-state svg { width: 64px; height: 64px; color: var(--text-dim); margin-bottom: 1rem; }
-        .empty-state h3 { color: var(--text-primary); margin-bottom: 0.5rem; }
-        .empty-state p { color: var(--text-muted); margin-bottom: 1.5rem; }
+        .empty-state svg { width: 64px; height: 64px; color: var(--dim); margin-bottom: 1rem; }
+        .empty-state h3 { color: var(--text); margin-bottom: 0.5rem; }
+        .empty-state p { color: var(--muted); margin-bottom: 1.5rem; }
     </style>
 </head>
 <body>
@@ -186,7 +179,7 @@ $expiredInvites = Database::fetchAll(
                             <div class="invite-header">
                                 <span class="invite-role <?= $invite['role'] ?>"><?= ucfirst($invite['role']) ?> Role</span>
                                 <?php if ($invite['max_uses']): ?>
-                                    <span style="font-size: 0.75rem; color: var(--gray-500);">
+                                    <span style="font-size: 0.75rem; color: var(--dim);">
                                         <?= $invite['use_count'] ?>/<?= $invite['max_uses'] ?> uses
                                     </span>
                                 <?php endif; ?>

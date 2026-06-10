@@ -114,57 +114,49 @@ $churchPositions = Database::fetchAll(
     <style>
         .filters { display: flex; gap: 1rem; flex-wrap: wrap; margin-bottom: 1.5rem; align-items: center; }
         .filter-tabs { display: flex; gap: 0.5rem; }
-        .filter-tab { padding: 0.5rem 1rem; background: var(--glass-bg); border: 1px solid var(--glass-border); border-radius: var(--radius); cursor: pointer; font-size: 0.875rem; color: var(--text-secondary); transition: var(--transition); }
-        .filter-tab:hover { background: var(--glass-bg-hover); border-color: var(--glass-border-hover); }
-        .filter-tab.active { background: var(--primary); color: white; border-color: var(--primary); }
+        .filter-tab { padding: 0.5rem 1rem; background: var(--card); border: 1px solid var(--line); border-radius: var(--radius-sm); cursor: pointer; font-size: 0.875rem; color: var(--muted); transition: all 0.2s ease; }
+        .filter-tab:hover { background: var(--card2); border-color: var(--accent); color: var(--text); }
+        .filter-tab.active { background: linear-gradient(135deg, var(--accent) 0%, #9333EA 100%); color: white; border-color: transparent; box-shadow: 0 4px 15px var(--accent-glow); }
         .filter-tab .count { margin-left: 0.5rem; opacity: 0.7; }
         .search-box { flex: 1; max-width: 300px; }
-        .search-box input { width: 100%; padding: 0.5rem 1rem; border: 1px solid var(--glass-border); border-radius: var(--radius); font-size: 0.875rem; background: var(--bg-elevated); color: var(--text-primary); }
-        .search-box input:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px var(--primary-glow); }
-        .role-select { padding: 0.5rem 1rem; border: 1px solid var(--glass-border); border-radius: var(--radius); font-size: 0.875rem; background: var(--bg-elevated); color: var(--text-primary); }
+        .search-box input { width: 100%; padding: 0.5rem 1rem; border: 1px solid var(--input-border); border-radius: var(--radius-sm); font-size: 0.875rem; background: var(--input-bg); color: var(--text); }
+        .search-box input::placeholder { color: var(--dim); }
+        .search-box input:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.15); }
+        .role-select { padding: 0.5rem 1rem; border: 1px solid var(--input-border); border-radius: var(--radius-sm); font-size: 0.875rem; background: var(--input-bg); color: var(--text); cursor: pointer; }
 
         .member-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 1rem; }
-        .member-card { background: var(--glass-bg); backdrop-filter: blur(20px); border: 1px solid var(--glass-border); border-radius: var(--radius-lg); padding: 1.5rem; box-shadow: var(--shadow); transition: var(--transition); }
-        .member-card:hover { box-shadow: var(--shadow-lg); border-color: var(--glass-border-hover); }
+        .member-card { background: var(--bg-glass); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border: 1px solid var(--line); border-radius: var(--radius); padding: 1.5rem; box-shadow: var(--shadow); transition: all 0.2s ease; }
+        .member-card:hover { box-shadow: var(--shadow-lg); border-color: var(--accent); }
         .member-card-header { display: flex; align-items: center; gap: 1rem; margin-bottom: 1rem; }
         .member-avatar-lg { width: 60px; height: 60px; border-radius: 50%; object-fit: cover; }
-        .member-avatar-lg-placeholder { width: 60px; height: 60px; border-radius: 50%; background: var(--gradient-primary); color: white; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; font-weight: 600; }
-        .member-name { font-weight: 600; color: var(--text-primary); }
-        .member-email { font-size: 0.8rem; color: var(--text-muted); }
+        .member-avatar-lg-placeholder { width: 60px; height: 60px; border-radius: 50%; background: linear-gradient(135deg, var(--accent) 0%, var(--accent2) 100%); color: white; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; font-weight: 600; box-shadow: 0 4px 12px var(--accent-glow); }
+        .member-name { font-weight: 600; color: var(--text); }
+        .member-email { font-size: 0.8rem; color: var(--muted); }
         .member-meta { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 0.5rem; }
         .role-tag { font-size: 0.7rem; padding: 0.2rem 0.5rem; border-radius: 100px; font-weight: 500; }
-        .role-tag.pastor { background: rgba(245, 158, 11, 0.2); color: #F59E0B; }
-        .role-tag.admin { background: rgba(139, 92, 246, 0.2); color: var(--primary-light); }
-        .role-tag.leader { background: rgba(16, 185, 129, 0.2); color: var(--success); }
-        .role-tag.member { background: var(--glass-bg); color: var(--text-muted); }
+        .role-tag.pastor { background: rgba(245, 158, 11, 0.15); color: var(--warn); }
+        .role-tag.admin { background: rgba(124, 58, 237, 0.15); color: #A78BFA; }
+        .role-tag.leader { background: rgba(34, 197, 94, 0.15); color: var(--good); }
+        .role-tag.member { background: var(--card); color: var(--muted); }
         .status-tag { font-size: 0.7rem; padding: 0.2rem 0.5rem; border-radius: 100px; }
-        .status-tag.pending { background: rgba(245, 158, 11, 0.2); color: #F59E0B; }
-        .status-tag.suspended { background: rgba(239, 68, 68, 0.2); color: var(--danger); }
+        .status-tag.pending { background: rgba(245, 158, 11, 0.15); color: var(--warn); }
+        .status-tag.suspended { background: rgba(239, 68, 68, 0.15); color: var(--bad); }
 
-        .member-details { font-size: 0.8rem; color: var(--text-muted); margin-bottom: 1rem; }
+        .member-details { font-size: 0.8rem; color: var(--muted); margin-bottom: 1rem; }
         .member-details p { margin: 0.25rem 0; display: flex; align-items: center; gap: 0.5rem; }
         .member-details svg { width: 14px; height: 14px; }
 
         .member-actions { display: flex; gap: 0.5rem; flex-wrap: wrap; }
-        .btn-xs { padding: 0.25rem 0.5rem; font-size: 0.7rem; }
-        .btn-outline { background: transparent; border: 1px solid var(--glass-border); color: var(--text-secondary); }
-        .btn-outline:hover { background: var(--glass-bg-hover); }
-        .btn-primary { background: var(--primary); color: white; border: none; }
-        .btn-primary:hover { background: var(--primary-dark); }
 
-        .modal { position: fixed; inset: 0; background: rgba(0,0,0,0.7); display: none; align-items: center; justify-content: center; z-index: 1000; }
+        .modal { position: fixed; inset: 0; background: rgba(0,0,0,0.7); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); display: none; align-items: center; justify-content: center; z-index: 1000; }
         .modal.show { display: flex; }
-        .modal-content { background: var(--bg-surface); border: 1px solid var(--glass-border); border-radius: var(--radius-lg); padding: 1.5rem; max-width: 400px; width: 90%; }
-        .modal-header { font-weight: 600; margin-bottom: 1rem; color: var(--text-primary); }
-        .modal-body { margin-bottom: 1.5rem; color: var(--text-secondary); }
+        .modal-content { background: var(--bg1); border: 1px solid var(--line); border-radius: var(--radius); padding: 1.5rem; max-width: 400px; width: 90%; box-shadow: var(--shadow-lg); }
+        .modal-header { font-weight: 600; margin-bottom: 1rem; color: var(--text); }
+        .modal-body { margin-bottom: 1.5rem; color: var(--muted); }
         .modal-footer { display: flex; gap: 0.5rem; justify-content: flex-end; }
 
-        .form-group { margin-bottom: 1rem; }
-        .form-group label { display: block; font-size: 0.875rem; font-weight: 500; margin-bottom: 0.5rem; color: var(--text-primary); }
-        .form-group select, .form-group input { width: 100%; padding: 0.5rem; border: 1px solid var(--glass-border); border-radius: var(--radius); background: var(--bg-elevated); color: var(--text-primary); }
-
         .positions-list { display: flex; flex-wrap: wrap; gap: 0.25rem; }
-        .position-tag { font-size: 0.65rem; padding: 0.125rem 0.375rem; background: rgba(139, 92, 246, 0.2); color: var(--primary-light); border-radius: 4px; }
+        .position-tag { font-size: 0.65rem; padding: 0.125rem 0.375rem; background: rgba(124, 58, 237, 0.15); color: #A78BFA; border-radius: 4px; }
     </style>
 </head>
 <body>
