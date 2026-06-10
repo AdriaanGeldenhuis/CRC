@@ -355,15 +355,16 @@ $isEnded = $session['live_status'] === 'ended';
             } catch (e) {}
         }
 
-        // Leave session on unload
+        // Leave session on unload.
+        // sendBeacon cannot set custom headers, so the CSRF token must travel in
+        // the POST body (study.php reads $_POST['csrf_token']).
         window.addEventListener('beforeunload', () => {
             const formData = new FormData();
             formData.append('action', 'leave');
             formData.append('session_id', SESSION_ID);
             formData.append('mode', '<?= $isEnded ? 'replay' : 'live' ?>');
-            navigator.sendBeacon('/morning_watch/api/study.php?' + new URLSearchParams({
-                csrf_token: getCSRFToken()
-            }), formData);
+            formData.append('csrf_token', getCSRFToken());
+            navigator.sendBeacon('/morning_watch/api/study.php', formData);
         });
 
         // Fetch messages (polling)

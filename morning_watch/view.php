@@ -1,6 +1,7 @@
 <?php
 /**
  * CRC Morning Study - View Session
+ * Aligned with app design system (home.css + gospel_media.css)
  */
 
 require_once __DIR__ . '/../core/bootstrap.php';
@@ -30,7 +31,7 @@ if (!$session) {
     Response::redirect('/morning_watch/');
 }
 
-$pageTitle = e($session['title']) . " - Morning Study";
+$pageTitle = $session['title'] . " - Morning Study";
 
 // Get user's entry for this session
 $userEntry = Database::fetchOne(
@@ -46,6 +47,15 @@ if ($session['prayer_points']) {
     $prayerPoints = json_decode($session['prayer_points'], true) ?? [];
 }
 
+// Recap availability (study sessions)
+$hasRecap = false;
+try {
+    $hasRecap = (bool) Database::fetchOne(
+        "SELECT id FROM morning_study_recaps WHERE session_id = ?",
+        [$sessionId]
+    );
+} catch (Exception $e) {}
+
 $isToday = $session['session_date'] === date('Y-m-d');
 ?>
 <!DOCTYPE html>
@@ -57,127 +67,266 @@ $isToday = $session['session_date'] === date('Y-m-d');
     <link rel="apple-touch-icon" href="/apple-touch-icon.png">
     <link rel="manifest" href="/site.webmanifest">
     <meta name="theme-color" content="#7C3AED">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><?= $pageTitle ?></title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title><?= e($pageTitle) ?></title>
     <?= CSRF::meta() ?>
     <link rel="stylesheet" href="/home/css/home.css?v=<?= filemtime(__DIR__ . '/../home/css/home.css') ?>">
-    <link rel="stylesheet" href="/morning_watch/css/morning_watch.css?v=<?= filemtime(__DIR__ . '/css/morning_watch.css') ?>">
+    <link rel="stylesheet" href="/gospel_media/css/gospel_media.css?v=<?= filemtime(__DIR__ . '/../gospel_media/css/gospel_media.css') ?>">
     <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Merriweather:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Merriweather:wght@400;700&display=swap" rel="stylesheet">
     <script>
         (function() {
             const saved = localStorage.getItem('theme') || 'dark';
             document.documentElement.setAttribute('data-theme', saved);
         })();
     </script>
+    <style>
+        /* Morning Study — View Session (matches Today's session design) */
+        .morning-page { padding-bottom: 100px; }
+
+        .page-header { padding: 1.5rem; }
+
+        .back-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+            color: var(--muted);
+            text-decoration: none;
+            font-size: 0.9rem;
+            font-weight: 500;
+            margin-bottom: 0.75rem;
+            transition: color 0.2s ease;
+        }
+        .back-link:hover { color: #7C3AED; }
+        .back-link svg { width: 18px; height: 18px; }
+        .session-date {
+            color: var(--muted);
+            font-size: 0.9rem;
+            margin: 0;
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.75rem 1.25rem;
+            border-radius: 12px;
+            font-weight: 600;
+            font-size: 0.9rem;
+            text-decoration: none;
+            transition: all 0.2s ease;
+            border: none;
+            cursor: pointer;
+            font-family: inherit;
+        }
+        .btn-outline { background: var(--card); border: 1px solid var(--line); color: var(--text); }
+        .btn-outline:hover { border-color: #7C3AED; color: #7C3AED; }
+        .btn-primary {
+            background: linear-gradient(135deg, #7C3AED, #22D3EE);
+            color: #fff;
+            box-shadow: 0 4px 15px rgba(124, 58, 237, 0.3);
+        }
+        .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(124, 58, 237, 0.4); }
+
+        /* Devotional Card */
+        .devotional-card {
+            margin: 0 1rem 1.5rem;
+            background: var(--card);
+            border: 1px solid var(--line);
+            border-radius: 16px;
+            padding: 1.5rem;
+        }
+        .devotional-header { display: flex; align-items: center; gap: 0.75rem; margin-bottom: 1rem; flex-wrap: wrap; }
+        .devotional-badge {
+            padding: 0.375rem 0.75rem;
+            background: linear-gradient(135deg, rgba(124, 58, 237, 0.2), rgba(34, 211, 238, 0.1));
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: #7C3AED;
+            text-transform: uppercase;
+        }
+        .devotional-theme { font-size: 0.85rem; color: var(--muted); }
+        .devotional-title { font-size: 1.25rem; font-weight: 700; color: var(--text); margin: 0 0 1rem; }
+
+        .scripture-section {
+            background: linear-gradient(135deg, rgba(124, 58, 237, 0.1), rgba(34, 211, 238, 0.05));
+            border-radius: 12px;
+            padding: 1rem;
+            margin-bottom: 1rem;
+        }
+        .scripture-ref { display: flex; align-items: center; gap: 0.5rem; font-weight: 600; color: #7C3AED; margin-bottom: 0.75rem; }
+        .scripture-ref svg { width: 18px; height: 18px; }
+        .version-badge { margin-left: auto; padding: 0.2rem 0.5rem; background: rgba(124, 58, 237, 0.2); border-radius: 4px; font-size: 0.7rem; }
+        .scripture-text {
+            margin: 0;
+            font-family: 'Merriweather', serif;
+            font-size: 1rem;
+            line-height: 1.7;
+            color: var(--text);
+            border-left: 3px solid #7C3AED;
+            padding-left: 1rem;
+        }
+
+        .devotional-content h3 { font-size: 1rem; font-weight: 700; color: var(--text); margin: 0 0 0.75rem; }
+        .content-text { color: var(--text); line-height: 1.7; }
+
+        .prayer-section { margin-top: 1.5rem; padding-top: 1rem; border-top: 1px solid var(--line); }
+        .prayer-section h3 { font-size: 1rem; font-weight: 700; color: var(--text); margin: 0 0 0.75rem; }
+        .prayer-list { margin: 0; padding-left: 1.25rem; }
+        .prayer-list li { margin-bottom: 0.5rem; color: var(--text); }
+
+        .devotional-author { margin-top: 1rem; padding-top: 1rem; border-top: 1px solid var(--line); font-size: 0.85rem; color: var(--muted); }
+
+        /* Entry (read-only) */
+        .entry-card {
+            margin: 0 1rem 1.5rem;
+            background: var(--card);
+            border: 1px solid var(--line);
+            border-radius: 16px;
+            padding: 1.5rem;
+        }
+        .entry-card h3 { font-size: 1.1rem; font-weight: 700; color: var(--text); margin: 0 0 1rem; }
+        .entry-section { margin-bottom: 1.25rem; }
+        .entry-section h4 {
+            font-size: 0.75rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: #7C3AED;
+            margin: 0 0 0.5rem;
+        }
+        .entry-section p { color: var(--text); line-height: 1.7; margin: 0; }
+        .entry-meta { font-size: 0.8rem; color: var(--muted); margin-top: 1rem; padding-top: 1rem; border-top: 1px solid var(--line); }
+
+        /* CTA */
+        .cta-card {
+            margin: 0 1rem 1.5rem;
+            background: var(--card);
+            border: 1px solid var(--line);
+            border-radius: 16px;
+            padding: 2rem 1.5rem;
+            text-align: center;
+        }
+        .cta-card p { color: var(--muted); margin: 0 0 1.25rem; }
+    </style>
 </head>
 <body>
     <?php include __DIR__ . '/../home/partials/navbar.php'; ?>
 
-    <main class="main-content" style="padding-bottom: 100px;">
-        <div class="container">
-            <!-- Header -->
-            <div class="mw-header">
-                <div class="mw-title">
-                    <a href="/morning_watch/archive.php" class="back-link">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <polyline points="15 18 9 12 15 6"></polyline>
-                        </svg>
-                        Back to Archive
-                    </a>
-                    <p class="session-date"><?= date('l, F j, Y', strtotime($session['session_date'])) ?></p>
-                </div>
+    <main class="feed-container morning-page">
+        <!-- Header -->
+        <div class="page-header">
+            <a href="/morning_watch/archive.php" class="back-link">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="15 18 9 12 15 6"></polyline>
+                </svg>
+                Back to Archive
+            </a>
+            <p class="session-date"><?= date('l, F j, Y', strtotime($session['session_date'])) ?></p>
+        </div>
+
+        <!-- Devotional -->
+        <div class="devotional-card">
+            <div class="devotional-header">
+                <span class="devotional-badge"><?= ucfirst($session['scope']) ?></span>
+                <?php if ($session['theme']): ?>
+                    <span class="devotional-theme"><?= e($session['theme']) ?></span>
+                <?php endif; ?>
             </div>
 
-            <!-- Devotional -->
-            <div class="devotional-card">
-                <div class="devotional-header">
-                    <span class="devotional-badge"><?= ucfirst($session['scope']) ?></span>
-                    <?php if ($session['theme']): ?>
-                        <span class="devotional-theme"><?= e($session['theme']) ?></span>
-                    <?php endif; ?>
+            <h2 class="devotional-title"><?= e($session['title']) ?></h2>
+
+            <!-- Scripture -->
+            <div class="scripture-section">
+                <div class="scripture-ref">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path>
+                    </svg>
+                    <?= e($session['scripture_ref']) ?>
+                    <span class="version-badge"><?= e($session['version_code'] ?? 'KJV') ?></span>
                 </div>
-
-                <h2 class="devotional-title"><?= e($session['title']) ?></h2>
-
-                <!-- Scripture -->
-                <div class="scripture-section">
-                    <div class="scripture-ref">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path>
-                        </svg>
-                        <?= e($session['scripture_ref']) ?>
-                        <span class="version-badge"><?= e($session['version_code'] ?? 'KJV') ?></span>
-                    </div>
+                <?php if ($session['scripture_text']): ?>
                     <blockquote class="scripture-text">
                         <?= nl2br(e($session['scripture_text'])) ?>
                     </blockquote>
-                </div>
+                <?php endif; ?>
+            </div>
 
-                <!-- Devotional Content -->
+            <!-- Devotional Content -->
+            <?php if ($session['devotional']): ?>
                 <div class="devotional-content">
                     <h3>Reflection</h3>
                     <div class="content-text">
                         <?= nl2br(e($session['devotional'])) ?>
                     </div>
                 </div>
+            <?php endif; ?>
 
-                <!-- Prayer Points -->
-                <?php if ($prayerPoints): ?>
-                    <div class="prayer-section">
-                        <h3>Prayer Points</h3>
-                        <ul class="prayer-list">
-                            <?php foreach ($prayerPoints as $point): ?>
-                                <li><?= e($point) ?></li>
-                            <?php endforeach; ?>
-                        </ul>
-                    </div>
-                <?php endif; ?>
-
-                <?php if ($session['author_name']): ?>
-                    <div class="devotional-author">
-                        Written by <?= e($session['author_name']) ?>
-                    </div>
-                <?php endif; ?>
-            </div>
-
-            <!-- User Entry -->
-            <?php if ($userEntry): ?>
-                <div class="entry-card view-only">
-                    <h3>Your Response</h3>
-
-                    <?php if ($userEntry['reflection']): ?>
-                        <div class="entry-section">
-                            <h4>My Reflection</h4>
-                            <p><?= nl2br(e($userEntry['reflection'])) ?></p>
-                        </div>
-                    <?php endif; ?>
-
-                    <?php if ($userEntry['prayer']): ?>
-                        <div class="entry-section">
-                            <h4>My Prayer</h4>
-                            <p><?= nl2br(e($userEntry['prayer'])) ?></p>
-                        </div>
-                    <?php endif; ?>
-
-                    <?php if ($userEntry['application']): ?>
-                        <div class="entry-section">
-                            <h4>Application</h4>
-                            <p><?= nl2br(e($userEntry['application'])) ?></p>
-                        </div>
-                    <?php endif; ?>
-
-                    <div class="entry-meta">
-                        Completed on <?= date('M j, Y \a\t g:i A', strtotime($userEntry['created_at'])) ?>
-                    </div>
+            <!-- Prayer Points -->
+            <?php if ($prayerPoints): ?>
+                <div class="prayer-section">
+                    <h3>Prayer Points</h3>
+                    <ul class="prayer-list">
+                        <?php foreach ($prayerPoints as $point): ?>
+                            <li><?= e($point) ?></li>
+                        <?php endforeach; ?>
+                    </ul>
                 </div>
-            <?php elseif ($isToday): ?>
-                <div class="cta-card">
-                    <p>You haven't completed today's devotional yet.</p>
-                    <a href="/morning_watch/" class="btn btn-primary">Complete Today's Entry</a>
+            <?php endif; ?>
+
+            <?php if ($session['author_name']): ?>
+                <div class="devotional-author">
+                    Written by <?= e($session['author_name']) ?>
+                </div>
+            <?php endif; ?>
+
+            <?php if ($hasRecap): ?>
+                <div class="prayer-section">
+                    <a href="/morning_watch/recap.php?session_id=<?= $session['id'] ?>" class="btn btn-outline">
+                        View Session Recap
+                    </a>
                 </div>
             <?php endif; ?>
         </div>
+
+        <!-- User Entry -->
+        <?php if ($userEntry): ?>
+            <div class="entry-card view-only">
+                <h3>Your Response</h3>
+
+                <?php if ($userEntry['reflection']): ?>
+                    <div class="entry-section">
+                        <h4>My Reflection</h4>
+                        <p><?= nl2br(e($userEntry['reflection'])) ?></p>
+                    </div>
+                <?php endif; ?>
+
+                <?php if ($userEntry['prayer']): ?>
+                    <div class="entry-section">
+                        <h4>My Prayer</h4>
+                        <p><?= nl2br(e($userEntry['prayer'])) ?></p>
+                    </div>
+                <?php endif; ?>
+
+                <?php if ($userEntry['application']): ?>
+                    <div class="entry-section">
+                        <h4>Application</h4>
+                        <p><?= nl2br(e($userEntry['application'])) ?></p>
+                    </div>
+                <?php endif; ?>
+
+                <div class="entry-meta">
+                    Completed on <?= date('M j, Y \a\t g:i A', strtotime($userEntry['created_at'])) ?>
+                </div>
+            </div>
+        <?php elseif ($isToday): ?>
+            <div class="cta-card">
+                <p>You haven't completed today's devotional yet.</p>
+                <a href="/morning_watch/" class="btn btn-primary">Complete Today's Entry</a>
+            </div>
+        <?php endif; ?>
     </main>
 
     <!-- Bottom Navigation -->
