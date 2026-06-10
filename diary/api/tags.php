@@ -18,7 +18,7 @@ switch ($action) {
         $tags = Database::fetchAll(
             "SELECT t.*, COUNT(det.entry_id) as entry_count
              FROM diary_tags t
-             LEFT JOIN diary_entry_tags det ON t.id = det.tag_id
+             LEFT JOIN diary_tag_links det ON t.id = det.tag_id
              WHERE t.user_id = ?
              GROUP BY t.id
              ORDER BY entry_count DESC, t.name ASC",
@@ -107,7 +107,7 @@ switch ($action) {
         }
 
         // Remove associations
-        Database::delete('diary_entry_tags', 'tag_id = ?', [$tagId]);
+        Database::delete('diary_tag_links', 'tag_id = ?', [$tagId]);
         // Delete tag
         Database::delete('diary_tags', 'id = ?', [$tagId]);
 

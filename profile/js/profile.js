@@ -164,7 +164,10 @@ function updateBirthdayCountdown() {
     if (!birthday) return;
 
     const today = new Date();
-    const birthDate = new Date(birthday);
+    // Parse Y-m-d as a local date — new Date('YYYY-MM-DD') is treated as UTC
+    // and can shift the birthday by a day depending on the user's timezone.
+    const [bYear, bMonth, bDay] = birthday.split('-').map(Number);
+    const birthDate = new Date(bYear, bMonth - 1, bDay);
 
     // Set to this year
     let nextBirthday = new Date(today.getFullYear(), birthDate.getMonth(), birthDate.getDate());

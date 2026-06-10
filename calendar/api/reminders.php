@@ -34,7 +34,7 @@ switch ($action) {
 
         // Check if reminder already exists
         $existing = Database::fetchOne(
-            "SELECT id FROM calendar_reminders WHERE event_id = ? AND user_id = ? AND minutes_before = ?",
+            "SELECT id FROM calendar_reminders WHERE calendar_event_id = ? AND user_id = ? AND minutes_before = ?",
             [$eventId, $user['id'], $minutesBefore]
         );
 
@@ -42,15 +42,10 @@ switch ($action) {
             Response::error('Reminder already exists');
         }
 
-        // Calculate reminder time
-        $reminderTime = date('Y-m-d H:i:s', strtotime($event['start_datetime']) - ($minutesBefore * 60));
-
         $reminderId = Database::insert('calendar_reminders', [
-            'event_id' => $eventId,
+            'calendar_event_id' => $eventId,
             'user_id' => $user['id'],
             'minutes_before' => $minutesBefore,
-            'reminder_datetime' => $reminderTime,
-            'status' => 'pending',
             'created_at' => date('Y-m-d H:i:s')
         ]);
 
@@ -84,19 +79,19 @@ switch ($action) {
         if ($eventId) {
             // Reminders for specific event
             $reminders = Database::fetchAll(
-                "SELECT * FROM calendar_reminders WHERE event_id = ? AND user_id = ? ORDER BY minutes_before ASC",
+                "SELECT * FROM calendar_reminders WHERE calendar_event_id = ? AND user_id = ? ORDER BY minutes_before ASC",
                 [$eventId, $user['id']]
             );
         } else {
-            // All pending reminders
+            // All pending reminders (fire time derived from start_datetime - minutes_before)
             $reminders = Database::fetchAll(
                 "SELECT r.*, e.title as event_title, e.start_datetime
                  FROM calendar_reminders r
-                 JOIN calendar_events e ON r.event_id = e.id
+                 JOIN calendar_events e ON r.calendar_event_id = e.id
                  WHERE r.user_id = ?
-                 AND r.status = 'pending'
-                 AND r.reminder_datetime >= NOW()
-                 ORDER BY r.reminder_datetime ASC
+                 AND r.is_sent = 0
+                 AND DATE_SUB(e.start_datetime, INTERVAL r.minutes_before MINUTE) >= NOW()
+                 ORDER BY DATE_SUB(e.start_datetime, INTERVAL r.minutes_before MINUTE) ASC
                  LIMIT 20",
                 [$user['id']]
             );
@@ -122,7 +117,8 @@ switch ($action) {
         }
 
         Database::update('calendar_reminders', [
-            'status' => 'dismissed'
+            'is_sent' => 1,
+            'sent_at' => date('Y-m-d H:i:s')
         ], 'id = ?', [$reminderId]);
 
         Response::success([], 'Reminder dismissed');
@@ -133,11 +129,11 @@ switch ($action) {
         $dueReminders = Database::fetchAll(
             "SELECT r.*, e.title as event_title, e.start_datetime, e.location
              FROM calendar_reminders r
-             JOIN calendar_events e ON r.event_id = e.id
+             JOIN calendar_events e ON r.calendar_event_id = e.id
              WHERE r.user_id = ?
-             AND r.status = 'pending'
-             AND r.reminder_datetime <= NOW()
-             ORDER BY r.reminder_datetime DESC
+             AND r.is_sent = 0
+             AND DATE_SUB(e.start_datetime, INTERVAL r.minutes_before MINUTE) <= NOW()
+             ORDER BY DATE_SUB(e.start_datetime, INTERVAL r.minutes_before MINUTE) DESC
              LIMIT 10",
             [$user['id']]
         );
@@ -145,7 +141,7 @@ switch ($action) {
         // Mark as sent
         foreach ($dueReminders as $reminder) {
             Database::update('calendar_reminders', [
-                'status' => 'sent',
+                'is_sent' => 1,
                 'sent_at' => date('Y-m-d H:i:s')
             ], 'id = ?', [$reminder['id']]);
         }

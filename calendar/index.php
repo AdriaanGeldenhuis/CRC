@@ -96,7 +96,7 @@ $eventsByHour = [];
 try {
     // Congregation/Global events
     $congEvents = Database::fetchAll(
-        "SELECT e.*, 'event' as source_type,
+        "SELECT e.*, e.is_all_day AS all_day, 'event' as source_type,
                 CASE WHEN e.scope = 'global' THEN 'global' ELSE 'congregation' END as event_category
          FROM events e
          WHERE (e.scope = 'global' OR e.congregation_id = ?)
@@ -116,7 +116,7 @@ try {
 try {
     // Personal events
     $personalEvents = Database::fetchAll(
-        "SELECT *, 'personal' as source_type
+        "SELECT *, is_all_day AS all_day, 'personal' as source_type
          FROM calendar_events
          WHERE user_id = ?
          AND status = 'active'

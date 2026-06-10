@@ -17,6 +17,9 @@ RewriteEngine On
     Header always set Permissions-Policy "geolocation=(), microphone=(), camera=()"
 </IfModule>
 
+# Friendly invite URLs: /join/<token> -> onboarding with invite param
+RewriteRule ^join/([A-Za-z0-9]+)/?$ /onboarding/index.php?invite=$1 [L,QSA]
+
 # Block access to sensitive directories
 RedirectMatch 403 ^/core/?.*$
 RedirectMatch 403 ^/migrations/?.*$

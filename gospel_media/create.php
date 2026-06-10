@@ -14,6 +14,32 @@ if (!$primaryCong) {
 }
 
 $user = Auth::user();
+
+// Optional group context (?group_id=) — post into a group.
+// The posts API re-verifies membership server-side; this check is for UX.
+$postGroup = null;
+$postGroupId = (int)($_GET['group_id'] ?? 0);
+if ($postGroupId) {
+    $postGroup = Database::fetchOne(
+        "SELECT * FROM `groups` WHERE id = ? AND status = 'active'",
+        [$postGroupId]
+    );
+
+    if ($postGroup && !Auth::isAdmin()) {
+        $isGroupMember = (bool) Database::fetchOne(
+            "SELECT 1 FROM group_members WHERE group_id = ? AND user_id = ? AND status = 'active'",
+            [$postGroupId, Auth::id()]
+        );
+        if (!$isGroupMember) {
+            $postGroup = null;
+        }
+    }
+
+    if (!$postGroup) {
+        Response::redirect('/gospel_media/groups.php');
+    }
+}
+
 $pageTitle = 'Create Post - CRC';
 ?>
 <!DOCTYPE html>
@@ -260,7 +286,7 @@ $pageTitle = 'Create Post - CRC';
 <body>
     <div class="create-page">
         <header class="create-header">
-            <a href="/gospel_media/" class="back-btn">
+            <a href="<?= $postGroup ? '/gospel_media/group.php?id=' . (int)$postGroup['id'] : '/gospel_media/' ?>" class="back-btn">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <polyline points="15 18 9 12 15 6"></polyline>
                 </svg>
@@ -280,12 +306,17 @@ $pageTitle = 'Create Post - CRC';
                     <?php endif; ?>
                     <div class="author-details">
                         <strong><?= e($user['name']) ?></strong>
-                        <select name="scope" class="scope-select">
-                            <option value="congregation"><?= e($primaryCong['name']) ?></option>
-                            <?php if (Auth::isAdmin()): ?>
-                                <option value="global">Global (All Congregations)</option>
-                            <?php endif; ?>
-                        </select>
+                        <?php if ($postGroup): ?>
+                            <input type="hidden" name="group_id" value="<?= (int)$postGroup['id'] ?>">
+                            <div class="scope-select" style="display:inline-block;">Posting to <?= e($postGroup['name']) ?></div>
+                        <?php else: ?>
+                            <select name="scope" class="scope-select">
+                                <option value="congregation"><?= e($primaryCong['name']) ?></option>
+                                <?php if (Auth::isAdmin()): ?>
+                                    <option value="global">Global (All Congregations)</option>
+                                <?php endif; ?>
+                            </select>
+                        <?php endif; ?>
                     </div>
                 </div>
 
@@ -367,7 +398,8 @@ $pageTitle = 'Create Post - CRC';
             const form = e.target;
             const btn = document.getElementById('postBtnBottom');
             const content = form.content.value.trim();
-            const scope = form.scope.value;
+            const scope = form.scope ? form.scope.value : 'congregation';
+            const groupId = form.group_id ? form.group_id.value : '';
             const originalHTML = btn.innerHTML;
 
             if (!content) return;
@@ -380,6 +412,9 @@ $pageTitle = 'Create Post - CRC';
                 formData.append('action', 'create');
                 formData.append('content', content);
                 formData.append('scope', scope);
+                if (groupId) {
+                    formData.append('group_id', groupId);
+                }
                 formData.append('csrf_token', csrfToken);
 
                 selectedFiles.forEach((file, i) => {
@@ -394,7 +429,9 @@ $pageTitle = 'Create Post - CRC';
                 const data = await response.json();
 
                 if (data.ok) {
-                    window.location.href = '/gospel_media/';
+                    window.location.href = groupId
+                        ? '/gospel_media/group.php?id=' + encodeURIComponent(groupId)
+                        : '/gospel_media/';
                 } else {
                     alert(data.error || 'Failed to create post');
                     btn.disabled = false;

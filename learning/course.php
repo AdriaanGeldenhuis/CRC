@@ -19,11 +19,11 @@ if (!$courseId) {
 $course = Database::fetchOne(
     "SELECT c.*, u.name as instructor_name,
             (SELECT COUNT(*) FROM lessons WHERE course_id = c.id) as lesson_count,
-            (SELECT COUNT(*) FROM enrollments WHERE course_id = c.id) as student_count
+            (SELECT COUNT(*) FROM user_course_enrollments WHERE course_id = c.id) as student_count
      FROM courses c
-     LEFT JOIN users u ON c.instructor_id = u.id
+     LEFT JOIN users u ON c.created_by = u.id
      WHERE c.id = ?
-     AND c.status = 'published'
+     AND c.is_published = 1
      AND (c.scope = 'global' OR c.congregation_id = ?)",
     [$courseId, $primaryCong['id'] ?? 0]
 );
@@ -36,14 +36,14 @@ $pageTitle = e($course['title']) . " - Bible School";
 
 // Get enrollment
 $enrollment = Database::fetchOne(
-    "SELECT * FROM enrollments WHERE course_id = ? AND user_id = ?",
+    "SELECT * FROM user_course_enrollments WHERE course_id = ? AND user_id = ? AND status != 'dropped'",
     [$courseId, $user['id']]
 );
 
 // Get lessons
 $lessons = Database::fetchAll(
     "SELECT l.*,
-            (SELECT completed_at FROM lesson_progress WHERE lesson_id = l.id AND user_id = ?) as completed_at
+            (SELECT completed_at FROM user_lesson_progress WHERE lesson_id = l.id AND user_id = ?) as completed_at
      FROM lessons l
      WHERE l.course_id = ?
      ORDER BY l.sort_order ASC, l.id ASC",
@@ -70,9 +70,10 @@ foreach ($lessons as $lesson) {
     }
 }
 
-// Parse requirements/outcomes
-$requirements = $course['requirements'] ? json_decode($course['requirements'], true) : [];
-$outcomes = $course['learning_outcomes'] ? json_decode($course['learning_outcomes'], true) : [];
+// Parse prerequisites/outcomes
+$requirements = $course['prerequisites'] ? json_decode($course['prerequisites'], true) : [];
+$settings = $course['settings'] ? json_decode($course['settings'], true) : [];
+$outcomes = is_array($settings) && !empty($settings['learning_outcomes']) ? $settings['learning_outcomes'] : [];
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -107,7 +108,7 @@ $outcomes = $course['learning_outcomes'] ? json_decode($course['learning_outcome
                 <div class="course-header-content">
                     <div class="course-header-info">
                         <div class="course-badges">
-                            <span class="badge level-<?= $course['level'] ?>"><?= ucfirst($course['level']) ?></span>
+                            <span class="badge level-<?= $course['difficulty'] ?>"><?= ucfirst($course['difficulty']) ?></span>
                             <span class="badge category"><?= ucwords(str_replace('_', ' ', $course['category'])) ?></span>
                         </div>
                         <h1><?= e($course['title']) ?></h1>
@@ -119,8 +120,8 @@ $outcomes = $course['learning_outcomes'] ? json_decode($course['learning_outcome
                             <?php endif; ?>
                             <span class="meta-item">📖 <?= $course['lesson_count'] ?> lessons</span>
                             <span class="meta-item">👥 <?= $course['student_count'] ?> students</span>
-                            <?php if ($course['duration_hours']): ?>
-                                <span class="meta-item">⏱️ <?= $course['duration_hours'] ?> hours</span>
+                            <?php if ($course['duration_weeks']): ?>
+                                <span class="meta-item">⏱️ <?= $course['duration_weeks'] ?> weeks</span>
                             <?php endif; ?>
                         </div>
                     </div>
@@ -183,8 +184,8 @@ $outcomes = $course['learning_outcomes'] ? json_decode($course['learning_outcome
                                             <?php if ($lesson['duration_minutes']): ?>
                                                 <span>⏱️ <?= $lesson['duration_minutes'] ?> min</span>
                                             <?php endif; ?>
-                                            <?php if ($lesson['type']): ?>
-                                                <span><?= getLessonTypeIcon($lesson['type']) ?> <?= ucfirst($lesson['type']) ?></span>
+                                            <?php if ($lesson['content_type']): ?>
+                                                <span><?= getLessonTypeIcon($lesson['content_type']) ?> <?= ucfirst($lesson['content_type']) ?></span>
                                             <?php endif; ?>
                                         </div>
                                     </div>
@@ -217,22 +218,22 @@ $outcomes = $course['learning_outcomes'] ? json_decode($course['learning_outcome
 
                 <!-- Sidebar -->
                 <aside class="course-sidebar">
-                    <?php if ($course['thumbnail']): ?>
-                        <img src="<?= e($course['thumbnail']) ?>" alt="" class="course-image">
+                    <?php if ($course['cover_image']): ?>
+                        <img src="<?= e($course['cover_image']) ?>" alt="" class="course-image">
                     <?php endif; ?>
 
                     <div class="sidebar-card">
                         <h3>Course Details</h3>
                         <dl class="details-list">
                             <dt>Level</dt>
-                            <dd><?= ucfirst($course['level']) ?></dd>
+                            <dd><?= ucfirst($course['difficulty']) ?></dd>
                             <dt>Category</dt>
                             <dd><?= ucwords(str_replace('_', ' ', $course['category'])) ?></dd>
                             <dt>Lessons</dt>
                             <dd><?= $course['lesson_count'] ?></dd>
-                            <?php if ($course['duration_hours']): ?>
+                            <?php if ($course['duration_weeks']): ?>
                                 <dt>Total Duration</dt>
-                                <dd><?= $course['duration_hours'] ?> hours</dd>
+                                <dd><?= $course['duration_weeks'] ?> weeks</dd>
                             <?php endif; ?>
                             <dt>Language</dt>
                             <dd>English</dd>

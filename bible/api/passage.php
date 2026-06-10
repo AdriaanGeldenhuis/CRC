@@ -30,12 +30,16 @@ switch ($action) {
         $bookNumber++; // 1-indexed
 
         // Try to get from database
+        // Note: bible_verses uses columns `verse` and `version_id` (see migrations/004_bible.sql).
+        // Alias `verse` as `verse_number` to keep the response shape unchanged for callers.
         $verses = [];
         try {
             $verses = Database::fetchAll(
-                "SELECT verse_number, text FROM bible_verses
-                 WHERE version_code = ? AND book_number = ? AND chapter = ?
-                 ORDER BY verse_number ASC",
+                "SELECT v.verse AS verse_number, v.text
+                 FROM bible_verses v
+                 INNER JOIN bible_versions bv ON bv.id = v.version_id
+                 WHERE bv.code = ? AND v.book_number = ? AND v.chapter = ?
+                 ORDER BY v.verse ASC",
                 [$version, $bookNumber, $chapter]
             ) ?: [];
         } catch (Exception $e) {}
@@ -54,11 +58,12 @@ switch ($action) {
         $results = [];
         try {
             $results = Database::fetchAll(
-                "SELECT v.book_number, v.chapter, v.verse_number, v.text
+                "SELECT v.book_number, v.chapter, v.verse AS verse_number, v.text
                  FROM bible_verses v
-                 WHERE v.version_code = ?
+                 INNER JOIN bible_versions bv ON bv.id = v.version_id
+                 WHERE bv.code = ?
                  AND v.text LIKE ?
-                 ORDER BY v.book_number, v.chapter, v.verse_number
+                 ORDER BY v.book_number, v.chapter, v.verse
                  LIMIT 50",
                 [$version, '%' . $query . '%']
             ) ?: [];

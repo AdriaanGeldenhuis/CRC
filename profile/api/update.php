@@ -50,6 +50,16 @@ foreach ($allowedFields as $field => $type) {
                 if ($field === 'bio' && strlen($value) > 500) {
                     Response::json(['success' => false, 'error' => 'Bio must be less than 500 characters']);
                 }
+                if (in_array($field, ['name', 'location', 'occupation'], true) && strlen($value) > 255) {
+                    Response::json(['success' => false, 'error' => ucfirst($field) . ' is too long']);
+                }
+                if ($field === 'phone' && $value !== '') {
+                    // Same South African format rule as registration
+                    $cleaned = preg_replace('/[\s\-]/', '', $value);
+                    if (!preg_match('/^(\+27|0)[0-9]{9}$/', $cleaned)) {
+                        Response::json(['success' => false, 'error' => 'Invalid phone number format']);
+                    }
+                }
                 break;
 
             case 'date':
@@ -58,9 +68,9 @@ foreach ($allowedFields as $field => $type) {
                     if (!$date) {
                         Response::json(['success' => false, 'error' => 'Invalid date format']);
                     }
-                    // Ensure date is in the past
-                    if ($date > new DateTime()) {
-                        Response::json(['success' => false, 'error' => 'Date of birth must be in the past']);
+                    // Ensure date is in the past and plausible
+                    if ($date > new DateTime() || $date < new DateTime('1900-01-01')) {
+                        Response::json(['success' => false, 'error' => 'Please enter a valid date of birth']);
                     }
                 } else {
                     $value = null;

@@ -205,7 +205,10 @@ class Session {
      * Set session cookie
      */
     private static function setCookie(string $token, int $lifetime): void {
-        $secure = isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off';
+        // Honour the configured flag; fall back to HTTPS detection so local
+        // development over plain HTTP still works when SESSION_SECURE is off.
+        $secure = (defined('SESSION_SECURE') && SESSION_SECURE)
+            || (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off');
 
         setcookie(SESSION_NAME, $token, [
             'expires' => time() + $lifetime,

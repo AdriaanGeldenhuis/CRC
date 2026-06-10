@@ -43,9 +43,9 @@ switch ($action) {
 
         Database::insert('congregation_invites', [
             'congregation_id' => $congregationId,
-            'token_hash' => $token, // Store readable token for URL
+            'token_hash' => $tokenHash, // Only the hash is stored; the raw token lives in the URL
             'role' => $role,
-            'max_uses' => $maxUses ?: null,
+            'max_uses' => $maxUses ? max(1, (int)$maxUses) : null,
             'use_count' => 0,
             'expires_at' => $expiryTimestamp,
             'created_by' => $adminId,

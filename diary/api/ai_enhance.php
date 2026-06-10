@@ -23,6 +23,13 @@ try {
         exit;
     }
 
+    // CSRF protection (token sent via X-CSRF-Token header)
+    if (!CSRF::validate()) {
+        http_response_code(403);
+        echo json_encode(['error' => 'invalid_csrf_token']);
+        exit;
+    }
+
     $userId = Auth::user()['id'] ?? 0;
 
     // Get JSON input

@@ -76,12 +76,13 @@ switch ($action) {
                 'description' => $description,
                 'start_datetime' => $startDatetime,
                 'end_datetime' => $endDatetime,
-                'all_day' => $allDay,
+                'is_all_day' => $allDay,
                 'location' => $location,
+                'event_type' => 'personal',
                 'category' => $category,
                 'color' => $color,
-                'recurrence' => $recurrence,
-                'recurrence_end' => $recurrence !== 'none' && $recurrenceEnd ? $recurrenceEnd : null,
+                'recurrence_rule' => ($recurrence && $recurrence !== 'none') ? $recurrence : null,
+                'recurrence_end_date' => ($recurrence && $recurrence !== 'none' && $recurrenceEnd) ? $recurrenceEnd : null,
                 'status' => 'active',
                 'created_at' => date('Y-m-d H:i:s'),
                 'updated_at' => date('Y-m-d H:i:s')
@@ -92,13 +93,10 @@ switch ($action) {
                 foreach ($reminders as $minutes) {
                     $minutes = (int)$minutes;
                     if ($minutes > 0) {
-                        $reminderTime = date('Y-m-d H:i:s', strtotime($startDatetime) - ($minutes * 60));
                         Database::insert('calendar_reminders', [
-                            'event_id' => $eventId,
+                            'calendar_event_id' => $eventId,
                             'user_id' => $user['id'],
                             'minutes_before' => $minutes,
-                            'reminder_datetime' => $reminderTime,
-                            'status' => 'pending',
                             'created_at' => date('Y-m-d H:i:s')
                         ]);
                     }
@@ -120,10 +118,9 @@ switch ($action) {
                 'description' => $description,
                 'start_datetime' => $startDatetime,
                 'end_datetime' => $endDatetime,
-                'all_day' => $allDay,
+                'is_all_day' => $allDay,
                 'location' => $location,
-                'category' => $category,
-                'color' => $color,
+                'event_type' => $category,
                 'status' => 'published',
                 'created_at' => date('Y-m-d H:i:s'),
                 'updated_at' => date('Y-m-d H:i:s')
@@ -189,7 +186,7 @@ switch ($action) {
                 'description' => $description,
                 'start_datetime' => $startDatetime,
                 'end_datetime' => $endDatetime,
-                'all_day' => $allDay,
+                'is_all_day' => $allDay,
                 'location' => $location,
                 'category' => $category,
                 'color' => $color,
@@ -197,18 +194,15 @@ switch ($action) {
             ], 'id = ?', [$eventId]);
 
             // Update reminders
-            Database::delete('calendar_reminders', 'event_id = ? AND user_id = ?', [$eventId, $user['id']]);
+            Database::delete('calendar_reminders', 'calendar_event_id = ? AND user_id = ?', [$eventId, $user['id']]);
             if (!empty($reminders)) {
                 foreach ($reminders as $minutes) {
                     $minutes = (int)$minutes;
                     if ($minutes > 0) {
-                        $reminderTime = date('Y-m-d H:i:s', strtotime($startDatetime) - ($minutes * 60));
                         Database::insert('calendar_reminders', [
-                            'event_id' => $eventId,
+                            'calendar_event_id' => $eventId,
                             'user_id' => $user['id'],
                             'minutes_before' => $minutes,
-                            'reminder_datetime' => $reminderTime,
-                            'status' => 'pending',
                             'created_at' => date('Y-m-d H:i:s')
                         ]);
                     }
@@ -235,10 +229,9 @@ switch ($action) {
                 'description' => $description,
                 'start_datetime' => $startDatetime,
                 'end_datetime' => $endDatetime,
-                'all_day' => $allDay,
+                'is_all_day' => $allDay,
                 'location' => $location,
-                'category' => $category,
-                'color' => $color,
+                'event_type' => $category,
                 'updated_at' => date('Y-m-d H:i:s')
             ], 'id = ?', [$eventId]);
         }
@@ -266,7 +259,7 @@ switch ($action) {
             }
 
             // Delete reminders first
-            Database::delete('calendar_reminders', 'event_id = ? AND user_id = ?', [$eventId, $user['id']]);
+            Database::delete('calendar_reminders', 'calendar_event_id = ? AND user_id = ?', [$eventId, $user['id']]);
             // Delete event
             Database::delete('calendar_events', 'id = ?', [$eventId]);
         } else {
@@ -304,12 +297,13 @@ switch ($action) {
             try {
                 $congEvents = Database::fetchAll(
                     "SELECT e.*,
+                            e.is_all_day AS all_day,
                             'event' as source_type,
                             CASE
                                 WHEN e.scope = 'global' THEN 'global'
                                 ELSE 'congregation'
                             END as event_category,
-                            COALESCE(e.color, '#10B981') as display_color
+                            '#10B981' as display_color
                      FROM events e
                      WHERE (e.scope = 'global' OR e.congregation_id = ?)
                      AND e.status = 'published'
@@ -330,9 +324,9 @@ switch ($action) {
                         'location' => $event['location'] ?? null,
                         'color' => $event['display_color'],
                         'source' => $event['source_type'],
-                        'category' => $event['event_category'],
+                        'category' => $event['event_type'] ?? 'general',
                         'editable' => false,
-                        'url' => '/gospel_media/event.php?id=' . $event['id']
+                        'url' => '/calendar/event.php?id=' . $event['id'] . '&type=congregation'
                     ];
                 }
             } catch (Exception $e) { Logger::error('Calendar events error: ' . $e->getMessage()); }
@@ -342,7 +336,7 @@ switch ($action) {
         if (in_array('all', $sources) || in_array('personal', $sources)) {
             try {
                 $personalEvents = Database::fetchAll(
-                    "SELECT *, 'personal' as source_type
+                    "SELECT *, is_all_day AS all_day, 'personal' as source_type
                      FROM calendar_events
                      WHERE user_id = ?
                      AND status = 'active'
@@ -458,11 +452,11 @@ switch ($action) {
         if (in_array('all', $sources) || in_array('courses', $sources)) {
             try {
                 $enrolledCourses = Database::fetchAll(
-                    "SELECT c.*, uce.enrolled_at, uce.status as enrollment_status,
+                    "SELECT c.*, uce.created_at as enrolled_at, uce.status as enrollment_status,
                             uce.progress_percent
                      FROM courses c
-                     JOIN enrollments uce ON c.id = uce.course_id
-                     WHERE uce.user_id = ? AND uce.status = 'active'",
+                     JOIN user_course_enrollments uce ON c.id = uce.course_id
+                     WHERE uce.user_id = ? AND uce.status IN ('enrolled', 'in_progress')",
                     [$user['id']]
                 ) ?: [];
 
@@ -471,10 +465,10 @@ switch ($action) {
                     $lessons = Database::fetchAll(
                         "SELECT l.*, ulp.status as lesson_status, ulp.completed_at
                          FROM lessons l
-                         LEFT JOIN lesson_progress ulp ON l.id = ulp.lesson_id AND ulp.user_id = ?
+                         LEFT JOIN user_lesson_progress ulp ON l.id = ulp.lesson_id AND ulp.user_id = ?
                          WHERE l.course_id = ?
                          AND (ulp.status IS NULL OR ulp.status != 'completed')
-                         ORDER BY l.order_index ASC
+                         ORDER BY l.sort_order ASC
                          LIMIT 5",
                         [$user['id'], $course['id']]
                     ) ?: [];

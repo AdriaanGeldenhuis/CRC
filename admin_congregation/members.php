@@ -305,7 +305,7 @@ $churchPositions = Database::fetchAll(
                                     <button class="btn btn-danger btn-xs" onclick="rejectMember(<?= $member['user_id'] ?>)">Reject</button>
                                 <?php elseif ($member['status'] === 'active'): ?>
                                     <?php if (!$isCurrentUser && !$isPastor): ?>
-                                        <button class="btn btn-outline btn-xs" onclick="openRoleModal(<?= $member['user_id'] ?>, '<?= e($member['name']) ?>', '<?= $member['role'] ?>')">Change Role</button>
+                                        <button class="btn btn-outline btn-xs" onclick="openRoleModal(<?= $member['user_id'] ?>, '<?= e($member['name']) ?>', '<?= e($member['role']) ?>')">Change Role</button>
                                         <button class="btn btn-outline btn-xs" onclick="openPositionModal(<?= $member['user_id'] ?>, '<?= e($member['name']) ?>')">Assign Position</button>
                                         <button class="btn btn-danger btn-xs" onclick="removeMember(<?= $member['user_id'] ?>, '<?= e($member['name']) ?>')">Remove</button>
                                     <?php endif; ?>

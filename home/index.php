@@ -128,8 +128,8 @@ try {
             (SELECT COUNT(*) FROM bible_notes WHERE user_id = ?) as bible_notes,
             (SELECT COUNT(*) FROM diary_entries WHERE user_id = ?) as diary_entries,
             (SELECT COUNT(*) FROM prayer_requests WHERE user_id = ?) as prayers_count,
-            (SELECT COUNT(*) FROM enrollments WHERE user_id = ?) as courses_enrolled,
-            (SELECT COUNT(*) FROM enrollments WHERE user_id = ? AND completed_at IS NOT NULL) as courses_completed,
+            (SELECT COUNT(*) FROM user_course_enrollments WHERE user_id = ?) as courses_enrolled,
+            (SELECT COUNT(*) FROM user_course_enrollments WHERE user_id = ? AND completed_at IS NOT NULL) as courses_completed,
             (SELECT COUNT(*) FROM posts WHERE user_id = ? AND status = 'active') as posts_count",
         [$user['id'], $user['id'], $user['id'], $user['id'], $user['id'], $user['id'], $user['id'], $user['id']]
     );

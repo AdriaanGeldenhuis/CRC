@@ -386,7 +386,7 @@ async function editCourse(id) {
     editingCourseId = c.id;
     fillForm(form, c, [
         { f: 'title', k: 'title' }, { f: 'category', k: 'category' },
-        { f: 'description', k: 'description' }, { f: 'thumbnail', k: 'thumbnail' }
+        { f: 'description', k: 'description' }, { f: 'cover_image', k: 'cover_image' }
     ]);
     setModalTitle('add-course-modal', 'Edit Course');
     openModal('add-course-modal');

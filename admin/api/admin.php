@@ -467,6 +467,7 @@ switch ($action) {
         $description = trim(input('description'));
         $category = trim(input('category'));
         $difficulty = input('difficulty', 'beginner');
+        $coverImage = trim(input('cover_image', ''));
         $congId = (int)input('congregation_id') ?: null;
 
         if (!$title) {
@@ -480,8 +481,9 @@ switch ($action) {
             'description' => $description,
             'category' => $category,
             'difficulty' => $difficulty,
+            'cover_image' => $coverImage ?: null,
             'congregation_id' => $congId,
-            'status' => 'draft',
+            'is_published' => 0,
             'created_by' => $user['id'],
             'created_at' => date('Y-m-d H:i:s')
         ]);
@@ -506,6 +508,7 @@ switch ($action) {
         $description = trim(input('description'));
         $category = trim(input('category'));
         $difficulty = input('difficulty', 'beginner');
+        $coverImage = trim(input('cover_image', ''));
 
         if (!$courseId || !$title) {
             Response::error('Title is required');
@@ -515,7 +518,8 @@ switch ($action) {
             'title' => $title,
             'description' => $description,
             'category' => $category,
-            'difficulty' => $difficulty
+            'difficulty' => $difficulty,
+            'cover_image' => $coverImage ?: null
         ], 'id = ?', [$courseId]);
 
         logActivity($user['id'], 'Updated course: ' . $title);
@@ -609,8 +613,8 @@ switch ($action) {
             'users_today' => Database::fetchColumn("SELECT COUNT(*) FROM users WHERE DATE(created_at) = CURDATE()"),
             'congregations' => Database::fetchColumn("SELECT COUNT(*) FROM congregations WHERE status = 'active'"),
             'sermons' => Database::fetchColumn("SELECT COUNT(*) FROM sermons WHERE status = 'published'"),
-            'courses' => Database::fetchColumn("SELECT COUNT(*) FROM courses WHERE status = 'published'"),
-            'events' => Database::fetchColumn("SELECT COUNT(*) FROM events WHERE event_date >= CURDATE()"),
+            'courses' => Database::fetchColumn("SELECT COUNT(*) FROM courses WHERE is_published = 1"),
+            'events' => Database::fetchColumn("SELECT COUNT(*) FROM events WHERE start_datetime >= CURDATE() AND status = 'published'"),
             'homecells' => Database::fetchColumn("SELECT COUNT(*) FROM homecells WHERE status = 'active'")
         ];
 

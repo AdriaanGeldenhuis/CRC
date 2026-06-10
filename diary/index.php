@@ -152,7 +152,7 @@ if ($tag) {
         if ($tagData) {
             $entries = Database::fetchAll(
                 "SELECT e.* FROM diary_entries e
-                 JOIN diary_entry_tags det ON e.id = det.entry_id
+                 JOIN diary_tag_links det ON e.id = det.entry_id
                  WHERE det.tag_id = ? AND e.user_id = ?
                  ORDER BY e.entry_date DESC",
                 [$tagData['id'], $user['id']]
@@ -167,7 +167,7 @@ if ($tag) {
 try {
     $tags = Database::fetchAll(
         "SELECT DISTINCT t.name, COUNT(*) as count
-         FROM diary_entry_tags det
+         FROM diary_tag_links det
          JOIN diary_tags t ON det.tag_id = t.id
          JOIN diary_entries e ON det.entry_id = e.id
          WHERE e.user_id = ?
