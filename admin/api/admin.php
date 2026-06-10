@@ -390,6 +390,78 @@ switch ($action) {
         Response::success([], 'Sermon deleted');
         break;
 
+    // Livestream management
+    case 'add_livestream':
+    case 'update_livestream':
+        $streamId = (int)input('stream_id');
+        $isUpdate = ($action === 'update_livestream');
+
+        $title = trim(input('title'));
+        if (!$title) {
+            Response::error('Title is required');
+        }
+        if ($isUpdate && !$streamId) {
+            Response::error('Stream ID required');
+        }
+
+        $status = in_array(input('status'), ['scheduled', 'live', 'ended'], true) ? input('status') : 'scheduled';
+        $congId = (int)input('congregation_id') ?: null;
+
+        $data = [
+            'title'         => $title,
+            'description'   => trim(input('description')) ?: null,
+            'embed_url'     => trim(input('embed_url')) ?: null,
+            'recording_url' => trim(input('recording_url')) ?: null,
+            'thumbnail_url' => trim(input('thumbnail_url')) ?: null,
+            'duration'      => sermonParseDuration(input('duration_minutes'), input('duration')),
+            'status'        => $status,
+            'scheduled_at'  => livestreamParseDateTime(input('scheduled_at')),
+            'congregation_id' => $congId,
+            'chat_enabled'  => input('chat_enabled') ? 1 : 0,
+            'updated_at'    => date('Y-m-d H:i:s'),
+        ];
+
+        // Status transitions: stamp start/end times automatically.
+        $existing = $isUpdate ? Database::fetchOne("SELECT started_at, ended_at FROM livestreams WHERE id = ?", [$streamId]) : null;
+        if ($status === 'live' && empty($existing['started_at'])) {
+            $data['started_at'] = date('Y-m-d H:i:s');
+        }
+        if ($status === 'ended' && empty($existing['ended_at'])) {
+            $data['ended_at'] = date('Y-m-d H:i:s');
+        }
+
+        if ($isUpdate) {
+            Database::update('livestreams', $data, 'id = ?', [$streamId]);
+            logActivity($user['id'], 'Updated livestream: ' . $title);
+            Response::success([], 'Livestream updated successfully');
+        } else {
+            $data['created_by'] = $user['id'];
+            $data['created_at'] = date('Y-m-d H:i:s');
+            $streamId = Database::insert('livestreams', $data);
+            logActivity($user['id'], 'Added livestream: ' . $title);
+            Response::success(['stream_id' => $streamId], 'Livestream added successfully');
+        }
+        break;
+
+    case 'get_livestream':
+        $streamId = (int)input('stream_id');
+        $stream = Database::fetchOne("SELECT * FROM livestreams WHERE id = ?", [$streamId]);
+        if (!$stream) {
+            Response::error('Livestream not found');
+        }
+        Response::success(['livestream' => $stream]);
+        break;
+
+    case 'delete_livestream':
+        $streamId = (int)input('stream_id');
+        if (!$streamId) {
+            Response::error('Stream ID required');
+        }
+        Database::delete('livestreams', 'id = ?', [$streamId]);
+        logActivity($user['id'], 'Deleted livestream ID: ' . $streamId);
+        Response::success([], 'Livestream deleted');
+        break;
+
     case 'add_course':
         $title = trim(input('title'));
         $description = trim(input('description'));
@@ -616,6 +688,19 @@ function sermonParseScripture($raw): ?string {
     }
     $parts = array_values(array_filter(array_map('trim', preg_split('/[\r\n,]+/', $raw))));
     return $parts ? json_encode($parts) : null;
+}
+
+/**
+ * Convert an HTML datetime-local value (YYYY-MM-DDTHH:MM) into a MySQL
+ * DATETIME, or null when empty.
+ */
+function livestreamParseDateTime($raw): ?string {
+    $raw = trim((string)$raw);
+    if ($raw === '') {
+        return null;
+    }
+    $ts = strtotime($raw);
+    return $ts ? date('Y-m-d H:i:s', $ts) : null;
 }
 
 /**

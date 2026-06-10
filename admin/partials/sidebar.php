@@ -41,6 +41,13 @@
             </svg>
             Sermons
         </a>
+        <a href="/admin/livestreams.php" class="nav-item <?= basename($_SERVER['PHP_SELF']) === 'livestreams.php' ? 'active' : '' ?>">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polygon points="23 7 16 12 23 17 23 7"></polygon>
+                <rect x="1" y="5" width="15" height="14" rx="2" ry="2"></rect>
+            </svg>
+            Livestreams
+        </a>
         <a href="/admin/courses.php" class="nav-item <?= basename($_SERVER['PHP_SELF']) === 'courses.php' ? 'active' : '' ?>">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>

@@ -223,7 +223,7 @@ switch ($action) {
         }
 
         $messages = Database::fetchAll(
-            "SELECT lc.id, lc.message, lc.created_at, u.id as user_id, u.name, u.avatar_url
+            "SELECT lc.id, lc.message, lc.created_at, u.id as user_id, u.name, u.avatar
              FROM livestream_chat lc
              JOIN users u ON lc.user_id = u.id
              $whereClause

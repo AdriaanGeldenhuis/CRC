@@ -11,61 +11,68 @@ $user = Auth::user();
 $primaryCong = Auth::primaryCongregation();
 $streamId = (int)($_GET['id'] ?? 0);
 
-$congId = $primaryCong ? $primaryCong['id'] : 0;
+$congId = $primaryCong ? (int)$primaryCong['id'] : 0;
 
-// Get specific stream or active stream
 $livestream = null;
-if ($streamId) {
-    $livestream = Database::fetchOne(
-        "SELECT l.*, c.name as congregation_name
-         FROM livestreams l
-         LEFT JOIN congregations c ON l.congregation_id = c.id
-         WHERE l.id = ? AND (l.congregation_id = ? OR l.congregation_id IS NULL)",
-        [$streamId, $congId]
-    );
-} else {
-    // Get active livestream
-    $livestream = Database::fetchOne(
-        "SELECT l.*, c.name as congregation_name
-         FROM livestreams l
-         LEFT JOIN congregations c ON l.congregation_id = c.id
-         WHERE l.congregation_id = ? AND l.status = 'live'
-         ORDER BY l.started_at DESC LIMIT 1",
+$upcomingStreams = [];
+$pastStreams = [];
+$chatMessages = [];
+
+try {
+    // Get specific stream or active stream
+    if ($streamId) {
+        $livestream = Database::fetchOne(
+            "SELECT l.*, c.name as congregation_name
+             FROM livestreams l
+             LEFT JOIN congregations c ON l.congregation_id = c.id
+             WHERE l.id = ? AND (l.congregation_id = ? OR l.congregation_id IS NULL)",
+            [$streamId, $congId]
+        );
+    } else {
+        // Get active livestream
+        $livestream = Database::fetchOne(
+            "SELECT l.*, c.name as congregation_name
+             FROM livestreams l
+             LEFT JOIN congregations c ON l.congregation_id = c.id
+             WHERE (l.congregation_id = ? OR l.congregation_id IS NULL) AND l.status = 'live'
+             ORDER BY l.started_at DESC LIMIT 1",
+            [$congId]
+        );
+    }
+
+    // Get upcoming streams
+    $upcomingStreams = Database::fetchAll(
+        "SELECT * FROM livestreams
+         WHERE (congregation_id = ? OR congregation_id IS NULL) AND status = 'scheduled' AND scheduled_at > NOW()
+         ORDER BY scheduled_at ASC LIMIT 5",
         [$congId]
     );
-}
 
-$pageTitle = $livestream ? e($livestream['title']) . " - Livestream" : "Livestream - CRC";
-
-// Get upcoming streams
-$upcomingStreams = Database::fetchAll(
-    "SELECT * FROM livestreams
-     WHERE congregation_id = ? AND status = 'scheduled' AND scheduled_at > NOW()
-     ORDER BY scheduled_at ASC LIMIT 5",
-    [$congId]
-);
-
-// Get past streams (recordings)
-$pastStreams = Database::fetchAll(
-    "SELECT * FROM livestreams
-     WHERE congregation_id = ? AND status = 'ended' AND recording_url IS NOT NULL
-     ORDER BY ended_at DESC LIMIT 6",
-    [$congId]
-);
-
-// Get chat messages if live
-$chatMessages = [];
-if ($livestream && $livestream['status'] === 'live' && $livestream['chat_enabled']) {
-    $chatMessages = Database::fetchAll(
-        "SELECT lc.*, u.name, u.avatar_url
-         FROM livestream_chat lc
-         JOIN users u ON lc.user_id = u.id
-         WHERE lc.livestream_id = ?
-         ORDER BY lc.created_at DESC LIMIT 50",
-        [$livestream['id']]
+    // Get past streams (recordings)
+    $pastStreams = Database::fetchAll(
+        "SELECT * FROM livestreams
+         WHERE (congregation_id = ? OR congregation_id IS NULL) AND status = 'ended' AND recording_url IS NOT NULL
+         ORDER BY ended_at DESC LIMIT 6",
+        [$congId]
     );
-    $chatMessages = array_reverse($chatMessages);
+
+    // Get chat messages if live
+    if ($livestream && $livestream['status'] === 'live' && !empty($livestream['chat_enabled'])) {
+        $chatMessages = Database::fetchAll(
+            "SELECT lc.*, u.name, u.avatar
+             FROM livestream_chat lc
+             JOIN users u ON lc.user_id = u.id
+             WHERE lc.livestream_id = ?
+             ORDER BY lc.created_at DESC LIMIT 50",
+            [$livestream['id']]
+        );
+        $chatMessages = array_reverse($chatMessages);
+    }
+} catch (Throwable $e) {
+    Logger::error('Livestream page load failed: ' . $e->getMessage());
 }
+
+$pageTitle = $livestream ? $livestream['title'] . " - Livestream" : "Livestream - CRC";
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -77,7 +84,7 @@ if ($livestream && $livestream['status'] === 'live' && $livestream['chat_enabled
     <link rel="manifest" href="/site.webmanifest">
     <meta name="theme-color" content="#7C3AED">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><?= $pageTitle ?></title>
+    <title><?= e($pageTitle) ?></title>
     <?= CSRF::meta() ?>
     <link rel="stylesheet" href="/media/css/media.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -144,7 +151,7 @@ if ($livestream && $livestream['status'] === 'live' && $livestream['chat_enabled
                                     <span class="viewer-count">
                                         👁 <span id="viewer-count"><?= number_format($livestream['viewer_count'] ?? 0) ?></span> watching
                                     </span>
-                                    <span>Started <?= timeAgo($livestream['started_at']) ?></span>
+                                    <span>Started <?= e(time_ago($livestream['started_at'])) ?></span>
                                 </div>
                             </div>
 
@@ -212,6 +219,50 @@ if ($livestream && $livestream['status'] === 'live' && $livestream['chat_enabled
                     <?php endif; ?>
                 </div>
 
+            <?php elseif ($livestream && $livestream['status'] === 'ended' && !empty($livestream['recording_url'])): ?>
+                <!-- Recording Playback -->
+                <div class="livestream-layout">
+                    <div class="livestream-main">
+                        <div class="stream-player">
+                            <?php if (strpos($livestream['recording_url'], 'youtube.com') !== false || strpos($livestream['recording_url'], 'youtu.be') !== false): ?>
+                                <?php
+                                preg_match('/(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/', $livestream['recording_url'], $matches);
+                                $videoId = $matches[1] ?? '';
+                                ?>
+                                <div class="video-embed">
+                                    <iframe src="https://www.youtube.com/embed/<?= e($videoId) ?>"
+                                            frameborder="0"
+                                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                                            allowfullscreen></iframe>
+                                </div>
+                            <?php elseif (strpos($livestream['recording_url'], 'vimeo.com') !== false): ?>
+                                <?php preg_match('/vimeo\.com\/(\d+)/', $livestream['recording_url'], $matches); $videoId = $matches[1] ?? ''; ?>
+                                <div class="video-embed">
+                                    <iframe src="https://player.vimeo.com/video/<?= e($videoId) ?>" frameborder="0" allow="autoplay; fullscreen; picture-in-picture" allowfullscreen></iframe>
+                                </div>
+                            <?php else: ?>
+                                <video controls class="video-player" preload="metadata">
+                                    <source src="<?= e($livestream['recording_url']) ?>" type="video/mp4">
+                                    Your browser does not support video playback.
+                                </video>
+                            <?php endif; ?>
+                        </div>
+                        <div class="stream-header">
+                            <div class="stream-info">
+                                <span class="scheduled-badge">▶ Recording</span>
+                                <h1><?= e($livestream['title']) ?></h1>
+                                <?php if (!empty($livestream['description'])): ?>
+                                    <p><?= e($livestream['description']) ?></p>
+                                <?php endif; ?>
+                            </div>
+                            <?php if (!empty($livestream['ended_at'])): ?>
+                                <div class="stream-meta">
+                                    <span><?= e(date('F j, Y', strtotime($livestream['ended_at']))) ?></span>
+                                </div>
+                            <?php endif; ?>
+                        </div>
+                    </div>
+                </div>
             <?php else: ?>
                 <!-- No Active Stream -->
                 <div class="no-stream">
@@ -255,18 +306,20 @@ if ($livestream && $livestream['status'] === 'live' && $livestream['chat_enabled
                         <?php foreach ($pastStreams as $stream): ?>
                             <a href="/media/livestream.php?id=<?= $stream['id'] ?>" class="recording-card">
                                 <div class="recording-thumb">
-                                    <?php if ($stream['thumbnail_url']): ?>
-                                        <img src="<?= e($stream['thumbnail_url']) ?>" alt="">
+                                    <?php if (!empty($stream['thumbnail_url'])): ?>
+                                        <img src="<?= e($stream['thumbnail_url']) ?>" alt="" loading="lazy">
                                     <?php else: ?>
                                         <div class="thumb-placeholder">📺</div>
                                     <?php endif; ?>
-                                    <?php if ($stream['duration']): ?>
+                                    <?php if (!empty($stream['duration'])): ?>
                                         <span class="duration"><?= formatDuration($stream['duration']) ?></span>
                                     <?php endif; ?>
                                 </div>
                                 <div class="recording-info">
                                     <h3><?= e($stream['title']) ?></h3>
-                                    <p><?= date('M j, Y', strtotime($stream['ended_at'])) ?></p>
+                                    <?php if (!empty($stream['ended_at'])): ?>
+                                        <p><?= e(date('M j, Y', strtotime($stream['ended_at']))) ?></p>
+                                    <?php endif; ?>
                                 </div>
                             </a>
                         <?php endforeach; ?>
