@@ -21,7 +21,8 @@ if (!$eventId) {
 
 // Try to find event
 $event = Database::fetchOne(
-    "SELECT * FROM calendar_events WHERE id = ? AND user_id = ?",
+    "SELECT *, is_all_day AS all_day, recurrence_rule AS recurrence, recurrence_end_date AS recurrence_end
+     FROM calendar_events WHERE id = ? AND user_id = ?",
     [$eventId, $user['id']]
 );
 
@@ -29,7 +30,7 @@ $isPersonalEvent = true;
 if (!$event) {
     // Check congregation events
     $event = Database::fetchOne(
-        "SELECT e.* FROM events e
+        "SELECT e.*, e.is_all_day AS all_day, e.event_type AS category FROM events e
          WHERE e.id = ? AND (e.user_id = ? OR (e.congregation_id = ? AND e.congregation_id IS NOT NULL))",
         [$eventId, $user['id'], $primaryCong['id']]
     );
@@ -51,7 +52,7 @@ $isAdmin = Auth::isCongregationAdmin($primaryCong['id']);
 $reminders = [];
 if ($isPersonalEvent) {
     $reminders = Database::fetchAll(
-        "SELECT minutes_before FROM calendar_reminders WHERE event_id = ? AND user_id = ?",
+        "SELECT minutes_before FROM calendar_reminders WHERE calendar_event_id = ? AND user_id = ?",
         [$eventId, $user['id']]
     );
     $reminderValues = array_column($reminders, 'minutes_before');

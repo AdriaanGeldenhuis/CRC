@@ -153,7 +153,7 @@ $totalPages = ceil($totalCount / $perPage);
                                             <td>
                                                 <div class="action-buttons">
                                                     <button onclick="editCongregation(<?= $c['id'] ?>)" class="action-btn" title="Edit">✏️</button>
-                                                    <a href="/congregation/admin/?id=<?= $c['id'] ?>" class="action-btn" title="Manage">⚙️</a>
+                                                    <a href="/admin_congregation/?cong_id=<?= $c['id'] ?>" class="action-btn" title="Manage">⚙️</a>
                                                     <?php if ($c['status'] === 'active'): ?>
                                                         <button onclick="suspendCongregation(<?= $c['id'] ?>)" class="action-btn" title="Suspend">⏸️</button>
                                                     <?php elseif ($c['status'] === 'suspended'): ?>

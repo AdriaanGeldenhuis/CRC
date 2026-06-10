@@ -4,8 +4,12 @@
  * Christian Revival Church
  */
 
-// Load local config FIRST (before bootstrap which has empty defaults)
-require_once __DIR__ . '/config.php';
+// Load local config FIRST (before bootstrap which has empty defaults).
+// config.php is gitignored, so it may not exist on a fresh deployment —
+// the env-based defaults in core/config.php cover that case.
+if (is_file(__DIR__ . '/config.php')) {
+    require_once __DIR__ . '/config.php';
+}
 require_once __DIR__ . '/../core/bootstrap.php';
 
 // Require authentication
@@ -79,6 +83,13 @@ if (isset($_GET['stream']) && $_GET['stream'] === '1') {
 
     if ($q === '') {
         $sse('error', t('empty_question'));
+        $sse('done', 'end');
+        exit;
+    }
+
+    // Per-user rate limit so a single account cannot drain the OpenAI budget
+    if (!Security::rateLimit('smartbible_' . Auth::id(), 20, 3600)) {
+        $sse('error', 'You have reached the hourly question limit. Please try again later.');
         $sse('done', 'end');
         exit;
     }

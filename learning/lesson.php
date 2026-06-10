@@ -29,30 +29,30 @@ if (!$lesson) {
 
 // Check enrollment
 $enrollment = Database::fetchOne(
-    "SELECT * FROM enrollments WHERE course_id = ? AND user_id = ?",
+    "SELECT * FROM user_course_enrollments WHERE course_id = ? AND user_id = ?",
     [$lesson['course_id'], $user['id']]
 );
 
 if (!$enrollment) {
     // Auto-enroll and continue
-    Database::insert('enrollments', [
+    Database::insert('user_course_enrollments', [
         'user_id' => $user['id'],
         'course_id' => $lesson['course_id'],
-        'enrolled_at' => date('Y-m-d H:i:s'),
-        'last_accessed_at' => date('Y-m-d H:i:s')
+        'status' => 'enrolled',
+        'created_at' => date('Y-m-d H:i:s')
     ]);
 }
 
 // Get progress
 $progress = Database::fetchOne(
-    "SELECT * FROM lesson_progress WHERE lesson_id = ? AND user_id = ?",
+    "SELECT * FROM user_lesson_progress WHERE lesson_id = ? AND user_id = ?",
     [$lessonId, $user['id']]
 );
 
 // Get all lessons for navigation
 $allLessons = Database::fetchAll(
     "SELECT id, title, sort_order,
-            (SELECT completed_at FROM lesson_progress WHERE lesson_id = lessons.id AND user_id = ?) as completed_at
+            (SELECT completed_at FROM user_lesson_progress WHERE lesson_id = lessons.id AND user_id = ?) as completed_at
      FROM lessons
      WHERE course_id = ?
      ORDER BY sort_order ASC, id ASC",
@@ -77,19 +77,22 @@ $pageTitle = e($lesson['title']) . " - " . e($lesson['course_title']);
 
 // Mark as started if not already
 if (!$progress) {
-    Database::insert('lesson_progress', [
+    Database::insert('user_lesson_progress', [
         'user_id' => $user['id'],
         'lesson_id' => $lessonId,
+        'status' => 'in_progress',
         'started_at' => date('Y-m-d H:i:s'),
         'created_at' => date('Y-m-d H:i:s')
     ]);
 }
 
-// Update last accessed
-Database::update('enrollments', [
-    'last_accessed_at' => date('Y-m-d H:i:s'),
-    'current_lesson_id' => $lessonId
-], 'course_id = ? AND user_id = ?', [$lesson['course_id'], $user['id']]);
+// Mark enrollment as in progress
+Database::query(
+    "UPDATE user_course_enrollments
+     SET status = 'in_progress', started_at = COALESCE(started_at, NOW())
+     WHERE course_id = ? AND user_id = ? AND status = 'enrolled'",
+    [$lesson['course_id'], $user['id']]
+);
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -151,9 +154,9 @@ Database::update('enrollments', [
                 <?php endif; ?>
 
                 <!-- Video Content -->
-                <?php if ($lesson['video_url']): ?>
+                <?php if ($lesson['media_url'] && in_array($lesson['content_type'], ['video', 'mixed'])): ?>
                     <div class="video-container">
-                        <iframe src="<?= e($lesson['video_url']) ?>" allowfullscreen></iframe>
+                        <iframe src="<?= e($lesson['media_url']) ?>" allowfullscreen></iframe>
                     </div>
                 <?php endif; ?>
 

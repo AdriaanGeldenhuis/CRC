@@ -181,9 +181,7 @@ $expiredInvites = Database::fetchAll(
                 </div>
             <?php else: ?>
                 <div class="invite-grid">
-                    <?php foreach ($invites as $invite):
-                        $inviteUrl = APP_URL . '/join/' . $invite['token_hash'];
-                    ?>
+                    <?php foreach ($invites as $invite): ?>
                         <div class="invite-card" id="invite-<?= $invite['id'] ?>">
                             <div class="invite-header">
                                 <span class="invite-role <?= $invite['role'] ?>"><?= ucfirst($invite['role']) ?> Role</span>
@@ -195,8 +193,7 @@ $expiredInvites = Database::fetchAll(
                             </div>
 
                             <div class="invite-link-box">
-                                <span class="invite-link-text" id="link-<?= $invite['id'] ?>"><?= e($inviteUrl) ?></span>
-                                <button class="copy-btn" onclick="copyLink('<?= e($inviteUrl) ?>')">Copy</button>
+                                <span class="invite-link-text" id="link-<?= $invite['id'] ?>">Link #<?= e(substr($invite['token_hash'], 0, 8)) ?>&hellip; (shown only when created)</span>
                             </div>
 
                             <div class="invite-stats">
@@ -222,7 +219,6 @@ $expiredInvites = Database::fetchAll(
                             </div>
 
                             <div class="invite-actions">
-                                <button class="btn btn-outline btn-xs" onclick="copyLink('<?= e($inviteUrl) ?>')">Copy Link</button>
                                 <button class="btn btn-danger btn-xs" onclick="revokeInvite(<?= $invite['id'] ?>)">Revoke</button>
                             </div>
                         </div>
@@ -293,6 +289,25 @@ $expiredInvites = Database::fetchAll(
         </div>
     </div>
 
+    <!-- New Invite Link Modal (shown once after creation) -->
+    <div id="newInviteModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Invite Link Created</h2>
+            </div>
+            <div class="modal-body">
+                <p style="margin-bottom: 0.75rem;">Copy this link now &mdash; for security it will not be shown again.</p>
+                <div class="invite-link-box">
+                    <span class="invite-link-text" id="newInviteUrl"></span>
+                    <button class="copy-btn" onclick="copyNewInviteLink()">Copy</button>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-primary" onclick="closeNewInviteModal()">Done</button>
+            </div>
+        </div>
+    </div>
+
     <div id="toast" class="toast"></div>
 
     <script>
@@ -337,8 +352,16 @@ $expiredInvites = Database::fetchAll(
                 });
                 const data = await response.json();
                 if (data.ok) {
-                    showToast('Invite link created');
-                    setTimeout(() => location.reload(), 1000);
+                    closeModal('createModal');
+                    const url = (data.data && data.data.invite_url) || '';
+                    if (url) {
+                        // The link is only shown once — the server stores a hash of the token.
+                        showNewInviteLink(url);
+                    } else {
+                        showToast('Invite link created');
+                        setTimeout(() => location.reload(), 1000);
+                    }
+                    return;
                 } else {
                     showToast(data.error || 'Failed to create invite', 'error');
                 }
@@ -346,6 +369,23 @@ $expiredInvites = Database::fetchAll(
                 showToast('Network error', 'error');
             }
             closeModal('createModal');
+        }
+
+        function showNewInviteLink(url) {
+            const linkEl = document.getElementById('newInviteUrl');
+            linkEl.textContent = url;
+            linkEl.dataset.url = url;
+            document.getElementById('newInviteModal').classList.add('show');
+        }
+
+        function copyNewInviteLink() {
+            const url = document.getElementById('newInviteUrl').dataset.url || '';
+            copyLink(url);
+        }
+
+        function closeNewInviteModal() {
+            closeModal('newInviteModal');
+            location.reload();
         }
 
         async function revokeInvite(inviteId) {

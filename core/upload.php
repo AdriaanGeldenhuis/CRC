@@ -106,7 +106,7 @@ class Upload {
     /**
      * Validate file size
      */
-    public function validateSize(int $maxBytes = null): self {
+    public function validateSize(?int $maxBytes = null): self {
         $maxBytes = $maxBytes ?? UPLOAD_MAX_SIZE;
 
         if ($this->file['size'] > $maxBytes) {

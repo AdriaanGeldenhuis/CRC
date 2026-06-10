@@ -19,6 +19,17 @@ switch ($action) {
         $params = [];
         $conditions = ["g.status = 'active'"];
 
+        // Membership join: for 'my' only the user's groups (no placeholder),
+        // otherwise LEFT JOIN to expose the user's role/status. The LEFT JOIN
+        // placeholder appears BEFORE the WHERE clause in the final SQL, so its
+        // parameter must be bound first.
+        if ($filter === 'my') {
+            $joinClause = "JOIN group_members gm ON g.id = gm.group_id AND gm.status = 'active'";
+        } else {
+            $joinClause = "LEFT JOIN group_members gm ON g.id = gm.group_id AND gm.user_id = ? AND gm.status = 'active'";
+            $params[] = Auth::id();
+        }
+
         if ($filter === 'my') {
             $conditions[] = "gm.user_id = ?";
             $params[] = Auth::id();
@@ -43,13 +54,6 @@ switch ($action) {
         }
 
         $where = implode(' AND ', $conditions);
-
-        $joinClause = $filter === 'my'
-            ? "JOIN group_members gm ON g.id = gm.group_id AND gm.status = 'active'"
-            : "LEFT JOIN group_members gm ON g.id = gm.group_id AND gm.user_id = ? AND gm.status = 'active'";
-        if ($filter !== 'my') {
-            $params[] = Auth::id();
-        }
 
         $groups = Database::fetchAll(
             "SELECT g.*,

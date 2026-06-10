@@ -36,24 +36,24 @@ switch ($action) {
 
         // Check enrollment
         $enrollment = Database::fetchOne(
-            "SELECT * FROM enrollments WHERE course_id = ? AND user_id = ?",
+            "SELECT * FROM user_course_enrollments WHERE course_id = ? AND user_id = ?",
             [$lesson['course_id'], $user['id']]
         );
 
         if (!$enrollment) {
             // Auto-enroll
-            Database::insert('enrollments', [
+            Database::insert('user_course_enrollments', [
                 'user_id' => $user['id'],
                 'course_id' => $lesson['course_id'],
-                'enrolled_at' => date('Y-m-d H:i:s'),
+                'status' => 'enrolled',
                 'progress_percent' => 0,
-                'last_accessed_at' => date('Y-m-d H:i:s')
+                'created_at' => date('Y-m-d H:i:s')
             ]);
         }
 
         // Check if already completed
         $progress = Database::fetchOne(
-            "SELECT * FROM lesson_progress WHERE lesson_id = ? AND user_id = ?",
+            "SELECT * FROM user_lesson_progress WHERE lesson_id = ? AND user_id = ?",
             [$lessonId, $user['id']]
         );
 
@@ -63,14 +63,18 @@ switch ($action) {
 
         if ($progress) {
             // Update existing
-            Database::update('lesson_progress', [
+            Database::update('user_lesson_progress', [
+                'status' => 'completed',
+                'progress_percent' => 100,
                 'completed_at' => date('Y-m-d H:i:s')
             ], 'id = ?', [$progress['id']]);
         } else {
             // Create new
-            Database::insert('lesson_progress', [
+            Database::insert('user_lesson_progress', [
                 'user_id' => $user['id'],
                 'lesson_id' => $lessonId,
+                'status' => 'completed',
+                'progress_percent' => 100,
                 'started_at' => date('Y-m-d H:i:s'),
                 'completed_at' => date('Y-m-d H:i:s'),
                 'created_at' => date('Y-m-d H:i:s')
@@ -96,7 +100,9 @@ switch ($action) {
             Response::error('Lesson not found');
         }
 
-        Database::update('lesson_progress', [
+        Database::update('user_lesson_progress', [
+            'status' => 'in_progress',
+            'progress_percent' => 0,
             'completed_at' => null
         ], 'lesson_id = ? AND user_id = ?', [$lessonId, $user['id']]);
 
@@ -114,24 +120,28 @@ switch ($action) {
             Response::error('Lesson ID required');
         }
 
-        // Get or create progress record
+        // Get or create progress record (quiz results are kept in the notes JSON field)
         $progress = Database::fetchOne(
-            "SELECT * FROM lesson_progress WHERE lesson_id = ? AND user_id = ?",
+            "SELECT * FROM user_lesson_progress WHERE lesson_id = ? AND user_id = ?",
             [$lessonId, $user['id']]
         );
 
+        $quizNotes = json_encode(['quiz_score' => $score, 'quiz_answers' => $answers]);
+
         if ($progress) {
-            Database::update('lesson_progress', [
-                'quiz_answers' => json_encode($answers),
-                'quiz_score' => $score,
+            Database::update('user_lesson_progress', [
+                'notes' => $quizNotes,
+                'status' => 'completed',
+                'progress_percent' => 100,
                 'completed_at' => date('Y-m-d H:i:s')
             ], 'id = ?', [$progress['id']]);
         } else {
-            Database::insert('lesson_progress', [
+            Database::insert('user_lesson_progress', [
                 'user_id' => $user['id'],
                 'lesson_id' => $lessonId,
-                'quiz_answers' => json_encode($answers),
-                'quiz_score' => $score,
+                'notes' => $quizNotes,
+                'status' => 'completed',
+                'progress_percent' => 100,
                 'started_at' => date('Y-m-d H:i:s'),
                 'completed_at' => date('Y-m-d H:i:s'),
                 'created_at' => date('Y-m-d H:i:s')
@@ -155,13 +165,13 @@ switch ($action) {
         }
 
         $enrollment = Database::fetchOne(
-            "SELECT * FROM enrollments WHERE course_id = ? AND user_id = ?",
+            "SELECT * FROM user_course_enrollments WHERE course_id = ? AND user_id = ?",
             [$courseId, $user['id']]
         );
 
         $lessonProgress = Database::fetchAll(
             "SELECT lp.*, l.title as lesson_title
-             FROM lesson_progress lp
+             FROM user_lesson_progress lp
              JOIN lessons l ON lp.lesson_id = l.id
              WHERE l.course_id = ? AND lp.user_id = ?
              ORDER BY l.sort_order ASC",
@@ -177,20 +187,20 @@ switch ($action) {
     case 'stats':
         // User's learning stats
         $totalEnrolled = Database::fetchColumn(
-            "SELECT COUNT(*) FROM enrollments WHERE user_id = ?",
+            "SELECT COUNT(*) FROM user_course_enrollments WHERE user_id = ? AND status != 'dropped'",
             [$user['id']]
         );
 
         $completed = Database::fetchColumn(
-            "SELECT COUNT(*) FROM enrollments WHERE user_id = ? AND progress_percent = 100",
+            "SELECT COUNT(*) FROM user_course_enrollments WHERE user_id = ? AND status = 'completed'",
             [$user['id']]
         );
 
         $totalLessons = Database::fetchColumn(
             "SELECT COUNT(DISTINCT lp.lesson_id)
-             FROM lesson_progress lp
+             FROM user_lesson_progress lp
              JOIN lessons l ON lp.lesson_id = l.id
-             JOIN enrollments e ON l.course_id = e.course_id AND e.user_id = lp.user_id
+             JOIN user_course_enrollments e ON l.course_id = e.course_id AND e.user_id = lp.user_id
              WHERE lp.user_id = ? AND lp.completed_at IS NOT NULL",
             [$user['id']]
         );
@@ -214,7 +224,7 @@ function updateCourseProgress($courseId, $userId) {
     );
 
     $completed = Database::fetchColumn(
-        "SELECT COUNT(*) FROM lesson_progress lp
+        "SELECT COUNT(*) FROM user_lesson_progress lp
          JOIN lessons l ON lp.lesson_id = l.id
          WHERE l.course_id = ? AND lp.user_id = ? AND lp.completed_at IS NOT NULL",
         [$courseId, $userId]
@@ -222,9 +232,9 @@ function updateCourseProgress($courseId, $userId) {
 
     $percent = $total > 0 ? round(($completed / $total) * 100) : 0;
 
-    Database::update('enrollments', [
+    Database::update('user_course_enrollments', [
         'progress_percent' => $percent,
-        'last_accessed_at' => date('Y-m-d H:i:s'),
+        'status' => $percent >= 100 ? 'completed' : ($percent > 0 ? 'in_progress' : 'enrolled'),
         'completed_at' => $percent >= 100 ? date('Y-m-d H:i:s') : null
     ], 'course_id = ? AND user_id = ?', [$courseId, $userId]);
 }

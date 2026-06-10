@@ -14,6 +14,7 @@ if (!$primaryCong) {
 
 $user = Auth::user();
 $eventId = (int)($_GET['id'] ?? 0);
+$eventType = $_GET['type'] ?? '';
 
 if (!$eventId) {
     Response::redirect('/calendar/');
@@ -21,7 +22,7 @@ if (!$eventId) {
 
 // Try to find event (either general event or personal calendar event)
 $event = Database::fetchOne(
-    "SELECT e.*, c.name as congregation_name, u.name as creator_name
+    "SELECT e.*, e.is_all_day AS all_day, c.name as congregation_name, u.name as creator_name
      FROM events e
      LEFT JOIN congregations c ON e.congregation_id = c.id
      LEFT JOIN users u ON e.user_id = u.id
@@ -31,10 +32,11 @@ $event = Database::fetchOne(
 );
 
 $isPersonalEvent = false;
-if (!$event) {
+if (!$event && $eventType !== 'congregation') {
     // Check personal calendar events
     $event = Database::fetchOne(
-        "SELECT * FROM calendar_events WHERE id = ? AND user_id = ?",
+        "SELECT *, is_all_day AS all_day, recurrence_rule AS recurrence, recurrence_end_date AS recurrence_end
+         FROM calendar_events WHERE id = ? AND user_id = ?",
         [$eventId, $user['id']]
     );
     $isPersonalEvent = true;
@@ -52,7 +54,7 @@ $canEdit = ($event['user_id'] == $user['id']) ||
 $reminders = [];
 if ($isPersonalEvent) {
     $reminders = Database::fetchAll(
-        "SELECT * FROM calendar_reminders WHERE event_id = ? AND user_id = ? ORDER BY minutes_before ASC",
+        "SELECT * FROM calendar_reminders WHERE calendar_event_id = ? AND user_id = ? ORDER BY minutes_before ASC",
         [$eventId, $user['id']]
     );
 }

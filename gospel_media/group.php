@@ -1,0 +1,1196 @@
+<?php
+/**
+ * CRC Gospel Media - Single Group View
+ * Group header, membership actions, member list and the group's post feed.
+ */
+
+require_once __DIR__ . '/../core/bootstrap.php';
+
+Auth::requireAuth();
+
+$primaryCong = Auth::primaryCongregation();
+if (!$primaryCong) {
+    Response::redirect('/onboarding/');
+}
+
+$user = Auth::user();
+
+$groupId = (int)($_GET['id'] ?? 0);
+if (!$groupId) {
+    Response::redirect('/gospel_media/groups.php');
+}
+
+// Load the group (same query pattern as api/groups.php 'get' action)
+$group = Database::fetchOne(
+    "SELECT g.*,
+            u.name as creator_name,
+            c.name as congregation_name,
+            (SELECT COUNT(*) FROM group_members WHERE group_id = g.id AND status = 'active') as member_count,
+            (SELECT COUNT(*) FROM posts WHERE group_id = g.id AND status = 'active') as post_count
+     FROM `groups` g
+     JOIN users u ON g.created_by = u.id
+     LEFT JOIN congregations c ON g.congregation_id = c.id
+     WHERE g.id = ? AND g.status = 'active'",
+    [$groupId]
+);
+
+if (!$group) {
+    Response::redirect('/gospel_media/groups.php');
+}
+
+// Current user's membership
+$membership = Database::fetchOne(
+    "SELECT * FROM group_members WHERE group_id = ? AND user_id = ?",
+    [$groupId, Auth::id()]
+);
+
+$isMember  = $membership && $membership['status'] === 'active';
+$isPending = $membership && $membership['status'] === 'pending';
+$isBanned  = $membership && $membership['status'] === 'banned';
+$userRole  = $isMember ? $membership['role'] : null;
+
+// Privacy enforcement: non-members of private groups only see the limited
+// header (name, description, member count) and a join button.
+$canViewContent = $group['privacy'] === 'public' || $isMember || Auth::isAdmin();
+
+// Pagination for the group feed
+$page = max(1, (int)($_GET['page'] ?? 1));
+$perPage = DEFAULT_PAGE_SIZE;
+$offset = ($page - 1) * $perPage;
+
+$members = [];
+$posts = [];
+$totalPosts = 0;
+
+if ($canViewContent) {
+    // Member list (same query pattern as api/groups.php 'members' action)
+    try {
+        $members = Database::fetchAll(
+            "SELECT gm.role, gm.joined_at, u.id as user_id, u.name, u.avatar
+             FROM group_members gm
+             JOIN users u ON gm.user_id = u.id
+             WHERE gm.group_id = ? AND gm.status = 'active'
+             ORDER BY gm.role = 'admin' DESC, gm.role = 'moderator' DESC, gm.joined_at ASC",
+            [$groupId]
+        ) ?: [];
+    } catch (Exception $e) {}
+
+    // Group post feed
+    try {
+        $posts = Database::fetchAll(
+            "SELECT p.*,
+                    u.name as author_name, u.avatar as author_avatar,
+                    c.name as congregation_name,
+                    (SELECT COUNT(*) FROM reactions WHERE reactable_type = 'post' AND reactable_id = p.id) as reaction_count,
+                    (SELECT COUNT(*) FROM comments WHERE post_id = p.id AND status = 'active') as comment_count,
+                    (SELECT reaction_type FROM reactions WHERE reactable_type = 'post' AND reactable_id = p.id AND user_id = ?) as user_reaction
+             FROM posts p
+             JOIN users u ON p.user_id = u.id
+             LEFT JOIN congregations c ON p.congregation_id = c.id
+             WHERE p.group_id = ?
+               AND p.status = 'active'
+             ORDER BY p.is_pinned DESC, p.created_at DESC
+             LIMIT ? OFFSET ?",
+            [Auth::id(), $groupId, $perPage, $offset]
+        ) ?: [];
+
+        // Reaction breakdown for all posts in ONE query (avoids N+1)
+        foreach ($posts as &$post) {
+            $post['reaction_breakdown'] = [];
+        }
+        unset($post);
+
+        $postIds = array_column($posts, 'id');
+        if ($postIds) {
+            try {
+                $placeholders = implode(',', array_fill(0, count($postIds), '?'));
+                $breakdownRows = Database::fetchAll(
+                    "SELECT reactable_id, reaction_type, COUNT(*) as count
+                     FROM reactions
+                     WHERE reactable_type = 'post' AND reactable_id IN ($placeholders)
+                     GROUP BY reactable_id, reaction_type
+                     ORDER BY count DESC",
+                    $postIds
+                ) ?: [];
+
+                $breakdownByPost = [];
+                foreach ($breakdownRows as $r) {
+                    $breakdownByPost[$r['reactable_id']][$r['reaction_type']] = (int)$r['count'];
+                }
+                foreach ($posts as &$post) {
+                    if (isset($breakdownByPost[$post['id']])) {
+                        $post['reaction_breakdown'] = $breakdownByPost[$post['id']];
+                    }
+                }
+                unset($post);
+            } catch (Exception $e2) {}
+        }
+    } catch (Exception $e) {}
+
+    $totalPosts = (int)$group['post_count'];
+}
+
+$totalPages = (int) ceil($totalPosts / $perPage);
+
+$pageTitle = $group['name'] . ' - CRC';
+
+// Get notification count
+$unreadNotifications = 0;
+try {
+    $unreadNotifications = Database::fetchColumn(
+        "SELECT COUNT(*) FROM notifications WHERE user_id = ? AND read_at IS NULL",
+        [$user['id']]
+    ) ?: 0;
+} catch (Exception $e) {}
+
+// Format post content with hashtags and links (same helper as the feed)
+function formatPostContent($content) {
+    $text = e($content);
+    // Convert URLs to clickable links
+    $text = preg_replace(
+        '/(https?:\/\/[^\s<]+)/',
+        '<a href="$1" class="post-link" target="_blank" rel="noopener noreferrer">$1</a>',
+        $text
+    );
+    // Convert hashtags to styled spans
+    $text = preg_replace(
+        '/#(\w+)/u',
+        '<span class="hashtag">#$1</span>',
+        $text
+    );
+    // Convert @mentions to styled spans
+    $text = preg_replace(
+        '/@(\w+)/u',
+        '<span class="mention">@$1</span>',
+        $text
+    );
+    return nl2br($text);
+}
+
+// Reaction icons map
+$reactionIcons = [
+    'like' => '<svg viewBox="0 0 24 24" fill="currentColor" width="14" height="14"><path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3zM7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3"/></svg>',
+    'love' => '<svg viewBox="0 0 24 24" fill="currentColor" width="14" height="14"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>',
+    'pray' => '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M12 22s-8-4-8-10V5l8-3 8 3v7c0 6-8 10-8 10z"/></svg>',
+    'amen' => '<svg viewBox="0 0 24 24" fill="currentColor" width="14" height="14"><path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z"/></svg>',
+];
+?>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <link rel="icon" href="/favicon.ico" sizes="any">
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+    <link rel="manifest" href="/site.webmanifest">
+    <meta name="theme-color" content="#7C3AED">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <?= CSRF::meta() ?>
+    <title><?= e($pageTitle) ?></title>
+    <link rel="stylesheet" href="/home/css/home.css?v=<?= filemtime(__DIR__ . '/../home/css/home.css') ?>">
+    <link rel="stylesheet" href="/gospel_media/css/gospel_media.css?v=<?= filemtime(__DIR__ . '/css/gospel_media.css') ?>">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <script>
+        (function() {
+            const saved = localStorage.getItem('theme') || 'dark';
+            document.documentElement.setAttribute('data-theme', saved);
+        })();
+    </script>
+    <style>
+        .group-page-wrap {
+            max-width: 680px;
+            margin: 0 auto;
+            padding: 0 1rem 1rem;
+        }
+
+        .back-bar { display: flex; align-items: center; gap: 10px; padding: 8px 2px 12px; }
+        .back-bar a {
+            display: inline-flex; align-items: center; gap: 8px;
+            color: var(--muted); text-decoration: none; font-size: 13px; font-weight: 600;
+            padding: 8px 12px; border: 1px solid var(--line); border-radius: 12px; background: var(--card2);
+            transition: border-color 0.2s ease, transform 0.2s ease;
+        }
+        .back-bar a:hover { border-color: var(--accent); transform: translateY(-1px); }
+        .back-bar a svg { width: 16px; height: 16px; }
+
+        .group-hero {
+            background: var(--card);
+            border: 1px solid var(--line);
+            border-radius: var(--radius);
+            overflow: hidden;
+            margin-bottom: 1rem;
+            backdrop-filter: blur(var(--blur));
+            -webkit-backdrop-filter: blur(var(--blur));
+        }
+
+        .group-cover {
+            height: 160px;
+            background: linear-gradient(135deg, var(--accent) 0%, var(--accent2) 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .group-cover img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .group-cover-icon {
+            width: 56px;
+            height: 56px;
+            color: white;
+            opacity: 0.8;
+        }
+
+        .group-hero-body {
+            padding: 1rem;
+        }
+
+        .group-name-row {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 0.5rem;
+            margin-bottom: 0.5rem;
+            flex-wrap: wrap;
+        }
+
+        .group-name {
+            font-size: 1.35rem;
+            font-weight: 800;
+            color: var(--text);
+            margin: 0;
+        }
+
+        .group-badges {
+            display: flex;
+            gap: 0.4rem;
+            flex-shrink: 0;
+        }
+
+        .group-type-badge {
+            font-size: 0.7rem;
+            padding: 0.2rem 0.5rem;
+            border-radius: 4px;
+            text-transform: uppercase;
+            font-weight: 700;
+        }
+
+        .group-type-badge.community {
+            background: rgba(59, 130, 246, 0.15);
+            color: #3B82F6;
+        }
+
+        .group-type-badge.sell {
+            background: rgba(34, 197, 94, 0.15);
+            color: #22C55E;
+        }
+
+        .group-type-badge.privacy-public {
+            background: rgba(124, 58, 237, 0.15);
+            color: var(--accent);
+        }
+
+        .group-type-badge.privacy-private {
+            background: rgba(245, 158, 11, 0.15);
+            color: #F59E0B;
+        }
+
+        .group-description {
+            font-size: 0.9rem;
+            color: var(--muted);
+            margin-bottom: 0.75rem;
+        }
+
+        .group-stats {
+            display: flex;
+            gap: 1rem;
+            font-size: 0.8rem;
+            color: var(--muted2);
+            margin-bottom: 1rem;
+            flex-wrap: wrap;
+        }
+
+        .group-stat {
+            display: flex;
+            align-items: center;
+            gap: 0.25rem;
+        }
+
+        .group-stat svg {
+            width: 14px;
+            height: 14px;
+        }
+
+        .group-actions {
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+        }
+
+        .group-btn {
+            flex: 1;
+            min-width: 130px;
+            padding: 0.6rem 1rem;
+            border-radius: var(--radius-sm);
+            font-size: 0.875rem;
+            font-weight: 600;
+            font-family: inherit;
+            cursor: pointer;
+            transition: all 0.12s ease;
+            text-align: center;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.4rem;
+        }
+
+        .group-btn svg {
+            width: 16px;
+            height: 16px;
+        }
+
+        .group-btn-primary {
+            background: linear-gradient(135deg, var(--accent), var(--accent2));
+            color: white;
+            border: none;
+            box-shadow: 0 8px 20px var(--accent-glow);
+        }
+
+        .group-btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 25px var(--accent-glow);
+        }
+
+        .group-btn-secondary {
+            background: var(--btn-bg);
+            color: var(--text);
+            border: 1px solid var(--line);
+        }
+
+        .group-btn-secondary:hover {
+            background: var(--btn-bg-hover);
+        }
+
+        .group-btn-joined {
+            background: rgba(34, 197, 94, 0.15);
+            color: var(--good);
+            border: 1px solid rgba(34, 197, 94, 0.3);
+            cursor: default;
+        }
+
+        .group-btn-pending {
+            background: rgba(245, 158, 11, 0.15);
+            color: #F59E0B;
+            border: 1px solid rgba(245, 158, 11, 0.3);
+            cursor: default;
+        }
+
+        .group-banned-note {
+            font-size: 0.85rem;
+            color: var(--bad);
+            padding: 0.5rem 0;
+        }
+
+        .section-title {
+            font-size: 0.95rem;
+            font-weight: 700;
+            color: var(--text);
+            margin: 1rem 0 0.5rem;
+        }
+
+        .members-card {
+            background: var(--card);
+            border: 1px solid var(--line);
+            border-radius: var(--radius);
+            padding: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .members-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            gap: 0.5rem;
+        }
+
+        .member-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.4rem;
+            border-radius: var(--radius-sm);
+            min-width: 0;
+        }
+
+        .member-item img,
+        .member-avatar-placeholder {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            object-fit: cover;
+            flex-shrink: 0;
+        }
+
+        .member-avatar-placeholder {
+            background: linear-gradient(135deg, var(--accent), var(--accent2));
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            font-size: 0.8rem;
+        }
+
+        .member-info {
+            min-width: 0;
+        }
+
+        .member-name {
+            display: block;
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--text);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .member-role {
+            font-size: 0.7rem;
+            color: var(--muted2);
+            text-transform: capitalize;
+        }
+
+        .member-role.admin { color: var(--accent); font-weight: 700; }
+        .member-role.moderator { color: #22D3EE; font-weight: 700; }
+
+        .members-more {
+            font-size: 0.8rem;
+            color: var(--muted2);
+            margin-top: 0.5rem;
+        }
+
+        .private-notice {
+            background: var(--card);
+            border: 1px solid var(--line);
+            border-radius: var(--radius);
+            padding: 2rem 1rem;
+            text-align: center;
+            color: var(--muted2);
+        }
+
+        .private-notice svg {
+            width: 48px;
+            height: 48px;
+            margin-bottom: 0.75rem;
+            opacity: 0.6;
+            color: var(--muted);
+        }
+
+        .private-notice h3 {
+            color: var(--text);
+            margin-bottom: 0.5rem;
+        }
+
+        .post-time-link {
+            color: inherit;
+            text-decoration: none;
+        }
+
+        .post-time-link:hover {
+            text-decoration: underline;
+        }
+
+        .feed-pagination {
+            display: flex;
+            justify-content: center;
+            gap: 0.5rem;
+            padding: 1rem 0;
+        }
+
+        .feed-pagination .group-btn {
+            flex: 0 0 auto;
+        }
+    </style>
+</head>
+<body>
+    <!-- Top Bar / Navigation (matching Groups page exactly) -->
+    <div class="topbar">
+        <div class="inner">
+            <a href="/home/" class="brand">
+                <div class="logo" aria-hidden="true"></div>
+                <div>
+                    <h1>CRC</h1>
+                    <span><?= e($primaryCong['name'] ?? 'Gospel Media') ?></span>
+                </div>
+            </a>
+
+            <div class="actions">
+                <!-- Status Chip (hidden on mobile) -->
+                <div class="chip" title="Status">
+                    <span class="dot"></span>
+                    <?= e(explode(' ', $user['name'])[0]) ?>
+                </div>
+
+                <!-- Theme Toggle -->
+                <button class="theme-toggle" onclick="toggleTheme()" title="Toggle theme" data-ripple>
+                    <svg class="sun-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M12 3v2m0 14v2M3 12h2m14 0h2M5.2 5.2l1.4 1.4m10.8 10.8l1.4 1.4M18.8 5.2l-1.4 1.4M6.6 17.4l-1.4 1.4"></path>
+                        <circle cx="12" cy="12" r="5"></circle>
+                    </svg>
+                    <svg class="moon-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+                    </svg>
+                </button>
+
+                <!-- Notifications -->
+                <a href="/notifications/" class="nav-icon-btn" title="Notifications" data-ripple>
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+                        <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+                    </svg>
+                    <?php if ($unreadNotifications > 0): ?>
+                        <span class="notification-badge"><?= $unreadNotifications > 9 ? '9+' : $unreadNotifications ?></span>
+                    <?php endif; ?>
+                </a>
+
+                <!-- 3-dot More Menu -->
+                <div class="more-menu">
+                    <button class="more-menu-btn" onclick="toggleMoreMenu()" title="More" data-ripple>
+                        <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor">
+                            <circle cx="12" cy="5" r="2"></circle>
+                            <circle cx="12" cy="12" r="2"></circle>
+                            <circle cx="12" cy="19" r="2"></circle>
+                        </svg>
+                    </button>
+                    <div class="more-dropdown" id="moreDropdown">
+                        <a href="/home/" class="more-dropdown-item">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+                                <polyline points="9 22 9 12 15 12 15 22"></polyline>
+                            </svg>
+                            Home
+                        </a>
+                        <a href="/gospel_media/" class="more-dropdown-item">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M4 11a9 9 0 0 1 9 9"></path>
+                                <path d="M4 4a16 16 0 0 1 16 16"></path>
+                                <circle cx="5" cy="19" r="1"></circle>
+                            </svg>
+                            Feed
+                        </a>
+                        <a href="/bible/" class="more-dropdown-item">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
+                                <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
+                                <path d="M12 6v7"></path>
+                                <path d="M8 9h8"></path>
+                            </svg>
+                            Bible
+                        </a>
+                        <a href="/calendar/" class="more-dropdown-item">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                                <line x1="16" y1="2" x2="16" y2="6"></line>
+                                <line x1="8" y1="2" x2="8" y2="6"></line>
+                                <line x1="3" y1="10" x2="21" y2="10"></line>
+                            </svg>
+                            Calendar
+                        </a>
+                        <a href="/media/" class="more-dropdown-item">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <polygon points="23 7 16 12 23 17 23 7"></polygon>
+                                <rect x="1" y="5" width="15" height="14" rx="2" ry="2"></rect>
+                            </svg>
+                            Media
+                        </a>
+                    </div>
+                </div>
+
+                <!-- User Profile Menu -->
+                <div class="user-menu">
+                    <button class="user-menu-btn" onclick="toggleUserMenu()">
+                        <?php if ($user['avatar']): ?>
+                            <img src="<?= e($user['avatar']) ?>" alt="" class="user-avatar" onerror="this.style.display='none';this.nextElementSibling.style.display='flex';">
+                            <div class="user-avatar-placeholder" style="display:none;"><?= strtoupper(substr($user['name'], 0, 1)) ?></div>
+                        <?php else: ?>
+                            <div class="user-avatar-placeholder"><?= strtoupper(substr($user['name'], 0, 1)) ?></div>
+                        <?php endif; ?>
+                    </button>
+                    <div class="user-dropdown" id="userDropdown">
+                        <div class="user-dropdown-header">
+                            <strong><?= e($user['name']) ?></strong>
+                            <span><?= e($primaryCong['name'] ?? '') ?></span>
+                        </div>
+                        <div class="user-dropdown-divider"></div>
+                        <a href="/profile/" class="user-dropdown-item">Profile</a>
+                        <?php if ($primaryCong && Auth::isCongregationAdmin($primaryCong['id'])): ?>
+                            <div class="user-dropdown-divider"></div>
+                            <a href="/admin_congregation/" class="user-dropdown-item">Manage Congregation</a>
+                        <?php endif; ?>
+                        <?php if (Auth::isAdmin()): ?>
+                            <a href="/admin/" class="user-dropdown-item">Admin Panel</a>
+                        <?php endif; ?>
+                        <div class="user-dropdown-divider"></div>
+                        <a href="/auth/logout.php" class="user-dropdown-item logout">Logout</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Feed Filter Tabs -->
+    <nav class="feed-tabs">
+        <a href="/gospel_media/" class="feed-tab">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M4 11a9 9 0 0 1 9 9"></path>
+                <path d="M4 4a16 16 0 0 1 16 16"></path>
+                <circle cx="5" cy="19" r="1"></circle>
+            </svg>
+            <span>Feed</span>
+        </a>
+        <a href="/gospel_media/groups.php" class="feed-tab active">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                <circle cx="9" cy="7" r="4"></circle>
+                <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+            </svg>
+            <span>Groups</span>
+        </a>
+        <a href="/calendar/" class="feed-tab">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                <line x1="16" y1="2" x2="16" y2="6"></line>
+                <line x1="8" y1="2" x2="8" y2="6"></line>
+                <line x1="3" y1="10" x2="21" y2="10"></line>
+            </svg>
+            <span>Events</span>
+        </a>
+    </nav>
+
+    <main class="feed-container">
+        <div class="group-page-wrap">
+            <div class="back-bar">
+                <a href="/gospel_media/groups.php">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"></polyline></svg>
+                    Back to Groups
+                </a>
+            </div>
+
+            <!-- Group Header -->
+            <section class="group-hero">
+                <div class="group-cover">
+                    <?php if ($group['cover_image']): ?>
+                        <img src="<?= e($group['cover_image']) ?>" alt="">
+                    <?php else: ?>
+                        <svg class="group-cover-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                            <?php if ($group['group_type'] === 'sell'): ?>
+                                <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"></path>
+                                <line x1="3" y1="6" x2="21" y2="6"></line>
+                                <path d="M16 10a4 4 0 0 1-8 0"></path>
+                            <?php else: ?>
+                                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                                <circle cx="9" cy="7" r="4"></circle>
+                                <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                                <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                            <?php endif; ?>
+                        </svg>
+                    <?php endif; ?>
+                </div>
+                <div class="group-hero-body">
+                    <div class="group-name-row">
+                        <h2 class="group-name"><?= e($group['name']) ?></h2>
+                        <div class="group-badges">
+                            <span class="group-type-badge <?= $group['group_type'] === 'sell' ? 'sell' : 'community' ?>">
+                                <?= $group['group_type'] === 'sell' ? 'Marketplace' : 'Community' ?>
+                            </span>
+                            <span class="group-type-badge privacy-<?= $group['privacy'] === 'private' ? 'private' : 'public' ?>">
+                                <?= $group['privacy'] === 'private' ? 'Private' : 'Public' ?>
+                            </span>
+                        </div>
+                    </div>
+
+                    <?php if ($group['description']): ?>
+                        <p class="group-description"><?= e($group['description']) ?></p>
+                    <?php endif; ?>
+
+                    <div class="group-stats">
+                        <span class="group-stat">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                                <circle cx="9" cy="7" r="4"></circle>
+                            </svg>
+                            <?= number_format($group['member_count']) ?> member<?= $group['member_count'] != 1 ? 's' : '' ?>
+                        </span>
+                        <?php if ($canViewContent): ?>
+                            <span class="group-stat">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+                                </svg>
+                                <?= number_format($group['post_count']) ?> post<?= $group['post_count'] != 1 ? 's' : '' ?>
+                            </span>
+                            <?php if ($group['congregation_name']): ?>
+                                <span class="group-stat">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+                                        <polyline points="9 22 9 12 15 12 15 22"></polyline>
+                                    </svg>
+                                    <?= e($group['congregation_name']) ?>
+                                </span>
+                            <?php endif; ?>
+                        <?php endif; ?>
+                    </div>
+
+                    <div class="group-actions">
+                        <?php if ($isMember): ?>
+                            <span class="group-btn group-btn-joined">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <polyline points="20 6 9 17 4 12"></polyline>
+                                </svg>
+                                Joined<?= $userRole && $userRole !== 'member' ? ' (' . e(ucfirst($userRole)) . ')' : '' ?>
+                            </span>
+                            <button class="group-btn group-btn-secondary" onclick="leaveGroup(<?= (int)$group['id'] ?>)">
+                                Leave Group
+                            </button>
+                        <?php elseif ($isPending): ?>
+                            <span class="group-btn group-btn-pending">Join Request Pending</span>
+                        <?php elseif ($isBanned): ?>
+                            <span class="group-banned-note">You are not able to join this group.</span>
+                        <?php else: ?>
+                            <button class="group-btn group-btn-primary" onclick="joinGroup(<?= (int)$group['id'] ?>)">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                                    <circle cx="8.5" cy="7" r="4"></circle>
+                                    <line x1="20" y1="8" x2="20" y2="14"></line>
+                                    <line x1="23" y1="11" x2="17" y2="11"></line>
+                                </svg>
+                                <?= $group['privacy'] === 'private' ? 'Request to Join' : 'Join Group' ?>
+                            </button>
+                        <?php endif; ?>
+                    </div>
+                </div>
+            </section>
+
+            <?php if (!$canViewContent): ?>
+                <!-- Private group: limited view for non-members -->
+                <div class="private-notice">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                        <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                        <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                    </svg>
+                    <h3>This group is private</h3>
+                    <p>Join the group to see its posts and members.</p>
+                </div>
+            <?php else: ?>
+
+                <?php if ($isMember || Auth::isAdmin()): ?>
+                    <!-- Create Post in Group -->
+                    <div class="create-post-card">
+                        <div class="create-post-row">
+                            <?php if ($user['avatar']): ?>
+                                <img src="<?= e($user['avatar']) ?>" alt="" class="create-avatar" onerror="this.style.display='none';this.nextElementSibling.style.display='flex';">
+                                <div class="create-avatar-placeholder" style="display:none;"><?= strtoupper(substr($user['name'], 0, 1)) ?></div>
+                            <?php else: ?>
+                                <div class="create-avatar-placeholder"><?= strtoupper(substr($user['name'], 0, 1)) ?></div>
+                            <?php endif; ?>
+                            <a class="create-post-input" href="/gospel_media/create.php?group_id=<?= (int)$group['id'] ?>">
+                                Share something with <?= e($group['name']) ?>...
+                            </a>
+                        </div>
+                    </div>
+                <?php endif; ?>
+
+                <!-- Members -->
+                <h3 class="section-title">Members (<?= number_format($group['member_count']) ?>)</h3>
+                <div class="members-card">
+                    <?php if (empty($members)): ?>
+                        <p class="members-more">No members yet.</p>
+                    <?php else: ?>
+                        <div class="members-grid">
+                            <?php foreach (array_slice($members, 0, 24) as $member): ?>
+                                <div class="member-item">
+                                    <?php if ($member['avatar']): ?>
+                                        <img src="<?= e($member['avatar']) ?>" alt="" onerror="this.style.display='none';this.nextElementSibling.style.display='flex';">
+                                        <div class="member-avatar-placeholder" style="display:none;"><?= strtoupper(substr($member['name'], 0, 1)) ?></div>
+                                    <?php else: ?>
+                                        <div class="member-avatar-placeholder"><?= strtoupper(substr($member['name'], 0, 1)) ?></div>
+                                    <?php endif; ?>
+                                    <div class="member-info">
+                                        <span class="member-name"><?= e($member['name']) ?></span>
+                                        <span class="member-role <?= e($member['role']) ?>"><?= e($member['role']) ?></span>
+                                    </div>
+                                </div>
+                            <?php endforeach; ?>
+                        </div>
+                        <?php if (count($members) > 24): ?>
+                            <p class="members-more">+ <?= count($members) - 24 ?> more member<?= count($members) - 24 != 1 ? 's' : '' ?></p>
+                        <?php endif; ?>
+                    <?php endif; ?>
+                </div>
+
+                <!-- Group Posts Feed -->
+                <h3 class="section-title">Posts</h3>
+                <div class="posts-feed">
+                    <?php if ($posts): ?>
+                        <?php foreach ($posts as $post): ?>
+                            <article class="post-card" data-post-id="<?= $post['id'] ?>">
+                                <div class="post-header">
+                                    <div class="post-author">
+                                        <?php if ($post['author_avatar']): ?>
+                                            <img src="<?= e($post['author_avatar']) ?>" alt="" class="author-avatar" onerror="this.style.display='none';this.nextElementSibling.style.display='flex';">
+                                            <div class="author-avatar-placeholder" style="display:none;"><?= strtoupper(substr($post['author_name'], 0, 1)) ?></div>
+                                        <?php else: ?>
+                                            <div class="author-avatar-placeholder"><?= strtoupper(substr($post['author_name'], 0, 1)) ?></div>
+                                        <?php endif; ?>
+                                        <div class="author-info">
+                                            <strong><?= e($post['author_name']) ?></strong>
+                                            <span class="post-meta">
+                                                <a href="/gospel_media/post.php?id=<?= $post['id'] ?>" class="post-time-link"><?= time_ago($post['created_at']) ?></a>
+                                                <span class="scope-badge"><?= e($group['name']) ?></span>
+                                            </span>
+                                        </div>
+                                    </div>
+                                    <div class="post-header-right">
+                                        <?php if ($post['is_pinned']): ?>
+                                            <span class="pinned-badge">
+                                                <svg viewBox="0 0 24 24" fill="currentColor" width="14" height="14">
+                                                    <path d="M16 12V4h1V2H7v2h1v8l-2 2v2h5v6l1 1 1-1v-6h5v-2l-2-2z"/>
+                                                </svg>
+                                            </span>
+                                        <?php endif; ?>
+                                        <?php if (Auth::isAdmin() || $post['user_id'] == Auth::id()): ?>
+                                            <div class="post-options">
+                                                <button class="post-options-btn" onclick="togglePostMenu(<?= $post['id'] ?>)">
+                                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                        <circle cx="12" cy="12" r="1"></circle>
+                                                        <circle cx="12" cy="5" r="1"></circle>
+                                                        <circle cx="12" cy="19" r="1"></circle>
+                                                    </svg>
+                                                </button>
+                                                <div class="post-options-menu" id="postMenu-<?= $post['id'] ?>">
+                                                    <?php if (Auth::isAdmin()): ?>
+                                                    <button class="post-option" onclick="togglePin(<?= $post['id'] ?>, <?= $post['is_pinned'] ? 'true' : 'false' ?>)">
+                                                        <svg viewBox="0 0 24 24" fill="<?= $post['is_pinned'] ? 'currentColor' : 'none' ?>" stroke="currentColor" stroke-width="2"><path d="M16 12V4h1V2H7v2h1v8l-2 2v2h5v6l1 1 1-1v-6h5v-2l-2-2z"/></svg>
+                                                        <?= $post['is_pinned'] ? 'Unpin' : 'Pin' ?>
+                                                    </button>
+                                                    <?php endif; ?>
+                                                    <button class="post-option" onclick="editPost(<?= $post['id'] ?>)">
+                                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+                                                        Edit
+                                                    </button>
+                                                    <button class="post-option delete" onclick="deletePost(<?= $post['id'] ?>)">
+                                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+                                                        Delete
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        <?php endif; ?>
+                                    </div>
+                                </div>
+
+                                <div class="post-content">
+                                    <?= formatPostContent($post['content']) ?>
+                                </div>
+
+                                <?php if ($post['media']): ?>
+                                    <?php $media = json_decode($post['media'], true); ?>
+                                    <?php if ($media): ?>
+                                        <div class="post-media <?= count($media) > 1 ? 'media-grid-' . min(count($media), 4) : '' ?>">
+                                            <?php foreach (array_slice($media, 0, 4) as $item): ?>
+                                                <?php if (strpos($item['type'] ?? '', 'image') !== false): ?>
+                                                    <img src="<?= e($item['url']) ?>" alt="" class="media-image" onclick="openImageViewer('<?= e($item['url']) ?>')">
+                                                <?php endif; ?>
+                                            <?php endforeach; ?>
+                                        </div>
+                                    <?php endif; ?>
+                                <?php endif; ?>
+
+                                <div class="post-engagement">
+                                    <?php if ($post['reaction_count'] > 0 || $post['comment_count'] > 0): ?>
+                                        <div class="engagement-stats">
+                                            <?php if ($post['reaction_count'] > 0): ?>
+                                                <span class="stat reaction-summary" data-post-id="<?= $post['id'] ?>">
+                                                    <span class="reaction-icons-row">
+                                                        <?php
+                                                        $shown = 0;
+                                                        foreach ($post['reaction_breakdown'] as $rType => $rCount):
+                                                            if ($shown >= 3) break;
+                                                            $colors = ['like' => '#3B82F6', 'love' => '#EF4444', 'pray' => '#8B5CF6', 'amen' => '#F59E0B'];
+                                                            $color = $colors[$rType] ?? '#7C3AED';
+                                                        ?>
+                                                            <span class="reaction-mini" style="color: <?= $color ?>"><?= $reactionIcons[$rType] ?? '' ?></span>
+                                                        <?php $shown++; endforeach; ?>
+                                                    </span>
+                                                    <?= $post['reaction_count'] ?>
+                                                </span>
+                                            <?php endif; ?>
+                                            <?php if ($post['comment_count'] > 0): ?>
+                                                <span class="stat comment-stat" onclick="toggleComments(<?= $post['id'] ?>)"><?= $post['comment_count'] ?> comment<?= $post['comment_count'] != 1 ? 's' : '' ?></span>
+                                            <?php endif; ?>
+                                        </div>
+                                    <?php endif; ?>
+                                </div>
+
+                                <div class="post-actions">
+                                    <?php
+                                    $userReactionType = $post['user_reaction'] ?: '';
+                                    $reactionLabels = ['like' => 'Like', 'love' => 'Love', 'pray' => 'Pray', 'amen' => 'Amen'];
+                                    $reactionColors = ['like' => '#3B82F6', 'love' => '#EF4444', 'pray' => '#8B5CF6', 'amen' => '#F59E0B'];
+                                    $activeLabel = $reactionLabels[$userReactionType] ?? 'Like';
+                                    $activeColor = $reactionColors[$userReactionType] ?? '';
+                                    ?>
+                                    <div class="reaction-btn-wrap">
+                                        <button class="post-action <?= $userReactionType ? 'reacted reaction-' . e($userReactionType) : '' ?>"
+                                                data-reaction="<?= e($userReactionType) ?>"
+                                                onclick="toggleReaction(<?= $post['id'] ?>, '<?= e($userReactionType ?: 'like') ?>')"
+                                                <?= $activeColor ? 'style="color:' . $activeColor . '"' : '' ?>>
+                                            <?php if ($userReactionType && isset($reactionIcons[$userReactionType])): ?>
+                                                <?= $reactionIcons[$userReactionType] ?>
+                                            <?php else: ?>
+                                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                    <path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3zM7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3"></path>
+                                                </svg>
+                                            <?php endif; ?>
+                                            <span><?= $activeLabel ?></span>
+                                        </button>
+                                        <!-- Reaction Picker Popup -->
+                                        <div class="reaction-picker" id="reactionPicker-<?= $post['id'] ?>">
+                                            <button class="reaction-option" data-type="like" onclick="selectReaction(<?= $post['id'] ?>, 'like')" title="Like">
+                                                <span class="reaction-emoji">&#128077;</span>
+                                            </button>
+                                            <button class="reaction-option" data-type="love" onclick="selectReaction(<?= $post['id'] ?>, 'love')" title="Love">
+                                                <span class="reaction-emoji">&#10084;&#65039;</span>
+                                            </button>
+                                            <button class="reaction-option" data-type="pray" onclick="selectReaction(<?= $post['id'] ?>, 'pray')" title="Pray">
+                                                <span class="reaction-emoji">&#128591;</span>
+                                            </button>
+                                            <button class="reaction-option" data-type="amen" onclick="selectReaction(<?= $post['id'] ?>, 'amen')" title="Amen">
+                                                <span class="reaction-emoji">&#11088;</span>
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <button class="post-action" onclick="toggleComments(<?= $post['id'] ?>)">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+                                        </svg>
+                                        <span>Comment</span>
+                                    </button>
+                                    <button class="post-action" onclick="sharePost(<?= $post['id'] ?>)">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <circle cx="18" cy="5" r="3"></circle>
+                                            <circle cx="6" cy="12" r="3"></circle>
+                                            <circle cx="18" cy="19" r="3"></circle>
+                                            <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line>
+                                            <line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line>
+                                        </svg>
+                                        <span>Share</span>
+                                    </button>
+                                </div>
+
+                                <!-- Comments Section -->
+                                <div class="comments-section" id="comments-<?= $post['id'] ?>" style="display: none;">
+                                    <div class="comments-list"></div>
+                                    <form class="comment-form" onsubmit="submitComment(event, <?= $post['id'] ?>)">
+                                        <?php if ($user['avatar']): ?>
+                                            <img src="<?= e($user['avatar']) ?>" alt="" class="comment-avatar" onerror="this.style.display='none';this.nextElementSibling.style.display='flex';">
+                                            <div class="comment-avatar-placeholder" style="display:none;"><?= strtoupper(substr($user['name'], 0, 1)) ?></div>
+                                        <?php else: ?>
+                                            <div class="comment-avatar-placeholder"><?= strtoupper(substr($user['name'], 0, 1)) ?></div>
+                                        <?php endif; ?>
+                                        <input type="text" placeholder="Write a comment..." class="comment-input" required>
+                                        <button type="submit" class="comment-submit">
+                                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                <line x1="22" y1="2" x2="11" y2="13"></line>
+                                                <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+                                            </svg>
+                                        </button>
+                                    </form>
+                                </div>
+                            </article>
+                        <?php endforeach; ?>
+
+                        <?php if ($totalPages > 1): ?>
+                            <div class="feed-pagination">
+                                <?php if ($page > 1): ?>
+                                    <a href="/gospel_media/group.php?id=<?= (int)$group['id'] ?>&page=<?= $page - 1 ?>" class="group-btn group-btn-secondary">Newer posts</a>
+                                <?php endif; ?>
+                                <?php if ($page < $totalPages): ?>
+                                    <a href="/gospel_media/group.php?id=<?= (int)$group['id'] ?>&page=<?= $page + 1 ?>" class="group-btn group-btn-secondary">Older posts</a>
+                                <?php endif; ?>
+                            </div>
+                        <?php endif; ?>
+                    <?php else: ?>
+                        <div class="empty-state">
+                            <div class="empty-icon">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                                    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+                                </svg>
+                            </div>
+                            <h3>No posts yet</h3>
+                            <p>Be the first to share something with this group!</p>
+                            <?php if ($isMember || Auth::isAdmin()): ?>
+                                <a href="/gospel_media/create.php?group_id=<?= (int)$group['id'] ?>" class="btn-primary">Create Post</a>
+                            <?php endif; ?>
+                        </div>
+                    <?php endif; ?>
+                </div>
+
+            <?php endif; ?>
+        </div>
+    </main>
+
+    <!-- Bottom Navigation (Mobile) -->
+    <nav class="bottom-nav">
+        <a href="/home/" class="bottom-nav-item">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+                <polyline points="9 22 9 12 15 12 15 22"></polyline>
+            </svg>
+            <span>Home</span>
+        </a>
+        <a href="/gospel_media/" class="bottom-nav-item">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M4 11a9 9 0 0 1 9 9"></path>
+                <path d="M4 4a16 16 0 0 1 16 16"></path>
+                <circle cx="5" cy="19" r="1"></circle>
+            </svg>
+            <span>Feed</span>
+        </a>
+        <a href="<?= ($isMember || Auth::isAdmin()) ? '/gospel_media/create.php?group_id=' . (int)$group['id'] : '/gospel_media/create.php' ?>" class="bottom-nav-item create-btn">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                <line x1="12" y1="5" x2="12" y2="19"></line>
+                <line x1="5" y1="12" x2="19" y2="12"></line>
+            </svg>
+        </a>
+        <a href="/calendar/" class="bottom-nav-item">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                <line x1="16" y1="2" x2="16" y2="6"></line>
+                <line x1="8" y1="2" x2="8" y2="6"></line>
+                <line x1="3" y1="10" x2="21" y2="10"></line>
+            </svg>
+            <span>Events</span>
+        </a>
+        <a href="/profile/" class="bottom-nav-item">
+            <?php if ($user['avatar']): ?>
+                <img src="<?= e($user['avatar']) ?>" alt="" class="bottom-nav-avatar" onerror="this.style.display='none';this.nextElementSibling.style.display='flex';">
+                <div class="bottom-nav-avatar-placeholder" style="display:none;"><?= strtoupper(substr($user['name'], 0, 1)) ?></div>
+            <?php else: ?>
+                <div class="bottom-nav-avatar-placeholder"><?= strtoupper(substr($user['name'], 0, 1)) ?></div>
+            <?php endif; ?>
+            <span>Me</span>
+        </a>
+    </nav>
+
+    <!-- Image Viewer -->
+    <div class="image-viewer" id="imageViewer" onclick="closeImageViewer()">
+        <button class="viewer-close">&times;</button>
+        <img src="" alt="" id="viewerImage">
+    </div>
+
+    <div id="toast" class="toast"></div>
+
+    <script src="/gospel_media/js/gospel_media.js"></script>
+    <script>
+        // Theme Toggle
+        function toggleTheme() {
+            const html = document.documentElement;
+            const current = html.getAttribute('data-theme') || 'dark';
+            const next = current === 'dark' ? 'light' : 'dark';
+            html.setAttribute('data-theme', next);
+            localStorage.setItem('theme', next);
+        }
+
+        // More Menu Toggle
+        function toggleMoreMenu() {
+            document.getElementById('moreDropdown').classList.toggle('show');
+            document.getElementById('userDropdown')?.classList.remove('show');
+        }
+
+        // User Menu Toggle
+        function toggleUserMenu() {
+            document.getElementById('userDropdown').classList.toggle('show');
+            document.getElementById('moreDropdown')?.classList.remove('show');
+        }
+
+        // Close menus when clicking outside
+        document.addEventListener('click', function(e) {
+            if (!e.target.closest('.user-menu')) {
+                document.getElementById('userDropdown')?.classList.remove('show');
+            }
+            if (!e.target.closest('.more-menu')) {
+                document.getElementById('moreDropdown')?.classList.remove('show');
+            }
+        });
+
+        async function joinGroup(groupId) {
+            try {
+                const response = await fetch('/gospel_media/api/groups.php?action=join', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-Token': getCSRFToken()
+                    },
+                    body: JSON.stringify({ group_id: groupId })
+                });
+
+                const data = await response.json();
+
+                if (data.ok) {
+                    showToast(data.message || 'Joined group!');
+                    setTimeout(() => location.reload(), 500);
+                } else {
+                    showToast(data.error || 'Failed to join group', 'error');
+                }
+            } catch (error) {
+                showToast('Network error', 'error');
+            }
+        }
+
+        async function leaveGroup(groupId) {
+            if (!confirm('Are you sure you want to leave this group?')) return;
+
+            try {
+                const response = await fetch('/gospel_media/api/groups.php?action=leave', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-Token': getCSRFToken()
+                    },
+                    body: JSON.stringify({ group_id: groupId })
+                });
+
+                const data = await response.json();
+
+                if (data.ok) {
+                    showToast('Left group');
+                    setTimeout(() => location.reload(), 500);
+                } else {
+                    showToast(data.error || 'Failed to leave group', 'error');
+                }
+            } catch (error) {
+                showToast('Network error', 'error');
+            }
+        }
+
+        // Ripple effect for buttons
+        document.querySelectorAll('[data-ripple]').forEach(btn => {
+            btn.addEventListener('click', function(e) {
+                const rect = this.getBoundingClientRect();
+                const ripple = document.createElement('span');
+                ripple.className = 'ripple';
+                ripple.style.left = (e.clientX - rect.left) + 'px';
+                ripple.style.top = (e.clientY - rect.top) + 'px';
+                this.appendChild(ripple);
+                setTimeout(() => ripple.remove(), 600);
+            });
+        });
+    </script>
+</body>
+</html>

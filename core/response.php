@@ -23,7 +23,7 @@ class Response {
     /**
      * Success response
      */
-    public static function success(array $data = [], string $message = null): never {
+    public static function success(array $data = [], ?string $message = null): never {
         $response = ['ok' => true];
 
         if ($message) {

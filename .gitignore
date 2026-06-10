@@ -22,7 +22,9 @@ Thumbs.db
 
 # Logs
 *.log
-logs/
+logs/*
+!logs/.htaccess
+!logs/.gitkeep
 
 # Vendor dependencies
 vendor/

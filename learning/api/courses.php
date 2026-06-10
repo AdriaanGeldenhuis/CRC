@@ -25,7 +25,7 @@ switch ($action) {
         // Verify course exists and is accessible
         $course = Database::fetchOne(
             "SELECT * FROM courses
-             WHERE id = ? AND status = 'published'
+             WHERE id = ? AND is_published = 1
              AND (scope = 'global' OR congregation_id = ?)",
             [$courseId, $primaryCong['id'] ?? 0]
         );
@@ -36,7 +36,7 @@ switch ($action) {
 
         // Check if already enrolled
         $existing = Database::fetchOne(
-            "SELECT * FROM enrollments WHERE course_id = ? AND user_id = ?",
+            "SELECT * FROM user_course_enrollments WHERE course_id = ? AND user_id = ?",
             [$courseId, $user['id']]
         );
 
@@ -45,12 +45,12 @@ switch ($action) {
         }
 
         // Create enrollment
-        $enrollmentId = Database::insert('enrollments', [
+        $enrollmentId = Database::insert('user_course_enrollments', [
             'user_id' => $user['id'],
             'course_id' => $courseId,
-            'enrolled_at' => date('Y-m-d H:i:s'),
+            'status' => 'enrolled',
             'progress_percent' => 0,
-            'last_accessed_at' => date('Y-m-d H:i:s')
+            'created_at' => date('Y-m-d H:i:s')
         ]);
 
         Response::success(['enrollment_id' => $enrollmentId], 'Successfully enrolled');
@@ -65,14 +65,14 @@ switch ($action) {
 
         // Delete enrollment
         Database::delete(
-            'enrollments',
+            'user_course_enrollments',
             'course_id = ? AND user_id = ?',
             [$courseId, $user['id']]
         );
 
         // Delete lesson progress
         Database::query(
-            "DELETE lp FROM lesson_progress lp
+            "DELETE lp FROM user_lesson_progress lp
              JOIN lessons l ON lp.lesson_id = l.id
              WHERE l.course_id = ? AND lp.user_id = ?",
             [$courseId, $user['id']]
@@ -91,8 +91,8 @@ switch ($action) {
         $course = Database::fetchOne(
             "SELECT c.*, u.name as instructor_name
              FROM courses c
-             LEFT JOIN users u ON c.instructor_id = u.id
-             WHERE c.id = ? AND c.status = 'published'",
+             LEFT JOIN users u ON c.created_by = u.id
+             WHERE c.id = ? AND c.is_published = 1",
             [$courseId]
         );
 
@@ -102,8 +102,8 @@ switch ($action) {
 
         // Get lessons
         $lessons = Database::fetchAll(
-            "SELECT l.id, l.title, l.type, l.duration_minutes, l.sort_order,
-                    (SELECT completed_at FROM lesson_progress WHERE lesson_id = l.id AND user_id = ?) as completed_at
+            "SELECT l.id, l.title, l.content_type, l.duration_minutes, l.sort_order,
+                    (SELECT completed_at FROM user_lesson_progress WHERE lesson_id = l.id AND user_id = ?) as completed_at
              FROM lessons l
              WHERE l.course_id = ?
              ORDER BY l.sort_order ASC",
@@ -120,7 +120,7 @@ switch ($action) {
         $level = input('level');
         $limit = min((int)input('limit', 20), 100);
 
-        $where = ["c.status = 'published'", "(c.scope = 'global' OR c.congregation_id = ?)"];
+        $where = ["c.is_published = 1", "(c.scope = 'global' OR c.congregation_id = ?)"];
         $params = [$primaryCong['id'] ?? 0];
 
         if ($category) {
@@ -129,19 +129,19 @@ switch ($action) {
         }
 
         if ($level) {
-            $where[] = "c.level = ?";
+            $where[] = "c.difficulty = ?";
             $params[] = $level;
         }
 
         $whereClause = implode(' AND ', $where);
 
         $courses = Database::fetchAll(
-            "SELECT c.id, c.title, c.description, c.category, c.level, c.thumbnail, c.featured,
+            "SELECT c.id, c.title, c.description, c.category, c.difficulty, c.cover_image, c.is_featured,
                     (SELECT COUNT(*) FROM lessons WHERE course_id = c.id) as lesson_count,
-                    (SELECT id FROM enrollments WHERE course_id = c.id AND user_id = ?) as enrolled
+                    (SELECT id FROM user_course_enrollments WHERE course_id = c.id AND user_id = ?) as enrolled
              FROM courses c
              WHERE $whereClause
-             ORDER BY c.featured DESC, c.created_at DESC
+             ORDER BY c.is_featured DESC, c.created_at DESC
              LIMIT ?",
             array_merge([$user['id']], $params, [$limit])
         );
@@ -151,12 +151,12 @@ switch ($action) {
 
     case 'my_courses':
         $courses = Database::fetchAll(
-            "SELECT c.*, e.progress_percent, e.enrolled_at, e.last_accessed_at,
+            "SELECT c.*, e.progress_percent, e.created_at as enrolled_at, e.updated_at as last_accessed_at,
                     (SELECT COUNT(*) FROM lessons WHERE course_id = c.id) as lesson_count
-             FROM enrollments e
+             FROM user_course_enrollments e
              JOIN courses c ON e.course_id = c.id
-             WHERE e.user_id = ?
-             ORDER BY e.last_accessed_at DESC",
+             WHERE e.user_id = ? AND e.status != 'dropped'
+             ORDER BY e.updated_at DESC",
             [$user['id']]
         );
 

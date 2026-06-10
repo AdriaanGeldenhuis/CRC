@@ -352,6 +352,205 @@ if ($book && $chapter && $verse) {
             border-color: var(--bad);
         }
 
+        /* ===== INLINE PANELS ===== */
+        .inline-panel {
+            margin-top: 16px;
+            background: var(--card);
+            border: 1px solid var(--line);
+            border-radius: var(--radius);
+            overflow: hidden;
+        }
+
+        .inline-panel[hidden] {
+            display: none;
+        }
+
+        .panel-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 14px 16px;
+            border-bottom: 1px solid var(--line);
+        }
+
+        .panel-title {
+            font-size: 0.6875rem;
+            font-weight: 700;
+            color: var(--accent);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .panel-close {
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: var(--card2);
+            border: 1px solid var(--line);
+            border-radius: 50%;
+            color: var(--muted);
+            font-size: 1.125rem;
+            line-height: 1;
+            cursor: pointer;
+            transition: all 0.12s ease;
+        }
+
+        .panel-close:active {
+            color: var(--text);
+            transform: scale(0.94);
+        }
+
+        .panel-body {
+            padding: 16px;
+        }
+
+        .panel-textarea {
+            width: 100%;
+            min-height: 120px;
+            padding: 12px;
+            background: var(--card2);
+            border: 1px solid var(--line);
+            border-radius: var(--radius-sm);
+            color: var(--text);
+            font-family: inherit;
+            font-size: 0.9375rem;
+            line-height: 1.6;
+            resize: vertical;
+        }
+
+        .panel-textarea:focus {
+            outline: none;
+            border-color: var(--accent);
+        }
+
+        .panel-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 12px;
+        }
+
+        .panel-btn {
+            flex: 1;
+            min-height: 44px;
+            padding: 12px 16px;
+            background: var(--card2);
+            border: 1px solid var(--line);
+            border-radius: var(--radius-sm);
+            color: var(--text);
+            font-family: inherit;
+            font-size: 0.875rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.12s ease;
+        }
+
+        .panel-btn:active {
+            transform: scale(0.98);
+        }
+
+        .panel-btn:disabled {
+            opacity: 0.6;
+            cursor: default;
+        }
+
+        .panel-btn-primary {
+            background: linear-gradient(135deg, var(--accent) 0%, #9333EA 100%);
+            border-color: var(--accent);
+            color: white;
+        }
+
+        .panel-status {
+            margin-top: 10px;
+            font-size: 0.8125rem;
+            font-weight: 600;
+        }
+
+        .panel-status.success { color: var(--good); }
+        .panel-status.error { color: var(--bad); }
+
+        .panel-loading {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: var(--muted);
+            font-size: 0.875rem;
+            padding: 4px 0;
+        }
+
+        .panel-spinner {
+            width: 16px;
+            height: 16px;
+            border: 2px solid var(--line);
+            border-top-color: var(--accent);
+            border-radius: 50%;
+            animation: panelSpin 0.8s linear infinite;
+            flex-shrink: 0;
+        }
+
+        @keyframes panelSpin {
+            to { transform: rotate(360deg); }
+        }
+
+        .panel-error {
+            color: var(--bad);
+            font-size: 0.875rem;
+            padding: 4px 0;
+        }
+
+        .panel-empty {
+            color: var(--muted);
+            font-size: 0.875rem;
+            padding: 4px 0;
+        }
+
+        .ai-ref {
+            font-size: 0.8125rem;
+            font-weight: 700;
+            color: var(--accent);
+            margin-bottom: 10px;
+        }
+
+        .ai-answer {
+            font-size: 0.9375rem;
+            line-height: 1.7;
+            color: var(--text);
+        }
+
+        .cross-ref-item {
+            display: block;
+            padding: 12px;
+            margin-bottom: 10px;
+            background: var(--card2);
+            border: 1px solid var(--line);
+            border-radius: var(--radius-sm);
+            text-decoration: none;
+            transition: all 0.12s ease;
+        }
+
+        .cross-ref-item:last-child {
+            margin-bottom: 0;
+        }
+
+        .cross-ref-item:active {
+            border-color: var(--accent);
+            transform: scale(0.98);
+        }
+
+        .cross-ref-title {
+            font-size: 0.8125rem;
+            font-weight: 700;
+            color: var(--accent);
+            margin-bottom: 4px;
+        }
+
+        .cross-ref-text {
+            font-size: 0.875rem;
+            line-height: 1.6;
+            color: var(--text);
+        }
+
         /* ===== SAFE AREA ===== */
         @supports (padding: max(0px)) {
             .actions-body {
@@ -399,12 +598,12 @@ if ($book && $chapter && $verse) {
                     Bookmark
                 </button>
 
-                <a href="/bible/add-note.php?book=<?= urlencode($book) ?>&chapter=<?= urlencode($chapter) ?>&verse=<?= urlencode($verse) ?>&text=<?= urlencode($text) ?>" class="action-btn">
+                <button class="action-btn" onclick="openNotePanel()">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <path d="M12 20h9M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/>
                     </svg>
                     Add Note
-                </a>
+                </button>
 
                 <button class="action-btn" onclick="askAI()">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -439,6 +638,40 @@ if ($book && $chapter && $verse) {
                     </svg>
                     Share
                 </button>
+            </div>
+
+            <!-- Note Panel -->
+            <div class="inline-panel" id="notePanel" hidden>
+                <div class="panel-header">
+                    <div class="panel-title">Note</div>
+                    <button class="panel-close" onclick="closePanel('notePanel')">&times;</button>
+                </div>
+                <div class="panel-body">
+                    <textarea id="noteText" class="panel-textarea" placeholder="Write your note here..." maxlength="10000"></textarea>
+                    <div class="panel-actions">
+                        <button class="panel-btn panel-btn-primary" id="noteSaveBtn" onclick="saveNote()">Save Note</button>
+                        <button class="panel-btn" onclick="closePanel('notePanel')">Cancel</button>
+                    </div>
+                    <div class="panel-status" id="noteStatus" hidden></div>
+                </div>
+            </div>
+
+            <!-- AI Explanation Panel -->
+            <div class="inline-panel" id="aiPanel" hidden>
+                <div class="panel-header">
+                    <div class="panel-title">AI Explanation</div>
+                    <button class="panel-close" onclick="closePanel('aiPanel')">&times;</button>
+                </div>
+                <div class="panel-body" id="aiOutput"></div>
+            </div>
+
+            <!-- Cross References Panel -->
+            <div class="inline-panel" id="crossRefPanel" hidden>
+                <div class="panel-header">
+                    <div class="panel-title">Cross References</div>
+                    <button class="panel-close" onclick="closePanel('crossRefPanel')">&times;</button>
+                </div>
+                <div class="panel-body" id="crossRefList"></div>
             </div>
         </div>
     </div>
@@ -539,17 +772,234 @@ if ($book && $chapter && $verse) {
             }
         }
 
-        async function askAI() {
-            window.location.href = '/bible/ai-explain.php?book=' + encodeURIComponent(verseData.book) +
-                '&chapter=' + verseData.chapter +
-                '&verse=' + verseData.verse +
-                '&text=' + encodeURIComponent(verseData.text);
+        // ===== INLINE PANELS =====
+        const PANEL_IDS = ['notePanel', 'aiPanel', 'crossRefPanel'];
+
+        function openPanel(id) {
+            PANEL_IDS.forEach(pid => {
+                document.getElementById(pid).hidden = (pid !== id);
+            });
+            document.getElementById(id).scrollIntoView({ behavior: 'smooth', block: 'nearest' });
         }
 
+        function closePanel(id) {
+            document.getElementById(id).hidden = true;
+        }
+
+        function escapeHtml(s) {
+            return String(s ?? '').replace(/[&<>"']/g, m => ({
+                '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+            })[m]);
+        }
+
+        function showPanelLoading(container, msg) {
+            container.innerHTML = '';
+            const loading = document.createElement('div');
+            loading.className = 'panel-loading';
+            const spinner = document.createElement('span');
+            spinner.className = 'panel-spinner';
+            loading.appendChild(spinner);
+            loading.appendChild(document.createTextNode(msg));
+            container.appendChild(loading);
+        }
+
+        function showPanelError(container, msg) {
+            container.innerHTML = '';
+            const err = document.createElement('div');
+            err.className = 'panel-error';
+            err.textContent = msg;
+            container.appendChild(err);
+        }
+
+        // ===== NOTES =====
+        let noteLoaded = false;
+
+        function setNoteStatus(msg, type) {
+            const status = document.getElementById('noteStatus');
+            status.textContent = msg;
+            status.className = 'panel-status' + (type ? ' ' + type : '');
+            status.hidden = !msg;
+        }
+
+        async function openNotePanel() {
+            openPanel('notePanel');
+            setNoteStatus('', '');
+            const textarea = document.getElementById('noteText');
+
+            // Prefill with existing note for this verse (if any)
+            if (!noteLoaded) {
+                try {
+                    const formData = new FormData();
+                    formData.append('action', 'list');
+                    formData.append('version', 'KJV');
+                    formData.append('book_number', bookIndex);
+                    formData.append('chapter', verseData.chapter);
+
+                    const res = await fetch('/bible/api/notes.php', {
+                        method: 'POST',
+                        body: formData,
+                        headers: { 'X-CSRF-Token': csrfToken }
+                    });
+
+                    const data = await res.json();
+                    if (data.ok && Array.isArray(data.notes)) {
+                        const existing = data.notes.find(n => parseInt(n.verse_start, 10) === verseData.verse);
+                        if (existing && !textarea.value) {
+                            textarea.value = existing.content || '';
+                        }
+                    }
+                } catch (e) {
+                    // Prefill is best-effort; user can still write a new note
+                }
+                noteLoaded = true;
+            }
+
+            textarea.focus();
+        }
+
+        async function saveNote() {
+            const btn = document.getElementById('noteSaveBtn');
+            const text = document.getElementById('noteText').value.trim();
+            btn.disabled = true;
+            btn.textContent = 'Saving...';
+            setNoteStatus('', '');
+
+            try {
+                const formData = new FormData();
+                formData.append('action', text ? 'add' : 'delete');
+                formData.append('version', 'KJV');
+                formData.append('book_number', bookIndex);
+                formData.append('chapter', verseData.chapter);
+                formData.append('verse_start', verseData.verse);
+                formData.append('verse_end', verseData.verse);
+                formData.append('content', text);
+
+                const res = await fetch('/bible/api/notes.php', {
+                    method: 'POST',
+                    body: formData,
+                    headers: { 'X-CSRF-Token': csrfToken }
+                });
+
+                const data = await res.json();
+                if (data.ok) {
+                    const msg = text ? 'Note saved' : 'Note deleted';
+                    setNoteStatus(msg, 'success');
+                    showToast(msg, 'success');
+                } else {
+                    setNoteStatus(data.error || 'Failed to save note', 'error');
+                    showToast('Error: ' + (data.error || 'Failed'), 'error');
+                }
+            } catch (e) {
+                setNoteStatus('Error saving note', 'error');
+                showToast('Error saving note', 'error');
+            }
+
+            btn.disabled = false;
+            btn.textContent = 'Save Note';
+        }
+
+        // ===== AI EXPLAIN =====
+        async function askAI() {
+            openPanel('aiPanel');
+            const out = document.getElementById('aiOutput');
+            showPanelLoading(out, 'AI is explaining this passage...');
+
+            try {
+                const formData = new FormData();
+                formData.append('book_number', bookIndex);
+                formData.append('chapter', verseData.chapter);
+                formData.append('verse', verseData.verse);
+                formData.append('verse_text', verseData.text);
+                formData.append('book_name', verseData.book);
+
+                const res = await fetch('/bible/api/ai_explain.php', {
+                    method: 'POST',
+                    body: formData,
+                    headers: { 'X-CSRF-Token': csrfToken }
+                });
+
+                const data = await res.json();
+                if (data.ok && data.explanation) {
+                    out.innerHTML = '';
+                    const refDiv = document.createElement('div');
+                    refDiv.className = 'ai-ref';
+                    refDiv.textContent = verseData.ref;
+
+                    const answer = document.createElement('div');
+                    answer.className = 'ai-answer';
+                    // Escape first, then apply simple **bold** / newline formatting
+                    answer.innerHTML = escapeHtml(data.explanation)
+                        .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+                        .replace(/\n/g, '<br>');
+
+                    out.appendChild(refDiv);
+                    out.appendChild(answer);
+                } else {
+                    // Surface API error message (e.g. daily rate limit reached)
+                    showPanelError(out, data.error || 'Could not get AI explanation. Please try again.');
+                }
+            } catch (e) {
+                showPanelError(out, 'Could not get AI explanation. Please try again.');
+            }
+        }
+
+        // ===== CROSS REFERENCES =====
         async function loadCrossRefs() {
-            window.location.href = '/bible/cross-refs.php?book=' + encodeURIComponent(verseData.book) +
-                '&chapter=' + verseData.chapter +
-                '&verse=' + verseData.verse;
+            openPanel('crossRefPanel');
+            const list = document.getElementById('crossRefList');
+            showPanelLoading(list, 'Loading cross references...');
+
+            try {
+                const formData = new FormData();
+                formData.append('book_number', bookIndex);
+                formData.append('chapter', verseData.chapter);
+                formData.append('verse', verseData.verse);
+
+                const res = await fetch('/bible/api/cross_references.php', {
+                    method: 'POST',
+                    body: formData,
+                    headers: { 'X-CSRF-Token': csrfToken }
+                });
+
+                const data = await res.json();
+                if (data.ok) {
+                    list.innerHTML = '';
+                    const refs = data.cross_references || [];
+
+                    if (!refs.length) {
+                        const empty = document.createElement('p');
+                        empty.className = 'panel-empty';
+                        empty.textContent = data.message || 'No cross references found for this verse.';
+                        list.appendChild(empty);
+                        return;
+                    }
+
+                    refs.forEach(ref => {
+                        const bookName = allBooks[ref.book_number - 1] || ('Book ' + ref.book_number);
+
+                        const item = document.createElement('a');
+                        item.className = 'cross-ref-item';
+                        item.href = '/bible/?book=' + encodeURIComponent(bookName) +
+                            '&chapter=' + encodeURIComponent(ref.chapter);
+
+                        const title = document.createElement('div');
+                        title.className = 'cross-ref-title';
+                        title.textContent = bookName + ' ' + ref.chapter + ':' + ref.verse;
+
+                        const text = document.createElement('div');
+                        text.className = 'cross-ref-text';
+                        text.textContent = ref.text || '';
+
+                        item.appendChild(title);
+                        item.appendChild(text);
+                        list.appendChild(item);
+                    });
+                } else {
+                    showPanelError(list, data.error || 'Could not load cross references.');
+                }
+            } catch (e) {
+                showPanelError(list, 'Could not load cross references.');
+            }
         }
     </script>
 </body>

@@ -17,7 +17,7 @@ $level = input('level');
 $search = input('search');
 
 // Build query
-$where = ["c.status = 'published'"];
+$where = ["c.is_published = 1"];
 $params = [];
 
 // Show global courses or congregation-specific
@@ -30,7 +30,7 @@ if ($category) {
 }
 
 if ($level) {
-    $where[] = "c.level = ?";
+    $where[] = "c.difficulty = ?";
     $params[] = $level;
 }
 
@@ -51,15 +51,15 @@ try {
         "SELECT c.*,
                 u.name as instructor_name,
                 (SELECT COUNT(*) FROM lessons WHERE course_id = c.id) as lesson_count,
-                (SELECT COUNT(*) FROM enrollments WHERE course_id = c.id) as student_count,
-                (SELECT id FROM enrollments WHERE course_id = c.id AND user_id = ?) as enrollment_id,
-                (SELECT COUNT(*) FROM lesson_progress lp
+                (SELECT COUNT(*) FROM user_course_enrollments WHERE course_id = c.id) as student_count,
+                (SELECT id FROM user_course_enrollments WHERE course_id = c.id AND user_id = ? AND status != 'dropped') as enrollment_id,
+                (SELECT COUNT(*) FROM user_lesson_progress lp
                  JOIN lessons l ON lp.lesson_id = l.id
                  WHERE l.course_id = c.id AND lp.user_id = ? AND lp.completed_at IS NOT NULL) as completed_lessons
          FROM courses c
-         LEFT JOIN users u ON c.instructor_id = u.id
+         LEFT JOIN users u ON c.created_by = u.id
          WHERE $whereClause
-         ORDER BY c.featured DESC, c.created_at DESC",
+         ORDER BY c.is_featured DESC, c.created_at DESC",
         array_merge([$user['id'], $user['id']], $params)
     ) ?: [];
 } catch (Exception $e) {}
@@ -67,12 +67,12 @@ try {
 // Get user's enrolled courses
 try {
     $enrolledCourses = Database::fetchAll(
-        "SELECT c.*, e.progress_percent, e.enrolled_at,
+        "SELECT c.*, e.progress_percent, e.created_at as enrolled_at,
                 (SELECT COUNT(*) FROM lessons WHERE course_id = c.id) as lesson_count
-         FROM enrollments e
+         FROM user_course_enrollments e
          JOIN courses c ON e.course_id = c.id
-         WHERE e.user_id = ?
-         ORDER BY e.last_accessed_at DESC
+         WHERE e.user_id = ? AND e.status != 'dropped'
+         ORDER BY e.updated_at DESC
          LIMIT 4",
         [$user['id']]
     ) ?: [];
@@ -117,8 +117,8 @@ $levels = ['beginner', 'intermediate', 'advanced'];
                     <div class="enrolled-grid">
                         <?php foreach ($enrolledCourses as $course): ?>
                             <a href="/learning/course.php?id=<?= $course['id'] ?>" class="enrolled-card">
-                                <?php if ($course['thumbnail']): ?>
-                                    <img src="<?= e($course['thumbnail']) ?>" alt="" class="enrolled-thumb">
+                                <?php if ($course['cover_image']): ?>
+                                    <img src="<?= e($course['cover_image']) ?>" alt="" class="enrolled-thumb">
                                 <?php else: ?>
                                     <div class="enrolled-thumb placeholder">📚</div>
                                 <?php endif; ?>
@@ -172,9 +172,9 @@ $levels = ['beginner', 'intermediate', 'advanced'];
                 <?php if ($courses): ?>
                     <div class="courses-grid">
                         <?php foreach ($courses as $course): ?>
-                            <div class="course-card <?= $course['featured'] ? 'featured' : '' ?>">
-                                <?php if ($course['thumbnail']): ?>
-                                    <img src="<?= e($course['thumbnail']) ?>" alt="" class="course-thumb">
+                            <div class="course-card <?= $course['is_featured'] ? 'featured' : '' ?>">
+                                <?php if ($course['cover_image']): ?>
+                                    <img src="<?= e($course['cover_image']) ?>" alt="" class="course-thumb">
                                 <?php else: ?>
                                     <div class="course-thumb placeholder">
                                         <?= getCategoryIcon($course['category']) ?>
@@ -183,8 +183,8 @@ $levels = ['beginner', 'intermediate', 'advanced'];
 
                                 <div class="course-content">
                                     <div class="course-meta">
-                                        <span class="course-level <?= $course['level'] ?>"><?= ucfirst($course['level']) ?></span>
-                                        <?php if ($course['featured']): ?>
+                                        <span class="course-level <?= $course['difficulty'] ?>"><?= ucfirst($course['difficulty']) ?></span>
+                                        <?php if ($course['is_featured']): ?>
                                             <span class="course-featured">⭐ Featured</span>
                                         <?php endif; ?>
                                     </div>

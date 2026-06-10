@@ -137,7 +137,7 @@ class Security {
     /**
      * General rate limiting
      */
-    public static function rateLimit(string $key, int $maxRequests = null, int $window = null): bool {
+    public static function rateLimit(string $key, ?int $maxRequests = null, ?int $window = null): bool {
         $maxRequests = $maxRequests ?? RATE_LIMIT_REQUESTS;
         $window = $window ?? RATE_LIMIT_WINDOW;
         $ip = $_SERVER['REMOTE_ADDR'] ?? '';
@@ -177,7 +177,7 @@ class Security {
     /**
      * Require rate limit or fail
      */
-    public static function requireRateLimit(string $key, int $maxRequests = null, int $window = null): void {
+    public static function requireRateLimit(string $key, ?int $maxRequests = null, ?int $window = null): void {
         if (!self::rateLimit($key, $maxRequests, $window)) {
             Response::tooManyRequests('Too many requests. Please try again later.');
         }

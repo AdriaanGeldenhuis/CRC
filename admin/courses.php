@@ -27,21 +27,24 @@ try {
     $params = [];
 
     if ($search) {
-        $whereClause .= " AND (title LIKE ? OR description LIKE ?)";
+        $whereClause .= " AND (c.title LIKE ? OR c.description LIKE ?)";
         $searchTerm = "%$search%";
         $params[] = $searchTerm;
         $params[] = $searchTerm;
     }
 
     $totalCount = Database::fetchColumn(
-        "SELECT COUNT(*) FROM courses $whereClause",
+        "SELECT COUNT(*) FROM courses c $whereClause",
         $params
     );
 
     $courses = Database::fetchAll(
-        "SELECT * FROM courses
+        "SELECT c.*,
+                (SELECT COUNT(*) FROM lessons WHERE course_id = c.id) as lesson_count,
+                (SELECT COUNT(*) FROM user_course_enrollments WHERE course_id = c.id) as enrollment_count
+         FROM courses c
          $whereClause
-         ORDER BY created_at DESC
+         ORDER BY c.created_at DESC
          LIMIT $perPage OFFSET $offset",
         $params
     ) ?: [];
@@ -125,8 +128,9 @@ try {
                                             <td><?= $c['lesson_count'] ?? 0 ?></td>
                                             <td><?= $c['enrollment_count'] ?? 0 ?></td>
                                             <td>
-                                                <span class="status-badge status-<?= $c['status'] ?? 'draft' ?>">
-                                                    <?= ucfirst($c['status'] ?? 'draft') ?>
+                                                <?php $courseStatus = !empty($c['is_published']) ? 'published' : 'draft'; ?>
+                                                <span class="status-badge status-<?= $courseStatus ?>">
+                                                    <?= ucfirst($courseStatus) ?>
                                                 </span>
                                             </td>
                                             <td>
@@ -191,8 +195,8 @@ try {
                     <textarea name="description" class="form-textarea" rows="3"></textarea>
                 </div>
                 <div class="form-group">
-                    <label>Thumbnail URL</label>
-                    <input type="url" name="thumbnail" class="form-input" placeholder="Image URL">
+                    <label>Cover Image URL</label>
+                    <input type="url" name="cover_image" class="form-input" placeholder="Image URL">
                 </div>
                 <div class="form-actions">
                     <button type="button" onclick="closeModal('add-course-modal')" class="btn btn-outline">Cancel</button>

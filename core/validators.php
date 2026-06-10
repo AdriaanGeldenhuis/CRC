@@ -70,7 +70,7 @@ class Validator {
     /**
      * Validate required string
      */
-    public function required(string $field, string $label = null): self {
+    public function required(string $field, ?string $label = null): self {
         $value = $this->data[$field] ?? null;
         $label = $label ?? ucfirst(str_replace('_', ' ', $field));
 
@@ -84,7 +84,7 @@ class Validator {
     /**
      * Validate string length
      */
-    public function length(string $field, int $min = null, int $max = null, string $label = null): self {
+    public function length(string $field, ?int $min = null, ?int $max = null, ?string $label = null): self {
         $value = $this->data[$field] ?? '';
         $label = $label ?? ucfirst(str_replace('_', ' ', $field));
         $len = mb_strlen($value);
@@ -103,7 +103,7 @@ class Validator {
     /**
      * Validate matches another field
      */
-    public function matches(string $field, string $otherField, string $label = null): self {
+    public function matches(string $field, string $otherField, ?string $label = null): self {
         $value = $this->data[$field] ?? null;
         $otherValue = $this->data[$otherField] ?? null;
         $label = $label ?? ucfirst(str_replace('_', ' ', $field));
@@ -142,7 +142,7 @@ class Validator {
     /**
      * Validate integer
      */
-    public function integer(string $field, int $min = null, int $max = null): self {
+    public function integer(string $field, ?int $min = null, ?int $max = null): self {
         $value = $this->data[$field] ?? null;
 
         if ($value !== null && $value !== '') {
@@ -189,7 +189,7 @@ class Validator {
     /**
      * Validate is in list
      */
-    public function in(string $field, array $allowed, string $label = null): self {
+    public function in(string $field, array $allowed, ?string $label = null): self {
         $value = $this->data[$field] ?? null;
         $label = $label ?? ucfirst(str_replace('_', ' ', $field));
 
