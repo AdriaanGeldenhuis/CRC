@@ -838,12 +838,12 @@ function formatDuration($seconds) {
                     <?php foreach ($latestSermons as $sermon): ?>
                         <a href="/media/sermon.php?id=<?= $sermon['id'] ?>" class="sermon-card">
                             <div class="sermon-thumb">
-                                <?php if ($sermon['thumbnail_url']): ?>
-                                    <img src="<?= e($sermon['thumbnail_url']) ?>" alt="">
+                                <?php if (!empty($sermon['thumbnail'])): ?>
+                                    <img src="<?= e($sermon['thumbnail']) ?>" alt="" loading="lazy">
                                 <?php else: ?>
                                     <div class="thumb-placeholder">🎤</div>
                                 <?php endif; ?>
-                                <?php if ($sermon['duration']): ?>
+                                <?php if (!empty($sermon['duration'])): ?>
                                     <span class="duration"><?= formatDuration($sermon['duration']) ?></span>
                                 <?php endif; ?>
                             </div>
@@ -875,10 +875,10 @@ function formatDuration($seconds) {
                     <?php foreach ($series as $s): ?>
                         <a href="/media/sermons.php?series=<?= $s['id'] ?>" class="series-card">
                             <div class="series-cover">
-                                <?php if ($s['cover_url']): ?>
-                                    <img src="<?= e($s['cover_url']) ?>" alt="">
+                                <?php if (!empty($s['image'])): ?>
+                                    <img src="<?= e($s['image']) ?>" alt="" loading="lazy">
                                 <?php else: ?>
-                                    <div class="cover-placeholder"><?= strtoupper(substr($s['name'], 0, 2)) ?></div>
+                                    <div class="cover-placeholder"><?= e(strtoupper(mb_substr($s['name'], 0, 2))) ?></div>
                                 <?php endif; ?>
                             </div>
                             <div class="series-info">

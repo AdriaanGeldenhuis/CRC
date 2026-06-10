@@ -7,6 +7,7 @@ const CSRF_TOKEN = document.querySelector('meta[name="csrf-token"]')?.content;
 let editingCongregationId = null;
 let editingCourseId = null;
 let editingSermonId = null;
+let editingLivestreamId = null;
 let editingContentId = null;
 
 function setModalTitle(modalId, text) {
@@ -414,8 +415,22 @@ async function editSermon(id) {
     fillForm(form, s, [
         { f: 'title', k: 'title' }, { f: 'speaker', k: 'speaker' }, { f: 'sermon_date', k: 'sermon_date' },
         { f: 'description', k: 'description' }, { f: 'video_url', k: 'video_url' },
-        { f: 'audio_url', k: 'audio_url' }, { f: 'category', k: 'category' }
+        { f: 'audio_url', k: 'audio_url' }, { f: 'category', k: 'category' },
+        { f: 'thumbnail', k: 'thumbnail' }, { f: 'status', k: 'status' },
+        { f: 'series_id', k: 'series_id' }, { f: 'congregation_id', k: 'congregation_id' }
     ]);
+    // Duration is stored in seconds; the form captures whole minutes.
+    const durMin = form.querySelector('[name="duration_minutes"]');
+    if (durMin) durMin.value = s.duration ? Math.round(s.duration / 60) : '';
+    // Scripture references are stored as a JSON array; show one per line.
+    const scrip = form.querySelector('[name="scripture_references"]');
+    if (scrip) {
+        let refs = [];
+        try { refs = s.scripture_references ? JSON.parse(s.scripture_references) : []; } catch (e) { refs = []; }
+        scrip.value = Array.isArray(refs) ? refs.join('\n') : (s.scripture_references || '');
+    }
+    const newSeries = form.querySelector('[name="new_series"]');
+    if (newSeries) newSeries.value = '';
     setModalTitle('add-sermon-modal', 'Edit Sermon');
     openModal('add-sermon-modal');
 }
@@ -423,6 +438,44 @@ async function deleteSermon(id) {
     if (!confirm('Are you sure you want to delete this sermon?')) return;
     const data = await adminPost('delete_sermon', { sermon_id: id });
     if (data.ok) { window.location.reload(); } else { alert(data.error || 'Failed to delete sermon'); }
+}
+
+// ===== Livestreams =====
+function openAddLivestream() {
+    editingLivestreamId = null;
+    document.getElementById('add-livestream-form')?.reset();
+    setModalTitle('add-livestream-modal', 'Add Livestream');
+    openModal('add-livestream-modal');
+}
+bindCrudForm('add-livestream-form', 'add_livestream', 'update_livestream', 'stream_id', () => editingLivestreamId, 'livestream');
+async function editLivestream(id) {
+    const data = await adminPost('get_livestream', { stream_id: id });
+    if (!data.ok) { alert(data.error || 'Failed to load livestream'); return; }
+    const s = data.livestream;
+    const form = document.getElementById('add-livestream-form');
+    form.reset();
+    editingLivestreamId = s.id;
+    fillForm(form, s, [
+        { f: 'title', k: 'title' }, { f: 'status', k: 'status' },
+        { f: 'congregation_id', k: 'congregation_id' }, { f: 'embed_url', k: 'embed_url' },
+        { f: 'description', k: 'description' }, { f: 'recording_url', k: 'recording_url' },
+        { f: 'thumbnail_url', k: 'thumbnail_url' }
+    ]);
+    // datetime-local wants YYYY-MM-DDTHH:MM
+    const sched = form.querySelector('[name="scheduled_at"]');
+    if (sched) sched.value = s.scheduled_at ? s.scheduled_at.replace(' ', 'T').slice(0, 16) : '';
+    // duration stored in seconds; form captures whole minutes
+    const durMin = form.querySelector('[name="duration_minutes"]');
+    if (durMin) durMin.value = s.duration ? Math.round(s.duration / 60) : '';
+    const chat = form.querySelector('[name="chat_enabled"]');
+    if (chat) chat.checked = !!Number(s.chat_enabled);
+    setModalTitle('add-livestream-modal', 'Edit Livestream');
+    openModal('add-livestream-modal');
+}
+async function deleteLivestream(id) {
+    if (!confirm('Are you sure you want to delete this livestream?')) return;
+    const data = await adminPost('delete_livestream', { stream_id: id });
+    if (data.ok) { window.location.reload(); } else { alert(data.error || 'Failed to delete livestream'); }
 }
 
 // ===== Content =====

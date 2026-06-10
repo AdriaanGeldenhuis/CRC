@@ -99,7 +99,7 @@ switch ($action) {
 
         // Increment view count
         Database::query(
-            "UPDATE sermons SET view_count = view_count + 1 WHERE id = ?",
+            "UPDATE sermons SET views = views + 1 WHERE id = ?",
             [$sermonId]
         );
 

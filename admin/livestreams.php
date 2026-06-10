@@ -1,6 +1,6 @@
 <?php
 /**
- * CRC Global Admin - Sermons Management
+ * CRC Global Admin - Livestreams Management
  */
 
 require_once __DIR__ . '/../core/bootstrap.php';
@@ -9,19 +9,16 @@ Auth::requireAuth();
 Auth::requireRole('super_admin');
 
 $user = Auth::user();
-$pageTitle = "Sermons - Admin";
+$pageTitle = "Livestreams - Admin";
 
-// Get filters
 $search = trim($_GET['search'] ?? '');
 $page = max(1, (int)($_GET['page'] ?? 1));
 $perPage = 20;
 $offset = ($page - 1) * $perPage;
 
-// Check if sermons table exists and get data
-$sermons = [];
+$streams = [];
 $totalCount = 0;
 $totalPages = 0;
-$allSeries = [];
 $congregations = [];
 
 try {
@@ -29,39 +26,37 @@ try {
     $params = [];
 
     if ($search) {
-        $whereClause .= " AND (s.title LIKE ? OR s.speaker LIKE ?)";
-        $searchTerm = "%$search%";
-        $params[] = $searchTerm;
-        $params[] = $searchTerm;
+        $whereClause .= " AND l.title LIKE ?";
+        $params[] = "%$search%";
     }
 
     $totalCount = Database::fetchColumn(
-        "SELECT COUNT(*) FROM sermons s $whereClause",
+        "SELECT COUNT(*) FROM livestreams l $whereClause",
         $params
     );
 
-    $sermons = Database::fetchAll(
-        "SELECT s.*, c.name as congregation_name, ss.name as series_name
-         FROM sermons s
-         LEFT JOIN congregations c ON s.congregation_id = c.id
-         LEFT JOIN sermon_series ss ON s.series_id = ss.id
+    $streams = Database::fetchAll(
+        "SELECT l.*, c.name AS congregation_name
+         FROM livestreams l
+         LEFT JOIN congregations c ON l.congregation_id = c.id
          $whereClause
-         ORDER BY s.created_at DESC
+         ORDER BY (l.status = 'live') DESC, COALESCE(l.scheduled_at, l.started_at, l.created_at) DESC
          LIMIT $perPage OFFSET $offset",
         $params
     ) ?: [];
 
     $totalPages = ceil($totalCount / $perPage);
 
-    $allSeries = Database::fetchAll(
-        "SELECT id, name FROM sermon_series ORDER BY name ASC"
-    ) ?: [];
-
     $congregations = Database::fetchAll(
         "SELECT id, name FROM congregations WHERE status = 'active' ORDER BY name ASC"
     ) ?: [];
 } catch (Exception $e) {
-    // Table might not exist
+    // Table might not exist yet
+}
+
+function adminStreamDate($stream): string {
+    $when = $stream['scheduled_at'] ?? $stream['started_at'] ?? $stream['created_at'] ?? null;
+    return $when ? date('M j, Y g:i A', strtotime($when)) : '—';
 }
 ?>
 <!DOCTYPE html>
@@ -92,62 +87,57 @@ try {
     <div class="admin-layout">
         <?php include __DIR__ . '/partials/sidebar.php'; ?>
 
-        <!-- Main Content -->
         <main class="admin-main">
             <header class="admin-header">
-                <h1>Sermons</h1>
+                <h1>Livestreams</h1>
                 <div class="header-actions">
-                    <button onclick="openAddSermon()" class="btn btn-primary">
-                        + Add Sermon
+                    <button onclick="openAddLivestream()" class="btn btn-primary">
+                        + Add Livestream
                     </button>
                 </div>
             </header>
 
             <div class="admin-content">
-                <!-- Filters -->
                 <div class="filters-bar">
                     <form class="search-form" method="GET">
-                        <input type="search" name="search" placeholder="Search sermons..."
+                        <input type="search" name="search" placeholder="Search livestreams..."
                                value="<?= e($search) ?>" class="search-input">
                         <button type="submit" class="btn btn-outline">Search</button>
                     </form>
                 </div>
 
-                <!-- Sermons Table -->
                 <div class="card">
                     <div class="card-body">
-                        <p class="result-count"><?= number_format($totalCount) ?> sermon<?= $totalCount != 1 ? 's' : '' ?></p>
+                        <p class="result-count"><?= number_format($totalCount) ?> livestream<?= $totalCount != 1 ? 's' : '' ?></p>
 
-                        <?php if ($sermons): ?>
+                        <?php if ($streams): ?>
                             <table class="data-table">
                                 <thead>
                                     <tr>
                                         <th>Title</th>
-                                        <th>Speaker</th>
-                                        <th>Series</th>
                                         <th>Congregation</th>
-                                        <th>Date</th>
                                         <th>Status</th>
+                                        <th>When</th>
+                                        <th>Viewers</th>
                                         <th>Actions</th>
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    <?php foreach ($sermons as $s): ?>
+                                    <?php foreach ($streams as $s): ?>
                                         <tr>
                                             <td><strong><?= e($s['title']) ?></strong></td>
-                                            <td><?= e($s['speaker'] ?? '-') ?></td>
-                                            <td><?= e($s['series_name'] ?? '—') ?></td>
                                             <td><?= e($s['congregation_name'] ?? 'Global') ?></td>
-                                            <td><?= e(date('M j, Y', strtotime($s['created_at']))) ?></td>
                                             <td>
-                                                <span class="status-badge status-<?= $s['status'] ?? 'draft' ?>">
-                                                    <?= ucfirst($s['status'] ?? 'draft') ?>
+                                                <span class="status-badge status-<?= e($s['status'] ?? 'scheduled') ?>">
+                                                    <?= ucfirst($s['status'] ?? 'scheduled') ?>
                                                 </span>
                                             </td>
+                                            <td><?= e(adminStreamDate($s)) ?></td>
+                                            <td><?= number_format((int)($s['viewer_count'] ?? 0)) ?></td>
                                             <td>
                                                 <div class="action-buttons">
-                                                    <button onclick="editSermon(<?= $s['id'] ?>)" class="action-btn" title="Edit">✏️</button>
-                                                    <button onclick="deleteSermon(<?= $s['id'] ?>)" class="action-btn" title="Delete">🗑️</button>
+                                                    <button onclick="editLivestream(<?= (int)$s['id'] ?>)" class="action-btn" title="Edit">✏️</button>
+                                                    <button onclick="deleteLivestream(<?= (int)$s['id'] ?>)" class="action-btn" title="Delete">🗑️</button>
                                                 </div>
                                             </td>
                                         </tr>
@@ -168,9 +158,9 @@ try {
                             <?php endif; ?>
                         <?php else: ?>
                             <div class="empty-state">
-                                <span class="empty-icon">🎤</span>
-                                <p class="empty-text">No sermons found</p>
-                                <p class="empty-subtext">Add your first sermon to get started</p>
+                                <span class="empty-icon">📺</span>
+                                <p class="empty-text">No livestreams found</p>
+                                <p class="empty-subtext">Schedule your first livestream to get started</p>
                             </div>
                         <?php endif; ?>
                     </div>
@@ -179,41 +169,27 @@ try {
         </main>
     </div>
 
-    <!-- Add Sermon Modal -->
-    <div id="add-sermon-modal" class="modal">
+    <!-- Add/Edit Livestream Modal -->
+    <div id="add-livestream-modal" class="modal">
         <div class="modal-content">
             <div class="modal-header">
-                <h2>Add Sermon</h2>
-                <button onclick="closeModal('add-sermon-modal')" class="modal-close">&times;</button>
+                <h2>Add Livestream</h2>
+                <button onclick="closeModal('add-livestream-modal')" class="modal-close">&times;</button>
             </div>
-            <form id="add-sermon-form">
+            <form id="add-livestream-form">
                 <div class="form-group">
                     <label>Title</label>
                     <input type="text" name="title" required class="form-input">
                 </div>
-                <div class="form-group">
-                    <label>Speaker</label>
-                    <input type="text" name="speaker" required class="form-input">
-                </div>
-                <div class="form-group">
-                    <label>Date</label>
-                    <input type="date" name="sermon_date" required class="form-input">
-                </div>
                 <div class="form-row">
-                    <div class="form-group">
-                        <label>Category</label>
-                        <input type="text" name="category" class="form-input" placeholder="e.g. Faith, Prayer, Hope">
-                    </div>
                     <div class="form-group">
                         <label>Status</label>
                         <select name="status" class="form-input">
-                            <option value="published">Published</option>
-                            <option value="draft">Draft</option>
-                            <option value="archived">Archived</option>
+                            <option value="scheduled">Scheduled</option>
+                            <option value="live">Live</option>
+                            <option value="ended">Ended</option>
                         </select>
                     </div>
-                </div>
-                <div class="form-row">
                     <div class="form-group">
                         <label>Congregation</label>
                         <select name="congregation_id" class="form-input">
@@ -223,19 +199,14 @@ try {
                             <?php endforeach; ?>
                         </select>
                     </div>
-                    <div class="form-group">
-                        <label>Series</label>
-                        <select name="series_id" class="form-input">
-                            <option value="">— None —</option>
-                            <?php foreach ($allSeries as $sr): ?>
-                                <option value="<?= (int)$sr['id'] ?>"><?= e($sr['name']) ?></option>
-                            <?php endforeach; ?>
-                        </select>
-                    </div>
                 </div>
                 <div class="form-group">
-                    <label>Or create a new series</label>
-                    <input type="text" name="new_series" class="form-input" placeholder="Leave blank to use the selection above">
+                    <label>Scheduled Date &amp; Time</label>
+                    <input type="datetime-local" name="scheduled_at" class="form-input">
+                </div>
+                <div class="form-group">
+                    <label>Live Embed URL</label>
+                    <input type="url" name="embed_url" class="form-input" placeholder="YouTube/Vimeo or embed URL (for live)">
                 </div>
                 <div class="form-group">
                     <label>Description</label>
@@ -243,31 +214,26 @@ try {
                 </div>
                 <div class="form-row">
                     <div class="form-group">
-                        <label>Video URL</label>
-                        <input type="url" name="video_url" class="form-input" placeholder="YouTube or Vimeo URL">
+                        <label>Recording URL</label>
+                        <input type="url" name="recording_url" class="form-input" placeholder="For ended streams (replay)">
                     </div>
                     <div class="form-group">
-                        <label>Audio URL</label>
-                        <input type="url" name="audio_url" class="form-input" placeholder="MP3 or audio file URL">
+                        <label>Thumbnail URL</label>
+                        <input type="url" name="thumbnail_url" class="form-input" placeholder="Cover image URL">
                     </div>
                 </div>
                 <div class="form-row">
                     <div class="form-group">
-                        <label>Thumbnail URL</label>
-                        <input type="url" name="thumbnail" class="form-input" placeholder="Cover image URL">
-                    </div>
-                    <div class="form-group">
                         <label>Duration (minutes)</label>
-                        <input type="number" name="duration_minutes" min="0" step="1" class="form-input" placeholder="e.g. 45">
+                        <input type="number" name="duration_minutes" min="0" step="1" class="form-input" placeholder="e.g. 60">
                     </div>
-                </div>
-                <div class="form-group">
-                    <label>Scripture References</label>
-                    <textarea name="scripture_references" class="form-textarea" rows="2" placeholder="One reference per line, e.g. John 3:16"></textarea>
+                    <div class="form-group checkbox-group">
+                        <label><input type="checkbox" name="chat_enabled" value="1" checked> Enable live chat</label>
+                    </div>
                 </div>
                 <div class="form-actions">
-                    <button type="button" onclick="closeModal('add-sermon-modal')" class="btn btn-outline">Cancel</button>
-                    <button type="submit" class="btn btn-primary">Save Sermon</button>
+                    <button type="button" onclick="closeModal('add-livestream-modal')" class="btn btn-outline">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Save Livestream</button>
                 </div>
             </form>
         </div>
